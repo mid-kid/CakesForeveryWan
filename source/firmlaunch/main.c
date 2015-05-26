@@ -1,6 +1,7 @@
 #include "main.h"
 
 #include <stdint.h>
+#include "firmcompat.h"
 #include "memchunkhax.h"
 #include "firmlaunchax.h"
 #include "../mset/draw.h"
@@ -47,9 +48,15 @@ void arm11_kernel_code()
 
 void do_firmlaunch()
 {
+    int result;
+
+    // Some offsets differ per firmware
+    result = set_firmware_offsets();
+    if (result != 0) return;
+    print("Got firmware-specific offsets");
+
     // This is used later in arm9 to boot into it.
-    print("Loading firmware...");
-    int result = load_file((char *)0x14400000, L"YS:/firm.bin", 0xEB000);
+    result = load_file((char *)0x14400000, L"YS:/firm.bin", 0xEB000);
     if (result != 0) return;
     print("Loaded firmware!");
 

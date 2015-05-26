@@ -18,7 +18,7 @@ static uint8_t *screen_bottom2 = (uint8_t *)0x14249CF0;
 #define screen_top_size (screen_top_width * screen_top_height * 3)
 #define screen_bottom_size (screen_bottom_width * screen_bottom_height * 3)
 
-uint8_t *print_pos = (uint8_t *)0x1419c561 /* screen_top_left1 + screen_top_size + 1 */;
+uint8_t *print_pos = (uint8_t *)0x14A00000;
 
 void clear_screen(enum screen screen)
 {

