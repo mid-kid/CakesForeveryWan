@@ -93,7 +93,7 @@ int set_firmware_offsets()
             fw->pdn_regs = 0xFFFBE000;
             fw->pxi_regs = 0xFFFC0000;
             break;
-        
+
         case 0x022E0000:  // 2.26-0 9.0.0
             fw->kernel_patch_address = 0xDFF83837;
             fw->reboot_patch_address = 0xDFFF4974;
@@ -105,7 +105,7 @@ int set_firmware_offsets()
             fw->pdn_regs = 0xFFFC2000;
             fw->pxi_regs = 0xFFFC4000;
             break;
-        
+
         default:
             print("Unsupported/Unrecognized kernel version");
             return 1;

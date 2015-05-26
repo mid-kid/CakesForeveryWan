@@ -15,6 +15,7 @@ struct firmware_offsets {
     uint32_t pxi_regs;
 };
 
+__attribute__((unused))
 static struct firmware_offsets *fw = (struct firmware_offsets *)0x14A00001;
 
 int set_firmware_offsets();
