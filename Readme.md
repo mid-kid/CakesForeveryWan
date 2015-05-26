@@ -13,4 +13,3 @@ Thanks
 * 3dbrew for info
 * Yellows8 for firmlaunchax and memchunkhax
 * smea and Yellows8 for gspwn
-* smea and plutoo for rohax
