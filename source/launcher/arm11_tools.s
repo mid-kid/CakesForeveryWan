@@ -25,21 +25,3 @@ asm_memcpy:
         bcc .memcpy_loop
 
     bx lr
-
-@.global copy_arm9_code
-@copy_arm9_code:
-@    ldr r0, =0xF0000000
-@    ldr r1, =0x3F00000
-@    add r0, r1
-@    ldr r1, =arm9_code
-@    ldr r2, =arm9_code_end
-@    sub r2, r1
-@
-@    push {lr}
-@    bl asm_memcpy
-@    pop {pc}
-@
-@.align 4
-@arm9_code:
-@    .incbin "cfw.bin"
-@arm9_code_end:

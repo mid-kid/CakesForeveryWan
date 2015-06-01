@@ -1,7 +1,7 @@
 #include "firmcompat.h"
 
 #include <stdint.h>
-#include "../mset/draw.h"
+#include "draw.h"
 
 int set_firmware_offsets()
 {

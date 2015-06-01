@@ -2,6 +2,7 @@
 #define __firmcompat_h__
 
 #include <stdint.h>
+#include "appcompat.h"
 
 struct firmware_offsets {
     uint32_t kernel_patch_address;
@@ -16,7 +17,7 @@ struct firmware_offsets {
 };
 
 __attribute__((unused))
-static struct firmware_offsets *fw = (struct firmware_offsets *)0x14A00001;
+static struct firmware_offsets *fw = (struct firmware_offsets *)APP_FIRM_COMPAT;
 
 int set_firmware_offsets();
 

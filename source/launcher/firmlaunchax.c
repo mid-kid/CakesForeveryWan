@@ -1,11 +1,11 @@
 #include "firmlaunchax.h"
 
-#include <cfw_bin.h>
 #include <arm9hax_bin.h>
 #include <stdint.h>
 #include "firmcompat.h"
+#include "appcompat.h"
 #include "arm11_tools.h"
-#include "../mset/draw.h"
+#include "draw.h"
 
 void firmlaunch_arm9hax()
 {
@@ -14,7 +14,8 @@ void firmlaunch_arm9hax()
     print("Invalidated instruction and data cache");
 
     uint32_t code_offset = 0x3F00000;
-    asm_memcpy((void *)(fw->fcram_address + code_offset), cfw_bin, cfw_bin_size);
+    asm_memcpy((void *)(fw->fcram_address + code_offset), 
+               (void *)(fw->fcram_address + APP_CFW_OFFSET), 0x10000);
     print("Copied arm9 code");
 
     asm_memcpy((void *)fw->jump_table_address, arm9hax_bin, arm9hax_bin_size);
@@ -38,11 +39,11 @@ void firmlaunch_arm9hax()
     invalidate_data_cache();
     print("Invalidated data cache");
 
+    // TODO: Do the one-liner
     void (*reboot_func)(int, int, int, int) = (void *)fw->reboot_func_address;
 
     print("Triggering reboot");
     reboot_func(0, 0, 2, 0);
 
-    // For some reason, the last instruction will be repeated without this.
     while (1) {};
 }

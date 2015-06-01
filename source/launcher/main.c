@@ -1,17 +1,11 @@
-#include "main.h"
-
 #include <stdint.h>
 #include "firmcompat.h"
+#include "appcompat.h"
 #include "memchunkhax.h"
 #include "firmlaunchax.h"
-#include "../mset/draw.h"
+#include "draw.h"
 
-// MSET functions
-int (*fopen)(uint32_t (*handle)[], short unsigned int *path, uint32_t flags) = (void *)0x001B82A8;
-uint32_t (*fread)(uint32_t (*handle)[], uint32_t *read, void *buffer, uint32_t size) = (void *)0x001B3954;
-
-
-int load_file(char *dest, short unsigned int *path, uint32_t size)
+int load_file(char *dest, short unsigned int *path, uint32_t offset, uint32_t size)
 {
     uint32_t file_handle[8] = {0};
     uint32_t bytes_read = 0;
@@ -21,13 +15,9 @@ int load_file(char *dest, short unsigned int *path, uint32_t size)
         print("Fopen failed!");
         return 1;
     }
+    file_handle[1] = offset;
 
     fread(&file_handle, &bytes_read, dest, size);
-    if (bytes_read != size) {
-        print("Fread failed!");
-        return 1;
-    }
-
     print("File has been loaded");
 
     return 0;
@@ -39,7 +29,7 @@ void arm11_kernel_code()
     __asm__ volatile ("clrex");
     print("I'm in!");
 
-    // Reboot and load our arm9 payload
+    // Reboot and load our arm9 payload in arm9 kernel mode
     firmlaunch_arm9hax();
 
     // We should never return here
@@ -55,12 +45,23 @@ void do_firmlaunch()
     if (result != 0) return;
     print("Got firmware-specific offsets");
 
-    // This is used later in arm9 to boot into it.
-    result = load_file((char *)0x14400000, L"YS:/firm.bin", 0xEB000);
+    // Load the arm9 payload to memory
+    // Spider has size restrictions to the Launcher, so we need to load the arm9
+    //   payload separately.
+    result = load_file((char *)(0x14000000 + APP_CFW_OFFSET),
+                       APP_LAUNCHER_PATH, 0x20000, 0x10000);
     if (result != 0) return;
     print("Loaded firmware!");
 
     // Now, we gain arm11 kernel mode
     print("Doing memchunkhax to gain arm11");
     memchunk_arm11hax(arm11_kernel_code);
+}
+
+void main()
+{
+    clear_screens();
+    print("Hello world!");
+
+    do_firmlaunch();
 }
