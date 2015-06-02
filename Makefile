@@ -75,12 +75,11 @@ $(dir_build)/spider_5x/rop.dat.dec: $(dir_build)/spider_5x/main.bin
 $(dir_build)/spider_9x/rop.dat: $(dir_build)/spider_9x/rop.dat.dec
 	$(PYTHON) $(dir_tools)/spider-encrypt.py $< $@
 $(dir_build)/spider_9x/rop.dat.dec: $(dir_build)/spider_9x/main.bin
-	$(PYTHON) $(dir_tools)/build-rop.py SPIDER_4X $< $@
+	$(PYTHON) $(dir_tools)/build-rop.py SPIDER_9X $< $@
 
 # Create bin from elf
 $(dir_build)/%/main.bin: $(dir_build)/%/main.elf
-	# TODO: Test
-	$(OC) -S --set-section-flags .bss=alloc,load,contents -O binary $< $@
+	$(OC) -S -O binary $< $@
 
 # Different flags for different entry points
 $(dir_build)/mset_4x/main.elf: CFLAGS := -DENTRY_MSET -DENTRY_MSET_4x $(CFLAGS)
