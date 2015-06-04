@@ -19,6 +19,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF84DDC;
             fw->pdn_regs = 0xFFFD0000;
             fw->pxi_regs = 0xFFFD2000;
+            fw->gpu_regs = 0xFFFCE000;
             break;
 
         case 0x02230600:  // 2.35-6 5.0.0
@@ -31,6 +32,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF765C4;
             fw->pdn_regs = 0xFFFD0000;
             fw->pxi_regs = 0xFFFD2000;
+            fw->gpu_regs = 0xFFFCE000;
             break;
 
         case 0x02240000:  // 2.36-0 5.1.0
@@ -43,6 +45,7 @@ int set_firmware_offsets()
             fw->reboot_patch_address = 0xEFFF4978;
             fw->jump_table_address = 0xEFFF4C80;
             fw->fcram_address = 0xF0000000;
+            fw->gpu_regs = 0xFFFCE000;
             break;
 
         case 0x02250000:  // 2.37-0 6.0.0
@@ -56,6 +59,7 @@ int set_firmware_offsets()
             fw->pxi_regs = 0xFFFD2000;
             fw->jump_table_address = 0xEFFF4C80;
             fw->fcram_address = 0xF0000000;
+            fw->gpu_regs = 0xFFFCE000;
             break;
 
         case 0x02270400:  // 2.39-4 7.0.0
@@ -68,6 +72,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF76B3C;
             fw->pdn_regs = 0xFFFD0000;
             fw->pxi_regs = 0xFFFD2000;
+            fw->gpu_regs = 0xFFFCE000;
             break;
 
         case 0x02280000:  // 2.40-0 7.2.0
@@ -80,6 +85,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF76B38;
             fw->pdn_regs = 0xFFFD0000;
             fw->pxi_regs = 0xFFFD2000;
+            fw->gpu_regs = 0xFFFBC000;
             break;
 
         case 0x022C0600:  // 2.44-6 8.0.0
@@ -92,6 +98,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF66F30;
             fw->pdn_regs = 0xFFFBE000;
             fw->pxi_regs = 0xFFFC0000;
+            fw->gpu_regs = 0xFFFC6000;
             break;
 
         case 0x022E0000:  // 2.26-0 9.0.0
@@ -104,6 +111,8 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF279D8;
             fw->pdn_regs = 0xFFFC2000;
             fw->pxi_regs = 0xFFFC4000;
+            //fw->gpu_regs = 0xFFFC6000;
+            fw->gpu_regs = 0xFFFC0000;
             break;
 
         default:

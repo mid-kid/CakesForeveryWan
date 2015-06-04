@@ -81,18 +81,6 @@ void memchunk_arm11hax(void (*func)())
     svcControlMemory(&tmp_addr, mem_hax_mem, NULL, 0x1000, 1 /* MEMOP_FREE */, 0);
     print("Triggered kernel write");
 
-    /*build_nop_slide(arm11_buffer, 0x4000);*/
-    /*print("Built nop slide");*/
-
-    /*uint32_t gsp_addr = 0x14000000;*/
-    /*uint32_t fcram_code_addr = 0x03E6D000;*/
-    /*gspwn_copy((void *)(gsp_addr + fcram_code_addr + 0x4000), arm11_buffer,*/
-               /*0x10000, 0xE1A00000, 0);*/
-    /*print("Copied nop slide");*/
-
-    /*((void (*)())0x104000)();*/
-    /*print("Executed nop slide");*/
-
 #ifdef ENTRY_SPIDER
     void *src = (void *)0x18000000;
     for (int i = 0; i < 3; i++) {  // Do it 3 times to be safe

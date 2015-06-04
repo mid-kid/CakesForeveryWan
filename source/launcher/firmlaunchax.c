@@ -7,6 +7,33 @@
 #include "arm11_tools.h"
 #include "draw.h"
 
+void setup_gpu()
+{
+    volatile uint32_t *top_left1 = (volatile uint32_t *)(fw->gpu_regs + 0x468);
+    volatile uint32_t *top_left2 = (volatile uint32_t *)(fw->gpu_regs + 0x46C);
+    volatile uint32_t *top_right1 = (volatile uint32_t *)(fw->gpu_regs + 0x494);
+    volatile uint32_t *top_right2 = (volatile uint32_t *)(fw->gpu_regs + 0x498);
+    volatile uint32_t *top_selected = (volatile uint32_t *)(fw->gpu_regs + 0x478);
+    volatile uint32_t *bottom1 = (volatile uint32_t *)(fw->gpu_regs + 0x568);
+    volatile uint32_t *bottom2 = (volatile uint32_t *)(fw->gpu_regs + 0x56C);
+    volatile uint32_t *bottom_selected = (volatile uint32_t *)(fw->gpu_regs + 0x578);
+
+    uint32_t *save = (uint32_t *)(fw->fcram_address + 0x3FFFE00);
+    if (*top_selected) {
+        save[0] = *top_left2;
+        save[1] = *top_right2;
+    } else {
+        save[0] = *top_left1;
+        save[1] = *top_right1;
+    }
+
+    if (*bottom_selected) {
+        save[2] = *bottom2;
+    } else {
+        save[2] = *bottom1;
+    }
+}
+
 void firmlaunch_arm9hax()
 {
     invalidate_data_cache();
@@ -14,9 +41,11 @@ void firmlaunch_arm9hax()
     print("Invalidated instruction and data cache");
 
     uint32_t code_offset = 0x3F00000;
-    asm_memcpy((void *)(fw->fcram_address + code_offset), 
+    asm_memcpy((void *)(fw->fcram_address + code_offset),
                (void *)(fw->fcram_address + APP_CFW_OFFSET), 0x10000);
     print("Copied arm9 code");
+
+    setup_gpu();
 
     asm_memcpy((void *)fw->jump_table_address, arm9hax_bin, arm9hax_bin_size);
     print("Copied jump table");

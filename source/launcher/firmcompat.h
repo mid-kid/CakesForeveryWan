@@ -14,6 +14,7 @@ struct firmware_offsets {
     uint32_t func_patch_return;
     uint32_t pdn_regs;
     uint32_t pxi_regs;
+    uint32_t gpu_regs;
 };
 
 __attribute__((unused))
