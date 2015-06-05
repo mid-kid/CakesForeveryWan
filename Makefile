@@ -27,9 +27,6 @@ objects_launcher := $(filter-out $(objects_mset), \
 					$(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
 					$(wildcard $(dir_source)/launcher/*.s $(dir_source)/launcher/*.c))))
 
-# Temporary
-bins := $(dir_build)/arm9hax.bin.o
-
 objects_mset_4x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/mset_4x/%, \
 				   $(objects_launcher) $(objects_mset))
 objects_spider_4x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_4x/%, \
@@ -85,19 +82,19 @@ $(dir_build)/%/main.bin: $(dir_build)/%/main.elf
 
 # Different flags for different entry points
 $(dir_build)/mset_4x/main.elf: CFLAGS := -DENTRY_MSET -DENTRY_MSET_4x $(CFLAGS)
-$(dir_build)/mset_4x/main.elf: $(bins) $(objects_mset_4x)
+$(dir_build)/mset_4x/main.elf: $(objects_mset_4x)
 	$(LD) $(LDFLAGS) -T linker_mset.ld $(OUTPUT_OPTION) $^
 
 $(dir_build)/spider_4x/main.elf: CFLAGS := -DENTRY_SPIDER -DENTRY_SPIDER_4x $(CFLAGS)
-$(dir_build)/spider_4x/main.elf: $(bins) $(objects_spider_4x)
+$(dir_build)/spider_4x/main.elf: $(objects_spider_4x)
 	$(LD) $(LDFLAGS) -T linker_spider.ld $(OUTPUT_OPTION) $^
 
 $(dir_build)/spider_5x/main.elf: CFLAGS := -DENTRY_SPIDER -DENTRY_SPIDER_5x $(CFLAGS)
-$(dir_build)/spider_5x/main.elf: $(bins) $(objects_spider_5x)
+$(dir_build)/spider_5x/main.elf: $(objects_spider_5x)
 	$(LD) $(LDFLAGS) -T linker_spider.ld $(OUTPUT_OPTION) $^
 
 $(dir_build)/spider_9x/main.elf: CFLAGS := -DENTRY_SPIDER -DENTRY_SPIDER_9x $(CFLAGS)
-$(dir_build)/spider_9x/main.elf: $(bins) $(objects_spider_9x)
+$(dir_build)/spider_9x/main.elf: $(objects_spider_9x)
 	$(LD) $(LDFLAGS) -T linker_spider.ld $(OUTPUT_OPTION) $^
 
 $(dir_build)/%.bin.o: %.bin

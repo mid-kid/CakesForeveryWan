@@ -1,10 +1,10 @@
 #include "firmlaunchax.h"
 
-#include <arm9hax_bin.h>
 #include <stdint.h>
 #include "firmcompat.h"
 #include "appcompat.h"
 #include "arm11_tools.h"
+#include "jump_table.h"
 #include "draw.h"
 
 void setup_gpu()
@@ -47,16 +47,15 @@ void firmlaunch_arm9hax()
 
     setup_gpu();
 
-    asm_memcpy((void *)fw->jump_table_address, arm9hax_bin, arm9hax_bin_size);
+    asm_memcpy((void *)fw->jump_table_address, &jump_table, (&jump_table_end - &jump_table + 1) * 4);
     print("Copied jump table");
 
-    int jt_func_patch_return = 0xCC;
-    int jt_pdn_regs = 0xC4;
-    int jt_pxi_regs = 0x1D8;
-
-    *(uint32_t *)(fw->jump_table_address + jt_func_patch_return) = fw->func_patch_return;
-    *(uint32_t *)(fw->jump_table_address + jt_pdn_regs) = fw->pdn_regs;
-    *(uint32_t *)(fw->jump_table_address + jt_pxi_regs) = fw->pxi_regs;
+    *(uint32_t *)(fw->jump_table_address +
+                 (&jt_func_patch_return - &jump_table) * 4) = fw->func_patch_return;
+    *(uint32_t *)(fw->jump_table_address +
+                 (&jt_pdn_regs - &jump_table) * 4) = fw->pdn_regs;
+    *(uint32_t *)(fw->jump_table_address +
+                 (&jt_pxi_regs - &jump_table) * 4) = fw->pxi_regs;
     print("Written firmware specific offsets");
 
     *(uint32_t *)fw->func_patch_address = 0xE51FF004;
