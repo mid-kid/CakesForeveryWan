@@ -1,6 +1,3 @@
-// TODO: Do this in a better way...
-#ifdef ENTRY_MSET
-
 #include "draw.h"
 
 #include <stdint.h>
@@ -20,9 +17,7 @@ static uint8_t *screen_bottom2 = (uint8_t *)0x14249CF0;
 #define screen_top_size (screen_top_width * screen_top_height * 3)
 #define screen_bottom_size (screen_bottom_width * screen_bottom_height * 3)
 
-// TODO: Maybe move this or something
-uint8_t *print_pos = (uint8_t *)0x14A00000;
-
+static uint8_t *print_pos = (uint8_t *)0x14A00000;
 
 int strlen(char *string)
 {
@@ -125,5 +120,3 @@ void print(char *string)
     draw_string(screen_top_left, string, 10, 10 + 10 * *print_pos);
     *print_pos += 1;
 }
-
-#endif

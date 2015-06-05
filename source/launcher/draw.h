@@ -1,7 +1,7 @@
 #ifndef __draw_h__
 #define __draw_h__
 
-#if defined(ENTRY_MSET)
+#ifdef ENTRY_MSET
 enum screen {
     screen_top_left,
     screen_top_right,

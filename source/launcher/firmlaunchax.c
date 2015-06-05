@@ -68,11 +68,8 @@ void firmlaunch_arm9hax()
     invalidate_data_cache();
     print("Invalidated data cache");
 
-    // TODO: Do the one-liner
-    void (*reboot_func)(int, int, int, int) = (void *)fw->reboot_func_address;
-
     print("Triggering reboot");
-    reboot_func(0, 0, 2, 0);
+    ((void (*)())fw->reboot_func_address)(0, 0, 2, 0);
 
     while (1) {};
 }

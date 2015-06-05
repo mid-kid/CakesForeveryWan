@@ -1,6 +1,5 @@
 #include "appcompat.h"
 
-// TODO: This is shit.
 void (*memcpy)(void *dest, void *src, int len) = (void *)FUNC_MEMCPY;
 int (*GSPGPU_FlushDataCache)(void *address, uint32_t length) = (void *)FUNC_GSPGPU_FLUSHDATACACHE;
 void (*nn__gxlow__CTR__CmdReqQueueTx__TryEnqueue)(void *arg1, void *arg2) = (void *)FUNC_NN__GXLOW__CTR__CMDREQQUEUETX__TRYENQUEUE;

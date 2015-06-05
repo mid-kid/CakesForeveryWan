@@ -21,15 +21,17 @@ dir_tools := p3ds
 ASFLAGS := -mcpu=mpcore -mlittle-endian
 CFLAGS := -marm $(ASFLAGS) -mword-relocations -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -I $(dir_build)
 
-objects_launcher := $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
+objects_mset := $(dir_build)/launcher/draw.o
+objects_launcher := $(filter-out $(objects_mset), \
+					$(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 					$(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
-					$(wildcard $(dir_source)/launcher/*.s $(dir_source)/launcher/*.c)))
+					$(wildcard $(dir_source)/launcher/*.s $(dir_source)/launcher/*.c))))
 
 # Temporary
 bins := $(dir_build)/arm9hax.bin.o
 
 objects_mset_4x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/mset_4x/%, \
-				   $(objects_launcher))
+				   $(objects_launcher) $(objects_mset))
 objects_spider_4x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_4x/%, \
 					 $(objects_launcher))
 objects_spider_5x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_5x/%, \

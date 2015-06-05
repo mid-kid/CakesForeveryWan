@@ -1,4 +1,9 @@
+# Project files
 build
 out
+
+# My own files
 env
-firm.bin
+
+# Programming tools leftovers
+*.swp

@@ -17,8 +17,7 @@ struct firmware_offsets {
     uint32_t gpu_regs;
 };
 
-__attribute__((unused))
-static struct firmware_offsets *fw = (struct firmware_offsets *)APP_FIRM_COMPAT;
+struct firmware_offsets *fw;
 
 int set_firmware_offsets();
 

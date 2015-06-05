@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "draw.h"
 
+struct firmware_offsets *fw = (struct firmware_offsets *)APP_FIRM_COMPAT;
+
 int set_firmware_offsets()
 {
     uint32_t kernel_version = *(uint32_t *)0x1FF80000;
