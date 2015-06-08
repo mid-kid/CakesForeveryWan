@@ -5,7 +5,7 @@
 #include "appcompat.h"
 #include "arm11_tools.h"
 #include "jump_table.h"
-#include "draw.h"
+#include "../draw.h"
 
 void setup_gpu()
 {

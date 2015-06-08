@@ -3,7 +3,7 @@
 #include "appcompat.h"
 #include "memchunkhax.h"
 #include "firmlaunchax.h"
-#include "draw.h"
+#include "../draw.h"
 
 int load_file(char *dest, short unsigned int *path, uint32_t offset, uint32_t size)
 {
@@ -60,7 +60,7 @@ void do_firmlaunch()
 
 void main()
 {
-    clear_screens();
+    draw_init();
     print("Hello world!");
 
     do_firmlaunch();
