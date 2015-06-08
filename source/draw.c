@@ -31,7 +31,6 @@ struct buffer_select {
     uint8_t *buffer2;
     uint8_t *buffer3;
     uint8_t *buffer4;
-    int height;
     int size;
 };
 
@@ -64,7 +63,6 @@ void set_buffers(enum screen screen, struct buffer_select *select)
     if (screen == screen_top_left || screen == screen_top_right) {
         select->buffer1 = screen_top_left1;
         select->buffer3 = screen_top_right1;
-        select->height = screen_top_height;
         select->size = screen_top_size;
 #ifdef ENTRY_MSET
         select->buffer2 = screen_top_left2;
@@ -72,7 +70,6 @@ void set_buffers(enum screen screen, struct buffer_select *select)
 #endif
     } else {
         select->buffer1 = screen_bottom1;
-        select->height = screen_top_height;
         select->size = screen_bottom_size;
 #ifdef ENTRY_MSET
         select->buffer2 = screen_bottom2;
@@ -116,7 +113,8 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y)
         unsigned char char_pos = font[character * 8 + y];
 
         for (int x = 7; x >= 0; x--) {
-            int screen_pos = (pos_x * select.height * 3 + (select.height - y - pos_y - 1) * 3) + (7 - x) * 3 * select.height;
+            // I'll just assume both screens have the same height.
+            int screen_pos = (pos_x * screen_top_height * 3 + (screen_top_height - y - pos_y - 1) * 3) + (7 - x) * 3 * screen_top_height;
 
             if ((char_pos >> x) & 1) {
                 select.buffer1[screen_pos] = 0xFF;
@@ -152,7 +150,7 @@ void draw_string(enum screen screen, char *string, int pos_x, int pos_y)
 
 void print(char *string)
 {
-    // I'll just assume both screens have the same height, because I'm too lazy
+    // I'll just assume both screens have the same height.
     if (*print_pos > (screen_top_height - 30) / 10) {
         clear_screen(*print_screen);
         *print_pos = 0;
