@@ -10,7 +10,7 @@ jump_table:
 
 func_patch_hook:
     push {r0-r12, lr}
-    
+
     mov r0, #0
     bl pxi_send
     bl pxi_sync
@@ -75,20 +75,20 @@ copy_mem:
 .pool
 
 arm11_reboot_hook:
-    ldr r0, unknown_var1
-    ldr r1, unknown_var2
+    ldr r0, pxi_regs
+    ldr r1, pxi_command
     str r1, [r0]
 
     ldr r8, io_mem
     ldr r9, arm9_payload
-    ldr r10, firm_exec_ptr
+    ldr r10, firm_header
 
     wait_arm9_loop:
         ldrb r0, [r8]
         ands r0, r0, #1
         bne wait_arm9_loop
 
-    str r9, [r10]
+    str r9, [r10, #0xC]
 
     mvn r0, #0xE0000007
     wait_arm11_loop:
@@ -98,11 +98,11 @@ arm11_reboot_hook:
 
     bx r1
 
-unknown_var1: .long 0x10163008
-unknown_var2: .long 0x44846
+pxi_regs: .long 0x10163008
+pxi_command: .long 0x44846
 io_mem: .long 0x10140000
 arm9_payload: .long 0x23F00000
-firm_exec_ptr: .long 0x2400000C
+firm_header: .long 0x24000000
 
 arm11_reboot_hook_end:
 
