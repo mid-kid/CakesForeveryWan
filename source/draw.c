@@ -82,15 +82,22 @@ void clear_screen(enum screen screen)
     struct buffer_select select = {0};
     set_buffers(screen, &select);
 
-    for (int i = 0; i < select.size; i++) {
-        select.buffer1[i] = 0;
+    // Use the full 32 bits of this CPU to copy this faster.
+    uint32_t *buffer1 = (uint32_t *)select.buffer1;
+    uint32_t *buffer3 = (uint32_t *)select.buffer3;
 #ifdef ENTRY_MSET
-        select.buffer2[i] = 0;
+    uint32_t *buffer2 = (uint32_t *)select.buffer2;
+    uint32_t *buffer4 = (uint32_t *)select.buffer4;
+#endif
+    for (int i = 0; i < select.size / 4; i++) {
+        buffer1[i] = 0;
+#ifdef ENTRY_MSET
+        buffer2[i] = 0;
 #endif
         if (select.buffer3 || select.buffer4) {
-            select.buffer3[i] = 0;
-#ifdef ENTRY_MSET   
-            select.buffer4[i] = 0;
+            buffer3[i] = 0;
+#ifdef ENTRY_MSET
+            buffer4[i] = 0;
 #endif
         }
     }
@@ -104,7 +111,7 @@ void clear_screens()
     *print_pos = 0;
 }
 
-void draw_character(enum screen screen, char character, int pos_x, int pos_y)
+void draw_character(enum screen screen, char character, int pos_x, int pos_y, uint32_t color)
 {
     struct buffer_select select = {0};
     set_buffers(screen, &select);
@@ -117,22 +124,22 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y)
             int screen_pos = (pos_x * screen_top_height * 3 + (screen_top_height - y - pos_y - 1) * 3) + (7 - x) * 3 * screen_top_height;
 
             if ((char_pos >> x) & 1) {
-                select.buffer1[screen_pos] = 0xFF;
-                select.buffer1[screen_pos + 1] = 0xFF;
-                select.buffer1[screen_pos + 2] = 0xFF;
+                select.buffer1[screen_pos] = color >> 16;
+                select.buffer1[screen_pos + 1] = color >> 8;
+                select.buffer1[screen_pos + 2] = color;
 #ifdef ENTRY_MSET
-                select.buffer2[screen_pos] = 0xFF;
-                select.buffer2[screen_pos + 1] = 0xFF;
-                select.buffer2[screen_pos + 2] = 0xFF;
+                select.buffer2[screen_pos] = color >> 16;
+                select.buffer2[screen_pos + 1] = color >> 8;
+                select.buffer2[screen_pos + 2] = color;
 #endif
                 if (select.buffer3 || select.buffer4) {
-                    select.buffer3[screen_pos] = 0xFF;
-                    select.buffer3[screen_pos + 1] = 0xFF;
-                    select.buffer3[screen_pos + 2] = 0xFF;
+                    select.buffer3[screen_pos] = color >> 16;
+                    select.buffer3[screen_pos + 1] = color >> 8;
+                    select.buffer3[screen_pos + 2] = color;
 #ifdef ENTRY_MSET
-                    select.buffer4[screen_pos] = 0xFF;
-                    select.buffer4[screen_pos + 1] = 0xFF;
-                    select.buffer4[screen_pos + 2] = 0xFF;
+                    select.buffer4[screen_pos] = color >> 16;
+                    select.buffer4[screen_pos + 1] = color >> 8;
+                    select.buffer4[screen_pos + 2] = color;
 #endif
                 }
             }
@@ -140,11 +147,11 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y)
     }
 }
 
-void draw_string(enum screen screen, char *string, int pos_x, int pos_y)
+void draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t color)
 {
     int length = strlen(string);
     for (int i = 0; i < length; i++) {
-        draw_character(screen, string[i], pos_x + i * 8, pos_y);
+        draw_character(screen, string[i], pos_x + i * 8, pos_y, color);
     }
 }
 
@@ -156,7 +163,7 @@ void print(char *string)
         *print_pos = 0;
     }
 
-    draw_string(*print_screen, string, 10, 10 + 10 * *print_pos);
+    draw_string(*print_screen, string, 10, 10 + 10 * *print_pos, 0xFFFFFF);
 
     *print_pos += 1;
 }

@@ -1,222 +1,150 @@
-@ Copyright (c) 2015, Shiny Quagsire, WulfyStylez, Dazzozo, and contributers
-@ All rights reserved.
-
-@ Redistribution and use in source and binary forms, with or without
-@ modification, are permitted provided that the following conditions are met:
-@ 1. Redistributions of source code must retain the above copyright
-@    notice, this list of conditions and the following disclaimer.
-@ 2. Redistributions in binary form must reproduce the above copyright
-@    notice, this list of conditions and the following disclaimer in the
-@    documentation and/or other materials provided with the distribution.
-@ 3. All advertising materials mentioning features or use of this software
-@    must display the following acknowledgement:
-@    This product includes software developed by Shiny Quagsire (and further contributors).
-@ 4. Neither the name of the <organization> nor the
-@    names of its contributors may be used to endorse or promote products
-@    derived from this software without specific prior written permission.
-
-@ THIS SOFTWARE IS PROVIDED BY THE　COPYRIGHT HOLDERS ''AS IS'' AND ANY
-@ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-@ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-@ DISCLAIMED. IN NO EVENT SHALL THE　COPYRIGHT HOLDERS BE LIABLE FOR ANY
-@ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-@ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-@ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-@ This file is taken from the bootstrap project.
-@ The reasoning behind it is because it works as-is, and I have no intention nor need
-@   to edit it.
-@ Possible TODO someday: Rewrite this to make it readable.
-@   I'm sorry, but this looks like partially deobfuscated, reverse engineered code.
-
-
 .arm
 .align 4
 .code 32
 .text
 
-.globl jump_table
+.global jump_table
 jump_table:
-		B	newloc_func_patch_hook
-		B	newloc_reboot_func
+    b func_patch_hook
+    b reboot_function
 
-newloc_func_patch_hook:
+func_patch_hook:
+    push {r0-r12, lr}
+    
+    mov r0, #0
+    bl pxi_send
+    bl pxi_sync
 
-		STMFD	SP!, {R0-R12,LR}
-		MOV	R0, #0
-		BL	sub_9D0470_9D253C
-		BL	sub_9D0470_9D2554
-		MOV	R0, #0x10000
-		BL	sub_9D0470_9D253C
-		BL	sub_9D0470_9D2568
-		BL	sub_9D0470_9D2568
-		BL	sub_9D0470_9D2568
+    mov r0, #0x10000
+    bl pxi_send
+    bl pxi_recv
+    bl pxi_recv
+    bl pxi_recv
 
-		LDR	R1, jt_pdn_regs
-		MOV	R0, #2
-		STRB	R0, [R1,#0x230]
-		MOV	R0, #0x10
-		BL	sub_9D0470_9D252C
-		MOV	R0, #0
-		STRB	R0, [R1,#0x230]
-		MOV	R0, #0x10
-		BL	sub_9D0470_9D252C
-		LDMFD	SP!, {R0-R12,LR}
+    ldr r1, jt_pdn_regs
+    mov r0, #2
+    strb r0, [r1, #0x230]
+    mov r0, #0x10
+    bl busy_spin
+    mov r0, #0
+    strb r0, [r1, #0x230]
+    mov r0, #0x10
+    bl busy_spin
 
-		STMFD	SP!, {R0-R12,LR}
-		LDR  R1, FB_1
-		MOV  R0, #0xFF
-		STRB R0, [R1]
-		LDR  R1, FB_2
-		STRB R0, [R1]
-		bl invalidate_all_dcache
-		LDMFD	SP!, {R0-R12,LR}
+    pop {r0-r12, lr}
 
-		LDR	R0, dword_9D0470_9D247C
-		STR	R0, [R1]
-		LDR	PC, jt_func_patch_return
+    ldr r0, =0x44836
+    str r0, [r1]
+    ldr pc, =0xFFF84DDC
 
-.globl jt_pdn_regs
-	jt_pdn_regs:		.long 0xFFFDA008
-.globl jt_pxi_regs
-	jt_pxi_regs:		.long 0xFFFCC48C
-.globl jt_func_patch_return
-	jt_func_patch_return:	.long 0xFFF5045C
+reboot_function:
+    adr r0, arm11_reboot_hook
+    adr r1, arm11_reboot_hook_end
+    ldr r2, =0x1FFFFC00
+    mov r4, r2
+    bl copy_mem
+    bx r4
 
+copy_mem:
+    sub r3, r1, r0
+    mov r1, r3,asr#2
+    cmp r1, #0
+    ble copy_mem_ret
+    movs r1, r3,lsl#29
+    sub r0, r0, #4
+    sub r1, r2,	#4
+    bpl copy_mem_loc1
+    ldr r2, [r0,#4]!
+    str r2, [r1,#4]!
 
-newloc_reboot_func:	
-		ADR	R0, reboot_wait
-		ADR	R1, invalidate_all_cache
-		LDR	R2, off_9D0470_9D2480
-		MOV	R4, R2
-		BL	sub_9D0470_9D2430
-		BX	R4
+    copy_mem_loc1:
+        movs r2, r3,asr#3
+        beq copy_mem_ret
 
-sub_9D0470_9D2430:
-		SUB	R3, R1,	R0
-		MOV	R1, R3,ASR#2
-		CMP	R1, #0
-		BLE	locret_9D0470_9D2478
-		MOVS	R1, R3,LSL#29
-		SUB	R0, R0,	#4
-		SUB	R1, R2,	#4
-		BPL	loc_9D0470_9D2458
-		LDR	R2, [R0,#4]!
-		STR	R2, [R1,#4]!
+    copy_mem_loc2:
+        ldr r3, [r0,#4]
+        subs r2, r2, #1
+        str r3, [r1,#4]
+        ldr	r3, [r0,#8]!
+        str	r3, [r1,#8]!
+        bne	copy_mem_loc2
 
-loc_9D0470_9D2458:
-		MOVS	R2, R3,ASR#3
-		BEQ	locret_9D0470_9D2478
+    copy_mem_ret:
+        bx lr
 
-loc_9D0470_9D2460:
-		LDR	R3, [R0,#4]
-		SUBS	R2, R2,	#1
-		STR	R3, [R1,#4]
-		LDR	R3, [R0,#8]!
-		STR	R3, [R1,#8]!
-		BNE	loc_9D0470_9D2460
+.pool
 
-locret_9D0470_9D2478:
-		BX	LR
+arm11_reboot_hook:
+    ldr r0, unknown_var1
+    ldr r1, unknown_var2
+    str r1, [r0]
 
-dword_9D0470_9D247C:	.long 0x44836
-off_9D0470_9D2480:		.long	0x1FFFFC00
+    ldr r8, io_mem
+    ldr r9, arm9_payload
+    ldr r10, firm_exec_ptr
 
-.globl reboot_wait
-reboot_wait:
-		LDR	R1, dword_0_1FFF49C4
-		LDR	R2, dword_0_1FFF49C8
-		STR	R2, [R1]
+    wait_arm9_loop:
+        ldrb r0, [r8]
+        ands r0, r0, #1
+        bne wait_arm9_loop
 
-		LDR	R10, firm_exec_ptr
-		LDR	R9, arm9_payload
-		LDR	R8, reboot_ready
-wait_arm9_loop:
-		LDRB	R0, [R8]
-		ANDS	R0, R0,	#1
-		BNE	wait_arm9_loop
-		STR	R9, [R10] @ Write our address
+    str r9, [r10]
 
-		MVN	R0, #0xE0000007 @ Load wait address
-wait_arm11_loop:
-		LDR	R1, [R0]
-		CMP	R1, #0
-		BEQ	wait_arm11_loop
-		BX	R1
+    mvn r0, #0xE0000007
+    wait_arm11_loop:
+        ldr r1, [r0]
+        cmp r1, #0
+        beq wait_arm11_loop
 
-off_0_1FFF49BC:	.long 0x1FFFFC00
-dword_0_1FFF49C4:	.long 0x10163008
-dword_0_1FFF49C8:	.long 0x44846
-firm_exec_ptr:		.long 0x2400000C
-arm9_payload:		.long 0x23F00000
-reboot_ready:		.long 0x10140000
-dword_9D0470_9D24D8:	.long 0x10163008
-dword_9D0470_9D24DC:	.long 0x44846
-FB_1: .long 0x1408ca37 @Supposed bottom screen buffers
-FB_2: .long  0x140c4e37
+    bx r1
 
-.align 4
+unknown_var1: .long 0x10163008
+unknown_var2: .long 0x44846
+io_mem: .long 0x10140000
+arm9_payload: .long 0x23F00000
+firm_exec_ptr: .long 0x2400000C
 
-invalidate_all_cache:
-		MOV	R0, #0
-		MCR	p15, 0,	R0,c8,c5, 0
-		MCR	p15, 0,	R0,c8,c6, 0
-		MCR	p15, 0,	R0,c8,c7, 0
-		MCR	p15, 0,	R0,c7,c10, 4
-		BX	LR
+arm11_reboot_hook_end:
 
+.pool
 
-invalidate_all_dcache:
-		MOV	R0, #0
-		MCR	p15, 0,	R0,c7,c14, 0
-		MCR	p15, 0,	R0,c7,c10, 4
-		BX	LR
+busy_spin:
+    subs r0, #2
+    nop
+    bgt busy_spin
+    bx lr
 
+pxi_send:
+    ldr r1, jt_pxi_regs
+    pxi_send_l1:
+        ldrh r2, [r1,#4]
+        tst r2, #2
+        bne pxi_send_l1
+    str r0, [r1,#8]
+    bx lr
 
-invalidate_all_icache:
-		MOV	R0, #0
-		MCR	p15, 0,	R0,c7,c5, 0
-		MCR	p15, 0,	R0,c7,c5, 4
-		MCR	p15, 0,	R0,c7,c5, 6
-		MCR	p15, 0,	R0,c7,c10, 4
-		BX	LR
+pxi_sync:
+    ldr r0, jt_pxi_regs
+    ldrb r1, [r0,#3]
+    orr r1, #0x40
+    strb r1, [r0,#3]
+    bx lr
 
-sub_9D0470_9D252C:
-		SUBS	R0, R0,	#2
-		NOP
-		BGT	sub_9D0470_9D252C
-		BX	LR
+pxi_recv:
+    ldr r0, jt_pxi_regs
+    pxi_recv_l1:
+        ldrh r1, [r0,#4]
+        tst r1, #0x100
+        bne pxi_recv_l1
+    ldr r0, [r0,#0xC]
+    bx lr
 
+.global jt_pdn_regs
+jt_pdn_regs: .long 0
+.global jt_pxi_regs
+jt_pxi_regs: .long 0
+.global jt_return
+jt_return: .long 0
 
-sub_9D0470_9D253C:
-		LDR	R1, jt_pxi_regs
-loc_9D0470_9D2540:
-		LDRH	R2, [R1,#4]
-		TST	R2, #2
-		BNE	loc_9D0470_9D2540
-		STR	R0, [R1,#8]
-		BX	LR
-
-sub_9D0470_9D2554:
-		LDR	R0, jt_pxi_regs
-		LDRB	R1, [R0,#3]
-		ORR	R1, R1,	#0x40
-		STRB	R1, [R0,#3]
-		BX	LR
-
-sub_9D0470_9D2568:
-		LDR	R0, jt_pxi_regs
-loc_9D0470_9D256C:
-		LDRH	R1, [R0,#4]
-		TST	R1, #0x100
-		BNE	loc_9D0470_9D256C
-		LDR	R0, [R0,#0xC]
-		BX	LR
-
-.globl jump_table_end
-jump_table_end: .long 0
-
+.global jump_table_end
+jump_table_end:

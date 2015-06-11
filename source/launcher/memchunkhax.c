@@ -40,6 +40,17 @@ void gspwn_copy(void *dest, void *src, uint32_t length, int check, int check_off
     }
 }
 
+#ifdef ENTRY_MSET
+void build_nop_slide(uint32_t *dest, unsigned int len)
+{
+    unsigned int i;
+    for (i = 0; i < len; i++) {
+        dest[i] = 0xE1A00000;  // ARM instruction: nop
+    }
+    dest[i - 1] = 0xE12FFF1E;  // ARM instruction: bx lr
+}
+#endif
+
 __attribute__((naked))
 void corrupted_svcCreateThread(__attribute__((unused)) void (*func)())
 {
@@ -72,7 +83,19 @@ void memchunk_arm11hax(void (*func)())
     svcControlMemory(&tmp_addr, mem_hax_mem, NULL, 0x1000, 1 /* MEMOP_FREE */, 0);
     print("Triggered kernel write");
 
-#ifdef ENTRY_SPIDER
+#if defined(ENTRY_MSET)
+    build_nop_slide(arm11_buffer, 0x4000);
+    print("Built nop slide");
+
+    int gsp_addr = 0x14000000;
+    int fcram_code_addr = 0x03E6D000;
+    gspwn_copy((void *)(gsp_addr + fcram_code_addr + 0x4000), arm11_buffer,
+               0x10000, 0xE1A00000, 0);
+    print("Copied nop slide");
+
+    ((void (*)())0x104000)();
+    print("Executed nop slide");
+#elif defined(ENTRY_SPIDER)
     void *src = (void *)0x18000000;
     for (int i = 0; i < 3; i++) {  // Do it 3 times to be safe
         GSPGPU_FlushDataCache(src, 0x00038400);

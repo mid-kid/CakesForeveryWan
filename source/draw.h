@@ -25,8 +25,8 @@ void draw_init(uint32_t *data);
 
 void clear_screen(enum screen screen);
 void clear_screens();
-void draw_character(enum screen screen, char character, int pos_x, int pos_y);
-void draw_string(enum screen screen, char *string, int pos_x, int pos_y);
+void draw_character(enum screen screen, char character, int pos_x, int pos_y, uint32_t color);
+void draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t color);
 void print(char *string);
 #else
 #define draw_init(...)

@@ -1,3 +1,5 @@
+rwildcard = $(foreach d, $(wildcard $1*), $(filter $(subst *, %, $2), $d) $(call rwildcard, $d/, $2))
+
 CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 LD := arm-none-eabi-ld
@@ -13,11 +15,11 @@ dir_tools := p3ds
 ARM9FLAGS := -mcpu=arm946e-s -march=armv5te
 ARM11FLAGS := -mcpu=mpcore
 ASFLAGS := -mlittle-endian
-CFLAGS := -MMD -MP -marm $(ASFLAGS) -mword-relocations -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -I $(dir_build)
+CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -I $(dir_build)
 
 get_objects = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
-			  $(wildcard $1/*.s $1/*.c)))
+			  $(call rwildcard, $1, *.s *.c)))
 
 objects_launcher := $(call get_objects, $(dir_source)/launcher)
 
@@ -81,7 +83,9 @@ $(dir_build)/%/main.bin: $(dir_build)/%/main.elf
 $(dir_build)/cfw/main.elf: ASFLAGS := $(ARM9FLAGS) $(ASFLAGS)
 $(dir_build)/cfw/main.elf: CFLAGS := -DARM9 $(ARM9FLAGS) $(CFLAGS)
 $(dir_build)/cfw/main.elf: $(objects_cfw)
-	$(LD) $(LDFLAGS) -T linker_cfw.ld $(OUTPUT_OPTION) $^
+	# TODO: Undefined reference to '__aeabi_uidiv'
+	$(CC) -nostartfiles $(LDFLAGS) -T linker_cfw.ld $(OUTPUT_OPTION) $^
+	#$(LD) $(LDFLAGS) -T linker_cfw.ld $(OUTPUT_OPTION) $^
 
 $(dir_build)/mset_4x/main.elf: ASFLAGS := $(ARM11FLAGS) $(ASFLAGS)
 $(dir_build)/mset_4x/main.elf: CFLAGS := -DENTRY_MSET -DENTRY_MSET_4x \
@@ -115,6 +119,14 @@ $(dir_build)/%.o: $(dir_source)/%.s
 	@mkdir -p "$(@D)"
 	$(COMPILE.s) $(OUTPUT_OPTION) $<
 
+$(dir_build)/cfw/fatfs/%.o: $(dir_source)/cfw/fatfs/%.c
+	@mkdir -p "$(@D)"
+	$(COMPILE.c) -mthumb -mthumb-interwork $(OUTPUT_OPTION) $<
+
+$(dir_build)/cfw/fatfs/%.o: $(dir_source)/cfw/fatfs/%.s
+	@mkdir -p "$(@D)"
+	$(COMPILE.s) -mthumb -mthumb-interwork $(OUTPUT_OPTION) $<
+
 .SECONDEXPANSION:
 $(dir_build)/%.o: $(dir_source)/launcher/$$(notdir $$*).c
 	@mkdir -p "$(@D)"
@@ -130,4 +142,4 @@ $(dir_build)/%.o: $(dir_source)/$$(notdir $$*).c
 	@mkdir -p "$(@D)"
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
-include $(wildcard $(dir_build)/**/*.d)
+include $(call rwildcard, $(dir_build), *.d)

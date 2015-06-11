@@ -51,7 +51,7 @@ void firmlaunch_arm9hax()
     print("Copied jump table");
 
     *(uint32_t *)(fw->jump_table_address +
-                 (&jt_func_patch_return - &jump_table) * 4) = fw->func_patch_return;
+                 (&jt_return - &jump_table) * 4) = fw->func_patch_return;
     *(uint32_t *)(fw->jump_table_address +
                  (&jt_pdn_regs - &jump_table) * 4) = fw->pdn_regs;
     *(uint32_t *)(fw->jump_table_address +
