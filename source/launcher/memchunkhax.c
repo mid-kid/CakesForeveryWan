@@ -2,9 +2,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <draw.h>
 #include "firmcompat.h"
 #include "appcompat.h"
-#include "../draw.h"
 
 void gspwn_copy(void *dest, void *src, uint32_t length, int check, int check_offset)
 {

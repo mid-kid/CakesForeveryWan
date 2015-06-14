@@ -1,6 +1,6 @@
 #include <stdint.h>
+#include <draw.h>
 #include "fatfs/ff.h"
-#include "../draw.h"
 #include "menu.h"
 #include "firm.h"
 
@@ -9,7 +9,6 @@ static FATFS fs;
 // TODO: Put this in a nice place
 void mount_sd()
 {
-    print("Mounting SD card");
     if (f_mount(&fs, "0:", 0) == FR_OK) {
         print("Mounted SD card");
     } else {
@@ -19,7 +18,6 @@ void mount_sd()
 
 void unmount_sd()
 {
-    print("Unmounting SD card");
     f_mount((void *)0, "0:", 0);
     print("Unmounted SD card");
 }
@@ -27,8 +25,8 @@ void unmount_sd()
 void menu_main()
 {
     while (1) {
-        char *options[] = {"Mount SD card", "Unmount SD card", "Read FIRM",
-                           "Boot FIRM"};
+        char *options[] = {"Mount SD card", "Unmount SD card", "Prepare files",
+                           "Decrypt FIRM", "Boot FIRM", "Boot CFW"};
         int result = draw_menu("Main menu", 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -39,10 +37,16 @@ void menu_main()
                 unmount_sd();
                 break;
             case 2:
-                read_firm();
+                prepare_files();
                 break;
             case 3:
+                decrypt_firm();
+                break;
+            case 4:
                 boot_firm();
+                break;
+            case 5:
+                boot_cfw();
                 break;
             default:
                 print(options[result]);

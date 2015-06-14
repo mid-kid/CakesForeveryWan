@@ -1,7 +1,7 @@
 #include "menu.h"
 
 #include <stdint.h>
-#include "../draw.h"
+#include <draw.h>
 #include "hid.h"
 
 #define COLOR_TITLE 0x0000FF
@@ -48,6 +48,28 @@ int draw_menu(char *title, int back, int count, char *options[])
             return current;
         } else if (key == (key_released | key_b) && back) {
             return -1;
+        }
+    }
+}
+
+int draw_loading(char *title, char *text)
+{
+    clear_screen(screen_top_left);
+    draw_string(screen_top_left, title, 10, 10, COLOR_TITLE);
+    return draw_string(screen_top_left, text, 10, 40, COLOR_IDLE);
+}
+
+void draw_message(char *title, char *text)
+{
+    int pos_y = draw_loading(title, text);
+
+    draw_string(screen_top_left, "Press A to continue", 10, pos_y + 20, COLOR_SELECTED);
+
+    while (1) {
+        uint16_t key = wait_key();
+
+        if (key == (key_released | key_a)) {
+            return;
         }
     }
 }

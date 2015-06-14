@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // Functions
-void (*memcpy)(void *dest, void *src, int len);
+void (*memcpy)(void *dest, void *src, uint32_t len);
 int (*GSPGPU_FlushDataCache)(void *address, uint32_t length);
 void (*nn__gxlow__CTR__CmdReqQueueTx__TryEnqueue)(void *arg1, void *arg2);
 uint32_t (*svcControlMemory)(uint32_t *outaddr, uint32_t *addr0, uint32_t *addr1, uint32_t size, uint32_t operation, uint32_t permissions);

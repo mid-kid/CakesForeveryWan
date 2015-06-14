@@ -1,6 +1,7 @@
 #include "draw.h"
 
 #include <stdint.h>
+#include "memfuncs.h"
 #include "font.h"
 
 static uint8_t *screen_top_left1 = (uint8_t *)0x14184E60;
@@ -33,13 +34,6 @@ struct buffer_select {
     uint8_t *buffer4;
     int size;
 };
-
-int strlen(char *string)
-{
-    char *string_end = string;
-    while (*string_end) string_end++;
-    return string_end - string;
-}
 
 #if defined(ENTRY_MSET)
 void draw_init()
@@ -82,24 +76,16 @@ void clear_screen(enum screen screen)
     struct buffer_select select = {0};
     set_buffers(screen, &select);
 
-    // Use the full 32 bits of this CPU to copy this faster.
-    uint32_t *buffer1 = (uint32_t *)select.buffer1;
-    uint32_t *buffer3 = (uint32_t *)select.buffer3;
+    memset32(select.buffer1, 0, select.size);
 #ifdef ENTRY_MSET
-    uint32_t *buffer2 = (uint32_t *)select.buffer2;
-    uint32_t *buffer4 = (uint32_t *)select.buffer4;
+    memset32(select.buffer2, 0, select.size);
 #endif
-    for (int i = 0; i < select.size / 4; i++) {
-        buffer1[i] = 0;
+
+    if (select.buffer3 || select.buffer4) {
+        memset32(select.buffer3, 0, select.size);
 #ifdef ENTRY_MSET
-        buffer2[i] = 0;
+        memset32(select.buffer4, 0, select.size);
 #endif
-        if (select.buffer3 || select.buffer4) {
-            buffer3[i] = 0;
-#ifdef ENTRY_MSET
-            buffer4[i] = 0;
-#endif
-        }
     }
 }
 
@@ -147,12 +133,20 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y, ui
     }
 }
 
-void draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t color)
+int draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t color)
 {
     int length = strlen(string);
     for (int i = 0; i < length; i++) {
+        if (string[i] == '\n') {
+            pos_y += 10;
+            pos_x -= i * 8;
+            continue;
+        }
+
         draw_character(screen, string[i], pos_x + i * 8, pos_y, color);
     }
+
+    return pos_y;
 }
 
 void print(char *string)

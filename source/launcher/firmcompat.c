@@ -1,7 +1,7 @@
 #include "firmcompat.h"
 
 #include <stdint.h>
-#include "../draw.h"
+#include <draw.h>
 
 struct firmware_offsets *fw = (struct firmware_offsets *)APP_FIRM_COMPAT;
 

@@ -15,15 +15,18 @@ dir_tools := p3ds
 ARM9FLAGS := -mcpu=arm946e-s -march=armv5te
 ARM11FLAGS := -mcpu=mpcore
 ASFLAGS := -mlittle-endian
-CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -I $(dir_build)
+CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -I $(dir_source)/lib
 
 get_objects = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
 			  $(call rwildcard, $1, *.s *.c)))
 
+objects_lib := $(call get_objects, $(dir_source)/lib)
+objects_draw := $(dir_build)/mset_4x/draw.o $(dir_build)/mset_4x/memfuncs.o
+
 objects_launcher := $(call get_objects, $(dir_source)/launcher)
 
-objects_mset_4x := $(dir_build)/mset_4x/draw.o \
+objects_mset_4x := $(objects_draw) \
 				   $(patsubst $(dir_build)/launcher/%, $(dir_build)/mset_4x/%, \
 				   $(objects_launcher) $(objects_mset))
 objects_spider_4x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_4x/%, \
@@ -33,7 +36,7 @@ objects_spider_5x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_5x/
 objects_spider_9x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_9x/%, \
 					 $(objects_launcher))
 
-objects_cfw := $(dir_build)/cfw/draw.o $(call get_objects, $(dir_source)/cfw)
+objects_cfw := $(objects_lib) $(call get_objects, $(dir_source)/cfw)
 
 rops := $(dir_build)/mset_4x/rop.dat $(dir_build)/spider_4x/rop.dat \
 		$(dir_build)/spider_5x/rop.dat $(dir_build)/spider_9x/rop.dat
@@ -138,7 +141,7 @@ $(dir_build)/%.o: $(dir_source)/launcher/$$(notdir $$*).s
 	$(COMPILE.s) $(OUTPUT_OPTION) $<
 
 .SECONDEXPANSION:
-$(dir_build)/%.o: $(dir_source)/$$(notdir $$*).c
+$(objects_draw): $(dir_build)/%.o: $(dir_source)/lib/$$(notdir $$*).c
 	@mkdir -p "$(@D)"
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 

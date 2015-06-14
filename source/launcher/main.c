@@ -1,9 +1,9 @@
 #include <stdint.h>
+#include <draw.h>
 #include "firmcompat.h"
 #include "appcompat.h"
 #include "memchunkhax.h"
 #include "firmlaunchax.h"
-#include "../draw.h"
 
 int load_file(char *dest, short unsigned int *path, uint32_t offset, uint32_t size)
 {
@@ -12,7 +12,6 @@ int load_file(char *dest, short unsigned int *path, uint32_t offset, uint32_t si
 
     int result = fopen(&file_handle, path, 1);
     if (result != 0) {
-        print("Fopen failed!");
         return 1;
     }
     file_handle[1] = offset;
@@ -50,8 +49,12 @@ void do_firmlaunch()
     //   payload separately.
     result = load_file((char *)(0x14000000 + APP_CFW_OFFSET),
                        APP_LAUNCHER_PATH, 0x20000, 0x10000);
-    if (result != 0) return;
-    print("Loaded firmware!");
+    if (result != 0) {
+        print("Failed to load arm9 payload!");   
+        print("Are you sure the launcher is located at /Launcher.dat?");
+        return;
+    }
+    print("Loaded arm9 payload!");
 
     // Now, we gain arm11 kernel mode
     print("Doing memchunkhax to gain arm11");

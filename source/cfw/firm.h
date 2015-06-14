@@ -1,7 +1,9 @@
 #ifndef __firm_h__
 #define __firm_h__
 
-void read_firm();
+int prepare_files();
+void decrypt_firm();
 void boot_firm();
+void boot_cfw();
 
 #endif
