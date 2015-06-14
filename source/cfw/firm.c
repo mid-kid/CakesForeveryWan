@@ -16,10 +16,10 @@ static const int firm_size = 0xEB000;
 static const int offset_exefs = 0xA00;
 static const int offset_firm = 0x200;
 
-// TODO: Load this from the SD card
 uint8_t firm_key[16] = {0};
-uint8_t exefs_key[16] = {0};
 uint8_t firm_iv[16] = {0};
+uint8_t exefs_key[16] = {0};
+uint8_t exefs_iv[16] = {0};
 
 int read_file(void *dest, char *path, unsigned int size)
 {
@@ -71,21 +71,18 @@ void decrypt_firm()
     aes_use_keyslot(0x11);
     aes(curloc, curloc, cursize / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    print("Next line should be '~P'");
-    memcpy(exefs_key, curloc, 2);
-    print(exefs_key);
-
     print("Getting exefs key");
     memcpy(exefs_key, curloc, 16);
+    ncch_getctr(curloc, exefs_iv, NCCHTYPE_EXEFS);
 
     // Get the exefs
     curloc += offset_exefs;
     cursize -= offset_exefs;
 
     print("Decrypting the exefs");
-    aes_setkey(0x10, exefs_key, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
-    aes_use_keyslot(0x10);
-    aes(curloc, curloc, cursize / AES_BLOCK_SIZE, firm_iv, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_setkey(0x2C, exefs_key, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_use_keyslot(0x2C);
+    aes(curloc, curloc, cursize / AES_BLOCK_SIZE, exefs_iv, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     // Get the decrypted FIRM
     curloc += offset_firm;

@@ -4,6 +4,9 @@ out
 
 # My own files
 env
+firmurl
+firm.bin
+firmkey.bin
 
 # Programming tools leftovers
 *.swp
