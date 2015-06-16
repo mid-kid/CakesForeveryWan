@@ -1,0 +1,4 @@
+%rename link old_link
+
+*link:
+%(old_link) -T dhs_patch.ld%s
