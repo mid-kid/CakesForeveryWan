@@ -35,7 +35,7 @@ func_patch_hook:
 
     ldr r0, =0x44836
     str r0, [r1]
-    ldr pc, =0xFFF84DDC
+    ldr pc, jt_return
 
 reboot_function:
     adr r0, arm11_reboot_hook
