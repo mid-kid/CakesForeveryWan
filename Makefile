@@ -19,6 +19,8 @@ ARM11FLAGS := -mcpu=mpcore
 ASFLAGS := -mlittle-endian
 CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -I $(dir_source)/lib
 
+revision := $(shell git rev-list HEAD --count)
+
 get_objects = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
 			  $(call rwildcard, $1, *.s *.c)))
@@ -55,7 +57,7 @@ provide_files := $(dir_out)/firmware_bin.here \
 all: launcher patches
 
 .PHONY: release
-release: Cakes.zip
+release: Cakes_$(revision).zip
 
 .PHONY: launcher
 launcher: $(dir_out)/Cakes.dat
@@ -65,14 +67,14 @@ patches: $(patch_files)
 
 .PHONY: clean
 clean:
-	rm -rf $(dir_out) $(dir_build) Cakes.zip
+	rm -rf $(dir_out) $(dir_build) Cakes_$(revision).zip
 
 $(dir_out)/%.here:
 	@mkdir -p "$(@D)"
 	touch $@
 
-Cakes.zip: launcher patches $(provide_files)
-	sh -c "cd $(dir_out); zip -r ../Cakes.zip *"
+Cakes_$(revision).zip: launcher patches $(provide_files)
+	sh -c "cd $(dir_out); zip -r ../$@ *"
 
 # Throw everything together
 $(dir_out)/Cakes.dat: $(rops) $(dir_build)/cfw/main.bin

@@ -131,7 +131,6 @@ void boot_firm()
         "mcr p15, 0, r0, c2, c0, 0\n\t"
         "mcr p15, 0, r1, c2, c0, 1\n\t"
         "mcr p15, 0, r2, c3, c0, 0\n\t"
-
         "pop {r4-r12}\n\t"
     );
     print("Set up MPU");
