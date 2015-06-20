@@ -1,7 +1,7 @@
 # Project files
 build
 out
-Cakes.zip
+Cakes_*.zip
 
 # My own files
 env

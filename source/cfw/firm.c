@@ -38,7 +38,7 @@ int prepare_files()
     rc = read_file(firm_key, "/cakes/firmkey.bin", 16);
     if (rc != 0) {
         print("Failed to load FIRM key");
-        draw_message("Failed to load FIRM key", "Make sure the FIRM key is\n  located at /firmkey.bin");
+        draw_message("Failed to load FIRM key", "Make sure the FIRM key is\n  located at /cakes/firmkey.bin");
         return 1;
     }
     print("Loaded FIRM key");

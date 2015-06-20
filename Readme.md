@@ -1,7 +1,16 @@
-Cakes For everyWan! (Temporary name)
-====================================
+CakesFW
+=======
 
-This is a CFW for the 3ds that patches signature checks, to allow easy installation of illegal games and homebrew.
+This is a homebrew for the 3ds that helps with patching the NATIVE\_FIRM, thus allowing for it to do things it wasn't supposed to do.
+
+Building
+--------
+
+You need 3 things: Python 2.x, devkitARM, and armips.
+Make sure the cross compilers (arm-none-eabi-\*), armips and python are in your $PATH.
+On windows you might have to edit dir\_top in the Makefile to point to your current directory.
+If everything's set up, just run make.
+
 
 Thanks
 ------
