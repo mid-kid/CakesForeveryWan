@@ -11,6 +11,8 @@ dir_source := source
 dir_build := build
 dir_out := out
 dir_tools := p3ds
+dir_patches := patches
+dir_top := $(PWD)
 
 ARM9FLAGS := -mcpu=arm946e-s -march=armv5te
 ARM11FLAGS := -mcpu=mpcore
@@ -41,15 +43,39 @@ objects_cfw := $(objects_lib) $(call get_objects, $(dir_source)/cfw)
 rops := $(dir_build)/mset_4x/rop.dat $(dir_build)/spider_4x/rop.dat \
 		$(dir_build)/spider_5x/rop.dat $(dir_build)/spider_9x/rop.dat
 
+patch_files := $(dir_out)/cakes/patches/signatures.cake \
+			   $(dir_out)/cakes/patches/emunand.cake \
+	           $(dir_out)/cakes/patches/reboot.cake
+
+provide_files := $(dir_out)/firmware_bin.here \
+				 $(dir_out)/slot0x25keyX_bin.here \
+				 $(dir_out)/cakes/firmkey_bin.here
+
 .PHONY: all
-all: $(dir_out)/Launcher.dat
+all: launcher patches
+
+.PHONY: release
+release: Cakes.zip
+
+.PHONY: launcher
+launcher: $(dir_out)/Cakes.dat
+
+.PHONY: patches
+patches: $(patch_files)
 
 .PHONY: clean
 clean:
-	rm -rf $(dir_out) $(dir_build)
+	rm -rf $(dir_out) $(dir_build) Cakes.zip
+
+$(dir_out)/%.here:
+	@mkdir -p "$(@D)"
+	touch $@
+
+Cakes.zip: launcher patches $(provide_files)
+	sh -c "cd $(dir_out); zip -r ../Cakes.zip *"
 
 # Throw everything together
-$(dir_out)/Launcher.dat: $(rops) $(dir_build)/cfw/main.bin
+$(dir_out)/Cakes.dat: $(rops) $(dir_build)/cfw/main.bin
 	@mkdir -p "$(@D)"
 	touch $@
 	dd if=$(dir_build)/mset_4x/rop.dat of=$@
@@ -57,6 +83,10 @@ $(dir_out)/Launcher.dat: $(rops) $(dir_build)/cfw/main.bin
 	dd if=$(dir_build)/spider_5x/rop.dat of=$@ bs=512 seek=176
 	dd if=$(dir_build)/spider_9x/rop.dat of=$@ bs=512 seek=208
 	dd if=$(dir_build)/cfw/main.bin of=$@ bs=512 seek=256
+
+$(dir_out)/cakes/patches/%.cake: $(dir_build)/patches/%/*.cake
+	@mkdir -p "$(@D)"
+	mv $(<D)/$*.cake $@
 
 $(dir_build)/mset_4x/rop.dat: $(dir_build)/mset_4x/rop.dat.dec
 	$(OPENSSL) enc -aes-128-cbc -K 580006192800C5F0FBFB04E06A682088 -iv 00000000000000000000000000000000 -in $< -out $@
@@ -114,6 +144,11 @@ $(dir_build)/spider_9x/main.elf: CFLAGS := -DENTRY_SPIDER -DENTRY_SPIDER_9x \
 $(dir_build)/spider_9x/main.elf: $(objects_spider_9x)
 	$(LD) $(LDFLAGS) -T linker_spider.ld $(OUTPUT_OPTION) $^
 
+$(dir_build)/patches/%/*.cake: $(dir_patches)/%
+	@mkdir -p $(@D)
+	sh -c "cd $(@D); armips $(dir_top)/$</patches.s"
+	sh -c "cd $(@D); armips $(dir_top)/$</bundle.s"
+
 $(dir_build)/%.o: $(dir_source)/%.c
 	@mkdir -p "$(@D)"
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
@@ -124,7 +159,7 @@ $(dir_build)/%.o: $(dir_source)/%.s
 
 $(dir_build)/cfw/fatfs/%.o: $(dir_source)/cfw/fatfs/%.c
 	@mkdir -p "$(@D)"
-	$(COMPILE.c) -mthumb -mthumb-interwork $(OUTPUT_OPTION) $<
+	$(COMPILE.c) -mthumb -mthumb-interwork -Wno-unused-function $(OUTPUT_OPTION) $<
 
 $(dir_build)/cfw/fatfs/%.o: $(dir_source)/cfw/fatfs/%.s
 	@mkdir -p "$(@D)"

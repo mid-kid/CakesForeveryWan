@@ -136,14 +136,14 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y, ui
 int draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t color)
 {
     int length = strlen(string);
-    for (int i = 0; i < length; i++) {
+    for (int i = 0, line_i = 0; i < length; i++, line_i++) {
         if (string[i] == '\n') {
             pos_y += 10;
-            pos_x -= i * 8;
-            continue;
+            line_i = 0;
+            i++;
         }
 
-        draw_character(screen, string[i], pos_x + i * 8, pos_y, color);
+        draw_character(screen, string[i], pos_x + line_i * 8, pos_y, color);
     }
 
     return pos_y;
@@ -157,7 +157,6 @@ void print(char *string)
         *print_pos = 0;
     }
 
-    draw_string(*print_screen, string, 10, 10 + 10 * *print_pos, 0xFFFFFF);
-
-    *print_pos += 1;
+    int pos = draw_string(*print_screen, string, 10, 10 + 10 * *print_pos, 0xFFFFFF);
+    *print_pos = pos / 10;
 }

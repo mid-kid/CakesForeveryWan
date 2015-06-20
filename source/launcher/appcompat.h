@@ -2,6 +2,7 @@
 #define __appcompat_h__
 
 #include <stdint.h>
+#include <globals.h>
 
 // Functions
 void (*memcpy)(void *dest, void *src, uint32_t len);
@@ -73,8 +74,6 @@ int (*svcSleepThread)(unsigned long long nanoseconds);
 #endif
 
 
-#define LAUNCHER_PATH L"Launcher.dat"
-
 #if defined(ENTRY_MSET)
     // The usable area for this app
     #define APP_FCRAM_ADDR 0x14000000
@@ -93,7 +92,9 @@ int (*svcSleepThread)(unsigned long long nanoseconds);
 // Locations in fcram
 #define APP_CHECK_MEM (APP_FCRAM_ADDR + 0x1000)
 #define APP_ARM11_BUFFER (APP_FCRAM_ADDR + 0x2000)
-#define APP_MEM_HAX_MEM (APP_FCRAM_ADDR + 0x20000)
-#define APP_FIRM_COMPAT (APP_FCRAM_ADDR + 0x30000)
+#define APP_MEM_HAX_MEM (APP_FCRAM_ADDR + 0x50000)
+#define APP_FIRM_COMPAT (APP_FCRAM_ADDR + 0x20000)
+
+#define ARM9_PAYLOAD_MAXSIZE 0x10000
 
 #endif

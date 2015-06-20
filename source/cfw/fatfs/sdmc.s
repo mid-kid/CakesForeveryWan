@@ -3,6 +3,7 @@
 	
 .thumb
 
+.thumb_func
 .global sdmmc_send_command
 
 @ int __cdecl sdmmc_send_command(unsigned int *ctx, unsigned int cmd, unsigned int args)
@@ -291,6 +292,7 @@ loc_80A3916:                            @ CODE XREF: sub_80A3910+Ej
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global InitSD
 
 InitSD:                                 @ CODE XREF: sub_80A244C+Ep
@@ -487,6 +489,7 @@ locret_80A3ACC:                         @ CODE XREF: sub_80A3A54+5Aj
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global SD_Init
 
 SD_Init:                                @ CODE XREF: sub_80A244C+16p
@@ -651,6 +654,7 @@ sub_80A3C20:                            @ CODE XREF: sub_80A3EC0+1Ap
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global sdmmc_sdcard_readsector
 
 sdmmc_sdcard_readsector:
@@ -683,6 +687,7 @@ sdmmc_sdcard_readsector_:
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global sdmmc_sdcard_readsectors
 
 sdmmc_sdcard_readsectors:                      @ CODE XREF: sub_80A3E74+1Cp
@@ -724,6 +729,7 @@ loc_80A3C3E:                            @ CODE XREF: sdmmc_sdcard_readsectors+E
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global sdmmc_sdcard_writesector
 
 sdmmc_sdcard_writesector:
@@ -764,6 +770,7 @@ sdmmc_sdcard_writesector_:
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global sdmmc_sdcard_writesectors
 
 sdmmc_sdcard_writesectors:                     @ CODE XREF: menu_update+77Cp
@@ -815,6 +822,7 @@ loc_80A3C96:                            @ CODE XREF: sdmmc_sdcard_writesectors+1
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global Nand_Init
 
 Nand_Init:                              @ CODE XREF: sub_80A244C+12p
@@ -943,6 +951,7 @@ locret_80A3DC6:                         @ CODE XREF: Nand_Init+4Ej
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global sdmmc_nand_readsectors
 
 sdmmc_nand_readsectors:                     @ CODE XREF: menu_update+770p
@@ -1032,6 +1041,7 @@ loc_80A6780:                            @ CODE XREF: sub_80A6754+24j
 
 @ =============== S U B R O U T I N E =======================================
 
+.thumb_func
 .global sdmmc_sdcard_init
 
 sdmmc_sdcard_init:                     @ CODE XREF: menu_update+770p

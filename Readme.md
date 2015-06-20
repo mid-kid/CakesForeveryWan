@@ -6,7 +6,7 @@ This is a CFW for the 3ds that patches signature checks, to allow easy installat
 Thanks
 ------
 
-* b1|1s for the POC based on a decompilation of rxTools, porting it to spider and a lot of help when creating this
+* b1|1s for the POC based on a decompilation of rxTools, porting it to spider and a lot of help when creating this. He's the guy who reverse-engineered all the info I needed for this.
 * Roxas75 for the font and firmlaunchax on MSET (rxTools)
 * YifanLu and dukesrg for Spider3DSTools
 * naehrwert for p3ds

@@ -3,58 +3,40 @@
 #include <stdint.h>
 #include <draw.h>
 #include <memfuncs.h>
-#include "fatfs/ff.h"
+#include "fs.h"
 #include "hid.h"
 #include "menu.h"
 #include "crypto.h"
+#include "patch.h"
+#include "fatfs/ff.h"
 
+void *firm_loc = (void *)0x24000000;
+const int firm_size = 0xEB000;
 static void *firm_loc_encrypted = (void *)0x24100000;
-static void *firm_loc = (void *)0x24000000;
 static const int firm_size_encrypted = 0xEBC00;
-static const int firm_size = 0xEB000;
 
-static const int offset_exefs = 0xA00;
-static const int offset_firm = 0x200;
+static uint8_t firm_key[16] = {0};
 
-uint8_t firm_key[16] = {0};
-uint8_t firm_iv[16] = {0};
-uint8_t exefs_key[16] = {0};
-uint8_t exefs_iv[16] = {0};
-
-int read_file(void *dest, char *path, unsigned int size)
-{
-    FRESULT fr;
-    FIL handle;
-    unsigned int bytes_read = 0;
-
-    fr = f_open(&handle, path, 1);
-    if (fr != FR_OK) return 1;
-
-    fr = f_read(&handle, dest, size, &bytes_read);
-    if (fr != FR_OK || bytes_read != size) return 1;
-
-    fr = f_close(&handle);
-    if (fr != FR_OK) return 1;
-
-    return 0;
-}
+int save_firm = 0;
+const char *save_path = "/cakes/patched_firm.bin";
 
 int prepare_files()
 {
     int rc;
 
-    rc = read_file(firm_loc_encrypted, "/firm.bin", firm_size_encrypted);
+    rc = read_file(firm_loc_encrypted, "/firmware.bin", firm_size_encrypted);
     if (rc != 0) {
         print("Failed to load FIRM");
-        draw_message("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at /firm.bin");
+        draw_message("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at /firmware.bin");
         return 1;
     }
     print("Loaded FIRM");
 
-    rc = read_file(firm_key, "/firmkey.bin", 16);
+    rc = read_file(firm_key, "/cakes/firmkey.bin", 16);
     if (rc != 0) {
         print("Failed to load FIRM key");
         draw_message("Failed to load FIRM key", "Make sure the FIRM key is\n  located at /firmkey.bin");
+        return 1;
     }
     print("Loaded FIRM key");
 
@@ -64,20 +46,22 @@ int prepare_files()
 void decrypt_firm()
 {
     void *curloc = firm_loc_encrypted;
-    int cursize = firm_size_encrypted;
+    uint32_t cursize = firm_size_encrypted;
+    uint8_t firm_iv[16] = {0};
+    uint8_t exefs_key[16] = {0};
+    uint8_t exefs_iv[16] = {0};
 
     print("Decrypting the NCCH");
     aes_setkey(0x11, firm_key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_use_keyslot(0x11);
     aes(curloc, curloc, cursize / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    print("Getting exefs key");
     memcpy(exefs_key, curloc, 16);
     ncch_getctr(curloc, exefs_iv, NCCHTYPE_EXEFS);
 
-    // Get the exefs
-    curloc += offset_exefs;
-    cursize -= offset_exefs;
+    // Get the exefs offset and size from the NCCH
+    cursize = *(uint32_t *)(curloc + 0x1A4) * 0x200;
+    curloc += *(uint32_t *)(curloc + 0x1A0) * 0x200;
 
     print("Decrypting the exefs");
     aes_setkey(0x2C, exefs_key, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
@@ -85,13 +69,14 @@ void decrypt_firm()
     aes(curloc, curloc, cursize / AES_BLOCK_SIZE, exefs_iv, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     // Get the decrypted FIRM
-    curloc += offset_firm;
-    cursize -= offset_firm;
+    // We assume the firm.bin is always the first file
+    cursize = firm_size;
+    curloc += 0x200;  // The offset right behind the exefs header; the first file.
 
     print("Copying the FIRM");
     memcpy32(firm_loc, curloc, cursize);
 
-    print("Result:");
+    print("Magic:");
     print(firm_loc);
 }
 
@@ -136,13 +121,10 @@ void boot_firm()
     );
     print("Set up MPU");
 
-    // TODO: Clean this up
-    uint32_t *thing = firm_loc + 0x40;
-    memcpy32((void *)thing[1], *thing + firm_loc, thing[2]);
-    uint32_t *thing2 = firm_loc + 0x70;
-    memcpy32((void *)thing2[1], *thing2 + firm_loc, thing2[2]);
-    uint32_t *thing3 = firm_loc + 0xA0;
-    memcpy32((void *)thing3[1], *thing3 + firm_loc, thing3[2]);
+    struct firm_section *sections = firm_loc + 0x40;
+    memcpy32(sections[0].address, firm_loc + (uintptr_t)sections[0].offset, sections[0].size);
+    memcpy32(sections[1].address, firm_loc + (uintptr_t)sections[1].offset, sections[1].size);
+    memcpy32(sections[2].address, firm_loc + (uintptr_t)sections[2].offset, sections[2].size);
     print("Copied FIRM");
 
     *(uint32_t *)0x1FFFFFF8 = *(uint32_t *)(firm_loc + 8);
@@ -153,14 +135,28 @@ void boot_firm()
     ((void (*)())*(void **)(firm_loc + 0xC))();
 }
 
-void boot_cfw()
+void boot_cfw(int patch_level)
 {
-    draw_loading("Booting CFW", "Loading...");   
+    char *title = "Booting CFW";
+
+    draw_loading(title, "Loading...");
     if (prepare_files() != 0) return;
 
-    draw_loading("Booting CFW", "Decrypting...");
+    draw_loading(title, "Decrypting...");
     decrypt_firm();
 
-    draw_loading("Booting CFW", "Booting...");
+    draw_loading(title, "Patching...");
+    if (patch_firm_all(patch_level) != 0) return;
+
+    if (save_firm) {
+        draw_loading(title, "Saving FIRM...");
+        print("Saving patched FIRM");
+        if (write_file(firm_loc, save_path, firm_size) != 0) {
+            draw_message("Failed to save FIRM", "One or more patches you selected requires this.\nBut, for some reason, I failed to write it");
+            return;
+        }
+    }
+
+    draw_loading(title, "Booting...");
     boot_firm();
 }

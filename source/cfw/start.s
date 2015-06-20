@@ -2,6 +2,9 @@
 .align 4
 .global _start
 _start:
+    @ Change the stack pointer
+    mov sp, #0x27000000
+
     @ Sets MPU permissions and cache settings
 	ldr r0, =0xFFFF001D			@ ffff0000 32k
 	ldr r1, =0x01FF801D			@ 01ff8000 32k

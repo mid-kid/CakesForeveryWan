@@ -42,7 +42,7 @@ void firmlaunch_arm9hax()
 
     uint32_t code_offset = 0x3F00000;
     asm_memcpy((void *)(fw->fcram_address + code_offset),
-               (void *)(fw->fcram_address + APP_CFW_OFFSET), 0x10000);
+               (void *)(fw->fcram_address + APP_CFW_OFFSET), ARM9_PAYLOAD_MAXSIZE);
     print("Copied arm9 code");
 
     setup_gpu();

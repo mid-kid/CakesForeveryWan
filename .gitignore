@@ -1,11 +1,11 @@
 # Project files
 build
 out
+Cakes.zip
 
 # My own files
 env
-firmurl
-firm.bin
+firmware.bin
 firmkey.bin
 
 # Programming tools leftovers

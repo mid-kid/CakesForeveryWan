@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 
-int strlen(char *string)
+int strlen(const char *string)
 {
-    char *string_end = string;
+    char *string_end = (char *)string;
     while (*string_end) string_end++;
     return string_end - string;
 }

@@ -48,9 +48,9 @@ void do_firmlaunch()
     // Spider has size restrictions to the Launcher, so we need to load the arm9
     //   payload separately.
     result = load_file((char *)(0x14000000 + APP_CFW_OFFSET),
-                       APP_LAUNCHER_PATH, 0x20000, 0x10000);
+                       APP_LAUNCHER_PATH, 0x20000, ARM9_PAYLOAD_MAXSIZE);
     if (result != 0) {
-        print("Failed to load arm9 payload!");   
+        print("Failed to load arm9 payload!");
         print("Are you sure the launcher is located at /Launcher.dat?");
         return;
     }

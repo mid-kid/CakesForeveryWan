@@ -16,14 +16,14 @@
 /  data transfer. */
 
 
-#define _FS_READONLY	1
+#define _FS_READONLY	0
 /* This option switches read-only configuration. (0:Read/Write or 1:Read-only)
 /  Read-only configuration removes writing API functions, f_write(), f_sync(),
 /  f_unlink(), f_mkdir(), f_chmod(), f_rename(), f_truncate(), f_getfree()
 /  and optional writing functions as well. */
 
 
-#define _FS_MINIMIZE	3
+#define _FS_MINIMIZE	2
 /* This option defines minimization level to remove some basic API functions.
 /
 /   0: All basic functions are enabled.
@@ -69,7 +69,7 @@
 / Locale and Namespace Configurations
 /---------------------------------------------------------------------------*/
 
-#define _CODE_PAGE	932
+#define _CODE_PAGE	437
 /* This option specifies the OEM code page to be used on the target system.
 /  Incorrect setting of the code page can cause a file open failure.
 /
@@ -93,7 +93,7 @@
 */
 
 
-#define	_USE_LFN	0
+#define	_USE_LFN	2
 #define	_MAX_LFN	255
 /* The _USE_LFN option switches the LFN feature.
 /
@@ -115,7 +115,7 @@
 /  to 1. This option also affects behavior of string I/O functions. */
 
 
-#define _STRF_ENCODE	3
+#define _STRF_ENCODE	0
 /* When _LFN_UNICODE is 1, this option selects the character encoding on the file to
 /  be read/written via string I/O functions, f_gets(), f_putc(), f_puts and f_printf().
 /
