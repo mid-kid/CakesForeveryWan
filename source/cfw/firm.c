@@ -17,6 +17,9 @@ static const int firm_size_encrypted = 0xEBC00;
 
 static uint8_t firm_key[16] = {0};
 
+static const uint32_t ncch_magic = 0x4843434E;  // Hex for "NCCH".
+static const uint32_t firm_magic = 0x4D524946;  // Hex for "FIRM". For easy comparing.
+
 int save_firm = 0;
 const char *save_path = "/cakes/patched_firm.bin";
 
@@ -43,7 +46,7 @@ int prepare_files()
     return 0;
 }
 
-void decrypt_firm()
+int decrypt_firm()
 {
     void *curloc = firm_loc_encrypted;
     uint32_t cursize = firm_size_encrypted;
@@ -55,6 +58,12 @@ void decrypt_firm()
     aes_setkey(0x11, firm_key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_use_keyslot(0x11);
     aes(curloc, curloc, cursize / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+    if (*(uint32_t *)(curloc + 0x100) != ncch_magic) {
+        print("Failed to decrypt the NCCH");
+        draw_message("Failed to decrypt the NCCH", "Please double check your firmware.bin and firmkey.bin are right.");
+        return 1;
+    }
 
     memcpy(exefs_key, curloc, 16);
     ncch_getctr(curloc, exefs_iv, NCCHTYPE_EXEFS);
@@ -76,8 +85,13 @@ void decrypt_firm()
     print("Copying the FIRM");
     memcpy32(firm_loc, curloc, cursize);
 
-    print("Magic:");
-    print(firm_loc);
+    if (*(uint32_t *)firm_loc != firm_magic) {
+        print("Failed to decrypt the exefs");
+        draw_message("Failed to decrypt the exefs", "I just don't know what went wrong");
+        return 1;
+    }
+
+    return 0;
 }
 
 void boot_firm()
@@ -117,6 +131,7 @@ void boot_firm()
         "mcr p15, 0, r0, c2, c0, 0\n\t"
         "mcr p15, 0, r1, c2, c0, 1\n\t"
         "mcr p15, 0, r2, c3, c0, 0\n\t"
+
         "pop {r4-r12}\n\t"
     );
     print("Set up MPU");
@@ -143,7 +158,7 @@ void boot_cfw(int patch_level)
     if (prepare_files() != 0) return;
 
     draw_loading(title, "Decrypting...");
-    decrypt_firm();
+    if (decrypt_firm() != 0) return;
 
     draw_loading(title, "Patching...");
     if (patch_firm_all(patch_level) != 0) return;
@@ -152,7 +167,7 @@ void boot_cfw(int patch_level)
         draw_loading(title, "Saving FIRM...");
         print("Saving patched FIRM");
         if (write_file(firm_loc, save_path, firm_size) != 0) {
-            draw_message("Failed to save FIRM", "One or more patches you selected requires this.\nBut, for some reason, I failed to write it");
+            draw_message("Failed to save FIRM", "One or more patches you selected requires this.\nBut, for some reason, I failed to write it.");
             return;
         }
     }

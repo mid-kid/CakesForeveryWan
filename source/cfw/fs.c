@@ -26,15 +26,8 @@ int read_file_offset(void *dest, const char *path, unsigned int size, unsigned i
     FIL handle;
     unsigned int bytes_read = 0;
 
-    char str[] = {'0', 0};
-
     fr = f_open(&handle, path, FA_READ);
-    if (fr != FR_OK) {
-        print("Failed to open file");
-        str[0] += fr;
-        print(str);
-        return 1;
-    }
+    if (fr != FR_OK) return 1;
 
     if (offset) {
         fr = f_lseek(&handle, offset);
@@ -42,20 +35,10 @@ int read_file_offset(void *dest, const char *path, unsigned int size, unsigned i
     }
 
     fr = f_read(&handle, dest, size, &bytes_read);
-    if (fr != FR_OK) {
-        print("Failed to read file");
-        str[0] += fr;
-        print(str);
-        return 1;
-    }
+    if (fr != FR_OK) return 1;
 
     fr = f_close(&handle);
-    if (fr != FR_OK) {
-        print("Failed to close file");
-        str[0] += fr;
-        print(str);
-        return 1;
-    }
+    if (fr != FR_OK) return 1;
 
     return 0;
 }
