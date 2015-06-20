@@ -6,7 +6,7 @@ OC=arm-none-eabi-objcopy
 LD=arm-none-eabi-ld
 AM=armips
 
-CTRUDIR=../ctrulib/libctru
+CTRUDIR=../../../ctrulib/libctru
 
 CFLAGS=-std=gnu99 -Os -g -mword-relocations -fomit-frame-pointer -ffast-math
 C9FLAGS=-mcpu=arm946e-s -march=armv5te -mlittle-endian

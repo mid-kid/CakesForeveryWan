@@ -6,7 +6,6 @@
 #include "3ds/services/soc.h"
 #include "3ds/services/ac.h"
 #include "3ds/os.h"
-#include "dev.h"
 #include <string.h>
 
 #include <sys/socket.h>

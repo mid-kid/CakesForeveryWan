@@ -173,16 +173,13 @@ void bgThreadEntry()
 
 void doExploit()
 {
-	if((*REG_HID & HID_LT) == 0)
-	{
-		svcBackdoor(mpuSetupWrap);
-		if(!dump_only)
-			patchARM11Kernel();
+	svcBackdoor(mpuSetupWrap);
+	if(!dump_only)
+		patchARM11Kernel();
 
-		Handle thread;
-		void* entry = (void*)bgThreadEntry;
-		void* arg = NULL;
-		void* stackTop = (void*)0x1FFAFB4;
-		svcCreateThread(&thread, entry, arg, stackTop, 0x3F, -2);
-	}
+	Handle thread;
+	void* entry = (void*)bgThreadEntry;
+	void* arg = NULL;
+	void* stackTop = (void*)0x1FFAFB4;
+	svcCreateThread(&thread, entry, arg, stackTop, 0x3F, -2);
 }
