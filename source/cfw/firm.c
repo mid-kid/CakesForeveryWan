@@ -4,7 +4,6 @@
 #include <draw.h>
 #include <memfuncs.h>
 #include "fs.h"
-#include "hid.h"
 #include "menu.h"
 #include "crypto.h"
 #include "patch.h"
@@ -144,8 +143,7 @@ void boot_firm()
     *(uint32_t *)0x1FFFFFF8 = *(uint32_t *)(firm_loc + 8);
     print("Prepared arm11 entry");
 
-    print("Press any button to boot.");
-    wait_key();
+    print("Booting...");
     ((void (*)())*(void **)(firm_loc + 0xC))();
 }
 

@@ -6,7 +6,7 @@
 #include "fs.h"
 #include "menu.h"
 #include "firm.h"
-#include "fatfs/sdmmc.h"
+#include "fatfs/sdmmc/sdmmc.h"
 
 struct patch_header {
     uint8_t count: 8;

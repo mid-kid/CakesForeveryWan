@@ -57,6 +57,7 @@ int write_file(const void *buffer, const char *path, unsigned int size)
 
     // This for some reason always returns an error
     f_close(&handle);
+    if (fr != FR_OK) return fr;
 
     return 0;
 }
