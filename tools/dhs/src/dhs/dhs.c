@@ -64,6 +64,11 @@ Result startServer()
 	return ret;
 }
 
+int snprintf ( char * s, size_t n, const char * format, ... )
+{
+	// Stub to decrease size : TODO
+}
+
 ssize_t readAtLeast(int sockfd, void* buffer, size_t bufSize, size_t size)
 {
 	ssize_t bytesRead = 0;
