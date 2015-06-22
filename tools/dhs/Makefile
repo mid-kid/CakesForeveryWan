@@ -39,6 +39,15 @@ bin/dhs_patch.bin: $(DHS_PATCH_OBJS) | dirs
 	$(CC) -nostartfiles --specs=dhs_patch.specs $(CFLAGS) $(DHS_PATCH_OBJS) -o $@.elf
 	$(OC) $(OCFLAGS) -O binary $@.elf $@
 
+obj/dhs_patch/%.11.o: src/dhs_patch/%.11.s | dirs
+	@echo Compiling $<
+	$(CC) -v
+	$(CC) -c $(CFLAGS) $(C11FLAGS) -fno-toplevel-reorder $< -o $@
+
+obj/%.11.o: src/%.11.S | dirs
+	@echo Compiling $<
+	$(CC) -c $(CFLAGS) $(C11FLAGS) -fno-toplevel-reorder $< -o $@
+
 obj/%.o: src/%.s | dirs
 	@echo Compiling $<
 	$(CC) -c $(CFLAGS) $(C9FLAGS) $< -o $@
@@ -46,14 +55,6 @@ obj/%.o: src/%.s | dirs
 obj/%.o: src/%.S | dirs
 	@echo Compiling $<
 	$(CC) -c $(CFLAGS) $(C9FLAGS) $< -o $@
-
-obj/%.11.o: src/%.11.s | dirs
-	@echo Compiling $<
-	$(CC) -c $(CFLAGS) $(C11FLAGS) -fno-toplevel-reorder $< -o $@
-
-obj/%.11.o: src/%.11.S | dirs
-	@echo Compiling $<
-	$(CC) -c $(CFLAGS) $(C11FLAGS) -fno-toplevel-reorder $< -o $@
 	
 obj/dhs_patch/%.o: src/dhs_patch/%.c | dirs
 	@echo Compiling $<
