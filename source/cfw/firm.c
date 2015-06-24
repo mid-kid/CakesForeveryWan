@@ -9,7 +9,7 @@
 #include "patch.h"
 #include "fatfs/ff.h"
 
-void *firm_loc = (void *)0x24000000;
+void *firm_loc = (void *)0x23000000;
 const int firm_size = 0xEB000;
 static void *firm_loc_encrypted = (void *)0x24100000;
 static const int firm_size_encrypted = 0xEBC00;
@@ -147,7 +147,7 @@ void boot_firm()
     ((void (*)())*(void **)(firm_loc + 0xC))();
 }
 
-void boot_cfw(int patch_level)
+void boot_cfw()
 {
     char *title = "Booting CFW";
 
@@ -158,7 +158,7 @@ void boot_cfw(int patch_level)
     if (decrypt_firm() != 0) return;
 
     draw_loading(title, "Patching...");
-    if (patch_firm_all(patch_level) != 0) return;
+    if (patch_firm_all() != 0) return;
 
     if (save_firm) {
         draw_loading(title, "Saving FIRM...");

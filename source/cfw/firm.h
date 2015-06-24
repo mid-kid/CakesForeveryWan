@@ -19,6 +19,6 @@ const char *save_path;
 int prepare_files();
 int decrypt_firm();
 void boot_firm();
-void boot_cfw(int patch_level);
+void boot_cfw();
 
 #endif

@@ -24,7 +24,8 @@ static uint8_t *screen_bottom2 = (uint8_t *)0x14249CF0;
 #if defined(ENTRY_MSET)
 static uint8_t *print_pos = (uint8_t *)0x14A00000;
 #elif defined(ARM9)
-static uint8_t *print_pos = (uint8_t *)0x20A00000;
+static uint8_t print_pos_local = 0;
+static uint8_t *print_pos = &print_pos_local;
 #endif
 
 struct buffer_select {

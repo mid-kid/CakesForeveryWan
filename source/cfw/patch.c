@@ -6,9 +6,10 @@
 #include "fs.h"
 #include "menu.h"
 #include "firm.h"
+#include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
 
-struct patch_header {
+struct cake_header {
     uint8_t count: 8;
     uint8_t patches_offset: 8;
     char name;
@@ -27,8 +28,11 @@ enum patch_options {
     patch_option_save = 0b00000100
 };
 
-static struct patch_header *firm_patch_temp = (struct patch_header *)0x24200000;
-static void *temp = (void *)0x24210000;
+struct cake_info *cake_list = (struct cake_info *)0x24300000;
+int cake_count = 0;
+
+static struct cake_header *firm_patch_temp = (struct cake_header *)0x24200000;
+static void *temp = (void *)0x24300000;
 
 static const int nand_size_toshiba = 0x1D7800;
 static const int nand_size_samsung = 0x1DD000;
@@ -98,7 +102,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
             draw_message("Failed to get the emunand offsets",
                     "There's 3 possible causes for this error:\n"
                     " - You don't even have an emuNAND installed\n"
-                    " - You're SD card can't be read\n"
+                    " - Your SD card can't be read\n"
                     " - You're using an unsupported emuNAND format");
             return 1;
         }
@@ -189,17 +193,77 @@ int patch_firm(char *filename)
     return 0;
 }
 
-int patch_firm_all(int patch_level)
+int patch_firm_all()
 {
-    if (patch_firm("/cakes/patches/signatures.cake") != 0) return 1;
-
-    if (patch_level >= 1) {
-        if (patch_firm("/cakes/patches/emunand.cake") != 0) return 1;
-
-        if (patch_level >= 2) {
-            if (patch_firm("/cakes/patches/reboot.cake") != 0) return 1;
+    for (int i = 0; i < cake_count; i++) {
+        if (cake_selected[i]) {
+            if (patch_firm(cake_list[i].path)) return 1;
         }
     }
 
     return 0;
+}
+
+int load_cakes_info()
+{
+    FRESULT fr;
+    DIR dir;
+    FILINFO fno;
+    FIL handle;
+
+    static const char *dirpath = "/cakes/patches";
+    static const int pathlen = 14;
+
+    static char lfn[_MAX_LFN + 1];
+    fno.lfname = lfn;
+    fno.lfsize = sizeof(lfn);
+
+    fr = f_opendir(&dir, dirpath);
+    if (fr != FR_OK) goto error;
+
+    while (cake_count < MAX_CAKES) {
+        fr = f_readdir(&dir, &fno);
+        if (fr != FR_OK) {
+            goto error;
+        } else if (fno.fname[0] == 0) {
+            break;
+        }
+
+        char *fn = *fno.lfname ? fno.lfname : fno.fname;
+        const int flen = strlen(fn);
+
+        // Build the path string
+        memcpy(cake_list[cake_count].path, dirpath, pathlen);
+        cake_list[cake_count].path[pathlen] = '/';
+        memcpy(&cake_list[cake_count].path[pathlen + 1], fn, flen);
+        cake_list[cake_count].path[pathlen + 1 + flen] = 0;
+
+        // Open the file
+        fr = f_open(&handle, cake_list[cake_count].path, FA_READ);
+        if (fr != FR_OK) goto error;
+
+        // Get the 2-byte header
+        unsigned int bytes_read = 0;
+        struct cake_header header;
+        fr = f_read(&handle, &header, 2, &bytes_read);
+        if (fr != FR_OK) goto error;
+
+        // Get the patch description
+        const int desc_size = header.patches_offset - 2;
+        fr = f_read(&handle, cake_list[cake_count].description, desc_size, &bytes_read);
+        if (fr != FR_OK) goto error;
+
+        fr = f_close(&handle);
+        if (fr != FR_OK) goto error;
+
+        cake_count++;
+    }
+    f_closedir(&dir);
+
+    return 0;
+
+error:
+    f_close(&handle);
+    f_closedir(&dir);
+    return fr;
 }

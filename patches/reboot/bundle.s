@@ -5,7 +5,7 @@
 ; Header
 .byte 2  ; Amount of patches
 .byte patches
-.ascii "Fix reboot in emuNAND", 0
+.ascii "Survive reboots when launching some titles", 0
 
 patches:
 

@@ -90,7 +90,7 @@ arm11_reboot_hook:
 
     str r9, [r10, #0xC]
 
-    mvn r0, #0xE0000007
+    mov r0, #0x1FFFFFF8
     wait_arm11_loop:
         ldr r1, [r0]
         cmp r1, #0

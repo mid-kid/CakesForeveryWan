@@ -1,29 +1,40 @@
 #include <stdint.h>
+#include <memfuncs.h>
 #include <draw.h>
 #include "fs.h"
 #include "menu.h"
 #include "firm.h"
 #include "patch.h"
+#include "fatfs/ff.h"
 
-// TODO: Put this in a nice place
+void menu_select_patches()
+{
+    #if MAX_CAKES > MAX_SELECTED_OPTIONS
+    #error "This function needs MAX_CAKES to be <= MAX_SELECTED_OPTIONS"
+    #endif
+
+    char *options[cake_count];
+    for (int i = 0; i < cake_count; i++) {
+        options[i] = cake_list[i].description;
+    }
+
+    int *result = draw_selection_menu("Select your cakes", cake_count, options, cake_selected);
+    memcpy(cake_selected, result, cake_count * sizeof(int));
+}
 
 void menu_main()
 {
     while (1) {
-        char *options[] = {"Boot CFW with sig patches, emunand and reboot",
-                           "Boot CFW with sig patches and emunand",
-                           "Boot CFW with sig patches"};
-        int result = draw_menu("Main menu", 0, sizeof(options) / sizeof(char *), options);
+        char *options[] = {"Boot CFW",
+                           "Select Patches"};
+        int result = draw_menu("CakesFW", 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
             case 0:
-                boot_cfw(2);
+                boot_cfw();
                 break;
             case 1:
-                boot_cfw(1);
-                break;
-            case 2:
-                boot_cfw(0);
+                menu_select_patches();
                 break;
         }
     }
@@ -32,6 +43,11 @@ void menu_main()
 void main()
 {
     draw_init((uint32_t *)0x23FFFE00);
-    mount_sd();
+
+    int rc;
+
+    rc = mount_sd();
+    rc = load_cakes_info();
+
     menu_main();
 }

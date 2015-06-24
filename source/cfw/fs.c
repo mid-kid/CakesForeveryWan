@@ -5,19 +5,24 @@
 
 static FATFS fs;
 
-void mount_sd()
+int mount_sd()
 {
-    if (f_mount(&fs, "0:", 1) == FR_OK) {
-        print("Mounted SD card");
-    } else {
+    if (f_mount(&fs, "0:", 1) != FR_OK) {
         print("Failed to mount SD card!");
+        return 1;
     }
+    print("Mounted SD card");
+    return 0;
 }
 
-void unmount_sd()
+int unmount_sd()
 {
-    f_mount((void *)0, "0:", 1);
+    if (f_mount((void *)0, "0:", 1) != FR_OK) {
+        print("Failed to mount SD card!");
+        return 1;
+    }
     print("Unmounted SD card");
+    return 0;
 }
 
 int read_file_offset(void *dest, const char *path, unsigned int size, unsigned int offset)
@@ -27,20 +32,24 @@ int read_file_offset(void *dest, const char *path, unsigned int size, unsigned i
     unsigned int bytes_read = 0;
 
     fr = f_open(&handle, path, FA_READ);
-    if (fr != FR_OK) return fr;
+    if (fr != FR_OK) goto error;
 
     if (offset) {
         fr = f_lseek(&handle, offset);
-        if (fr != FR_OK) return fr;
+        if (fr != FR_OK) goto error;
     }
 
     fr = f_read(&handle, dest, size, &bytes_read);
-    if (fr != FR_OK) return fr;
+    if (fr != FR_OK) goto error;
 
     fr = f_close(&handle);
-    if (fr != FR_OK) return fr;
+    if (fr != FR_OK) goto error;
 
     return 0;
+
+error:
+    f_close(&handle);
+    return fr;
 }
 
 int write_file(const void *buffer, const char *path, unsigned int size)
@@ -50,14 +59,17 @@ int write_file(const void *buffer, const char *path, unsigned int size)
     unsigned int bytes_written = 0;
 
     fr = f_open(&handle, path, FA_WRITE | FA_OPEN_ALWAYS);
-    if (fr != FR_OK) return fr;
+    if (fr != FR_OK) goto error;
 
     fr = f_write(&handle, buffer, size, &bytes_written);
-    if (fr != FR_OK || bytes_written != size) return fr;
+    if (fr != FR_OK || bytes_written != size) goto error;
 
-    // This for some reason always returns an error
+    // For some reason this always returns 1
     f_close(&handle);
-    if (fr != FR_OK) return fr;
 
     return 0;
+
+error:
+    f_close(&handle);
+    return fr;
 }
