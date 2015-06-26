@@ -33,6 +33,9 @@ objects_launcher := $(call get_objects, $(dir_source)/launcher)
 objects_mset_4x := $(objects_draw) \
 				   $(patsubst $(dir_build)/launcher/%, $(dir_build)/mset_4x/%, \
 				   $(objects_launcher) $(objects_mset))
+objects_mset_4x_dg := $(objects_draw) \
+				   $(patsubst $(dir_build)/launcher/%, $(dir_build)/mset_4x_dg/%, \
+				   $(objects_launcher) $(objects_mset))
 objects_spider_4x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_4x/%, \
 					 $(objects_launcher))
 objects_spider_5x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_5x/%, \
@@ -42,8 +45,9 @@ objects_spider_9x := $(patsubst $(dir_build)/launcher/%, $(dir_build)/spider_9x/
 
 objects_cfw := $(objects_lib) $(call get_objects, $(dir_source)/cfw)
 
-rops := $(dir_build)/mset_4x/rop.dat $(dir_build)/spider_4x/rop.dat \
-		$(dir_build)/spider_5x/rop.dat $(dir_build)/spider_9x/rop.dat
+rops := $(dir_build)/mset_4x/rop.dat $(dir_build)/mset_4x_dg/rop.dat \
+		$(dir_build)/spider_4x/rop.dat $(dir_build)/spider_5x/rop.dat \
+		$(dir_build)/spider_9x/rop.dat
 
 patch_files := $(dir_out)/cakes/patches/signatures.cake \
 			   $(dir_out)/cakes/patches/emunand.cake \
@@ -81,6 +85,7 @@ $(dir_out)/Cakes.dat: $(rops) $(dir_build)/cfw/main.bin
 	@mkdir -p "$(@D)"
 	touch $@
 	dd if=$(dir_build)/mset_4x/rop.dat of=$@
+	dd if=$(dir_build)/mset_4x_dg/rop.dat of=$@ bs=512 seek=80
 	dd if=$(dir_build)/spider_4x/rop.dat of=$@ bs=512 seek=144
 	dd if=$(dir_build)/spider_5x/rop.dat of=$@ bs=512 seek=176
 	dd if=$(dir_build)/spider_9x/rop.dat of=$@ bs=512 seek=208
@@ -90,10 +95,11 @@ $(dir_out)/cakes/patches/%.cake: $(dir_build)/patches/%/*.cake
 	@mkdir -p "$(@D)"
 	mv $(<D)/$*.cake $@
 
-$(dir_build)/mset_4x/rop.dat: $(dir_build)/mset_4x/rop.dat.dec
-	$(OPENSSL) enc -aes-128-cbc -K 580006192800C5F0FBFB04E06A682088 -iv 00000000000000000000000000000000 -in $< -out $@
-$(dir_build)/mset_4x/rop.dat.dec: $(dir_build)/mset_4x/main.bin
+$(dir_build)/mset_4x/rop.dat: $(dir_build)/mset_4x/main.bin
 	$(PYTHON) $(dir_tools)/build-rop.py MSET_4X $< $@
+
+$(dir_build)/mset_4x_dg/rop.dat: $(dir_build)/mset_4x_dg/main.bin
+	$(PYTHON) $(dir_tools)/build-rop.py MSET_4X_DG $< $@
 
 $(dir_build)/spider_4x/rop.dat: $(dir_build)/spider_4x/rop.dat.dec
 	$(PYTHON) $(dir_tools)/spider-encrypt.py $< $@
@@ -126,6 +132,12 @@ $(dir_build)/mset_4x/main.elf: ASFLAGS := $(ARM11FLAGS) $(ASFLAGS)
 $(dir_build)/mset_4x/main.elf: CFLAGS := -DENTRY_MSET -DENTRY_MSET_4x \
 							   $(ARM11FLAGS) $(CFLAGS)
 $(dir_build)/mset_4x/main.elf: $(objects_mset_4x)
+	$(LD) $(LDFLAGS) -T linker_mset.ld $(OUTPUT_OPTION) $^
+
+$(dir_build)/mset_4x_dg/main.elf: ASFLAGS := $(ARM11FLAGS) $(ASFLAGS)
+$(dir_build)/mset_4x_dg/main.elf: CFLAGS := -DENTRY_MSET -DENTRY_MSET_4x_DG \
+							   $(ARM11FLAGS) $(CFLAGS)
+$(dir_build)/mset_4x_dg/main.elf: $(objects_mset_4x_dg)
 	$(LD) $(LDFLAGS) -T linker_mset.ld $(OUTPUT_OPTION) $^
 
 $(dir_build)/spider_4x/main.elf: ASFLAGS := $(ARM11FLAGS) $(ASFLAGS)

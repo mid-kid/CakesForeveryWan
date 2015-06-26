@@ -19,7 +19,7 @@ int (*svcSleepThread)(unsigned long long nanoseconds);
 #endif
 
 
-#if defined(ENTRY_MSET_4x)
+#if defined(ENTRY_MSET)
     #define FUNC_MEMCPY 0x001BFA60
     #define FUNC_GSPGPU_FLUSHDATACACHE 0x0013C5D4
     #define FUNC_NN__GXLOW__CTR__CMDREQQUEUETX__TRYENQUEUE 0x001AC924
@@ -29,6 +29,16 @@ int (*svcSleepThread)(unsigned long long nanoseconds);
     #define FUNC_FWRITE 0x001B3B50
 
     #define APP_GPUHANDLE (0x0027C580 + 0x58)
+
+#if defined(ENTRY_MSET_4x)
+    // Default firm 4.x (0x1F)
+    // MSET code offset in FCRAM
+    #define APP_CODE_OFFSET 0x03E6D000
+#elif defined(ENTRY_MSET_4x_DG)
+    // Firm 9.0~9.2 (0x38)
+    // MSET code offset in FCRAM
+    #define APP_CODE_OFFSET 0x03F00000
+#endif
 
 #elif defined(ENTRY_SPIDER_4x)
     #define FUNC_MEMCPY 0x0029BF60

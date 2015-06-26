@@ -40,7 +40,7 @@ void gspwn_copy(void *dest, void *src, uint32_t length, int check, int check_off
     }
 }
 
-#ifdef ENTRY_MSET
+#if defined(ENTRY_MSET)
 void build_nop_slide(uint32_t *dest, unsigned int len)
 {
     unsigned int i;
@@ -84,13 +84,14 @@ void memchunk_arm11hax(void (*func)())
     print("Triggered kernel write");
 
 #if defined(ENTRY_MSET)
-    build_nop_slide(arm11_buffer, 0x4000);
+    unsigned int slide_len = 0x1000;
+    build_nop_slide(arm11_buffer, slide_len);
     print("Built nop slide");
 
     int gsp_addr = 0x14000000;
-    int fcram_code_addr = 0x03E6D000;
+    int fcram_code_addr = APP_CODE_OFFSET;
     gspwn_copy((void *)(gsp_addr + fcram_code_addr + 0x4000), arm11_buffer,
-               0x10000, 0xE1A00000, 0);
+               slide_len * 4, 0xE1A00000, 0);
     print("Copied nop slide");
 
     ((void (*)())0x104000)();
