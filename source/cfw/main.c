@@ -44,12 +44,18 @@ void main()
 {
     draw_init((uint32_t *)0x23FFFE00);
 
-    int rc;
-
-    rc = mount_sd();
-    if(rc == 0 && load_firm() == 0)
-    {
-        rc = load_cakes_info();
-        menu_main();
+    if(mount_sd() != 0) {
+        draw_loading("Failed to mount SD", "Make sure your SD card can be read correctly");
+        return;
     }
+
+    // This function already correctly draws error messages
+    if (load_firm() != 0) return;  
+
+    if (load_cakes_info() != 0) {
+        draw_loading("Failed to read some cakes", "Make sure your cakes are up to date\n  and your SD card can be read correctly");
+        return;
+    }
+
+    menu_main();
 }

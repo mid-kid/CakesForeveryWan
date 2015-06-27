@@ -8,6 +8,7 @@
 #include "firm.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
+
 struct cake_header {
     uint8_t count: 8;
     uint8_t firm_ver;
@@ -38,6 +39,7 @@ static void *temp = (void *)0x24300000;
 static const int nand_size_toshiba = 0x1D7800;
 static const int nand_size_samsung = 0x1DD000;
 
+// TODO: memcmp32?
 void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
 {
     // Searching backwards, since most of the stuff we'll search with this are near the end.
@@ -139,7 +141,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
 
 int patch_firm(char *filename)
 {
-    if (read_file(firm_patch_temp, filename, 0x10000) != 0) {
+    if (read_file(firm_patch_temp, filename, 0) != 0) {
         print("Failed to load patch");
         draw_message("Failed to load patch", "Please make sure all the patches you want\n  to apply actually exist on the SD card.");
         return 1;
@@ -155,7 +157,7 @@ int patch_firm(char *filename)
     memset(&process9, 0, sizeof(firm_section_h));
 
     // Assuming Process9 is in section 2
-    uint32_t *arm9section = (uint32_t *)(firm_loc + sections[2].offset);
+    uint32_t *arm9section = (uint32_t *)((void *)firm_loc + sections[2].offset);
     for (uint32_t i = 0; i < (sections[2].size / sizeof(uint32_t)); i += 2) {
         // 'Process9' <- this will be in exheader
         if (arm9section[i] == 0x636F7250 && arm9section[i + 1] == 0x39737365) {
@@ -178,7 +180,7 @@ int patch_firm(char *filename)
     for (uint8_t i = 0; i < firm_patch_temp->count; i++) {
         if (patches[i].address >= process9.address &&
               patches[i].address < process9.address + process9.size) {
-            void *offset = firm_loc + (uintptr_t)(process9.offset + (patches[i].address - process9.address));
+            void *offset = (void *)firm_loc + (uintptr_t)(process9.offset + (patches[i].address - process9.address));
             memcpy(offset, (uintptr_t)firm_patch_temp + patches[i].offset, patches[i].size);
 
             if (patches[i].options) {
@@ -193,7 +195,7 @@ int patch_firm(char *filename)
         for (int x = 0; x < 3; x++) {
             if (patches[i].address >= sections[x].address &&
                   patches[i].address < sections[x].address + sections[x].size) {
-                void *offset = firm_loc + (uintptr_t)(sections[x].offset + (patches[i].address - sections[x].address));
+                void *offset = (void *)firm_loc + (uintptr_t)(sections[x].offset + (patches[i].address - sections[x].address));
                 memcpy(offset, (uintptr_t)firm_patch_temp + patches[i].offset, patches[i].size);
 
                 if (patches[i].options) {
@@ -265,6 +267,11 @@ int load_cakes_info()
         fr = f_read(&handle, &header, sizeof(header), &bytes_read);
         if (fr != FR_OK) goto error;
 
+        // Only add patches applicable to the loaded firm
+        if(header.firm_ver != firm_ver) {
+            continue;
+        }
+
         // Get the patch description
         const int desc_size = header.patches_offset - sizeof(header);
         fr = f_read(&handle, cake_list[cake_count].description, desc_size, &bytes_read);
@@ -273,9 +280,7 @@ int load_cakes_info()
         fr = f_close(&handle);
         if (fr != FR_OK) goto error;
 
-        // Only add patches applicable to the loaded firm
-        if(header.firm_ver == get_firm_ver())
-            cake_count++;
+        cake_count++;
     }
     f_closedir(&dir);
 
