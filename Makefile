@@ -4,8 +4,13 @@ CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 LD := arm-none-eabi-ld
 OC := arm-none-eabi-objcopy
-PYTHON := python2
 OPENSSL := openssl
+
+PYTHON := python
+PYTHON_VER_MAJOR := $(word 2,$(subst ., ,$(shell $(PYTHON) --version 2>&1)))
+ifneq ($(PYTHON_VER_MAJOR),2)
+	PYTHON := python2
+endif
 
 dir_source := source
 dir_build := build
