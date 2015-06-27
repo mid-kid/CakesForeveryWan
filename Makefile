@@ -12,7 +12,7 @@ dir_build := build
 dir_out := out
 dir_tools := p3ds
 dir_patches := patches
-dir_top := $(PWD)
+dir_top := $(CURDIR)
 
 ARM9FLAGS := -mcpu=arm946e-s -march=armv5te
 ARM11FLAGS := -mcpu=mpcore
