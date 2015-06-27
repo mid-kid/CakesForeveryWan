@@ -34,6 +34,10 @@ int read_file_offset(void *dest, const char *path, unsigned int size, unsigned i
     fr = f_open(&handle, path, FA_READ);
     if (fr != FR_OK) goto error;
 
+    if (!size) {
+        size = f_size(&handle);
+    }
+
     if (offset) {
         fr = f_lseek(&handle, offset);
         if (fr != FR_OK) goto error;

@@ -10,14 +10,10 @@
 #include "fatfs/ff.h"
 
 void *firm_loc = (void *)0x23000000;
-const int firm_size = 0xEB000;
 static void *firm_loc_encrypted = (void *)0x24100000;
-static const int firm_size_encrypted = 0xEBC00;
+static const int firm_size_encrypted = 0xF0000;
 
 static uint8_t firm_key[16] = {0};
-
-static const uint32_t ncch_magic = 0x4843434E;  // Hex for "NCCH".
-static const uint32_t firm_magic = 0x4D524946;  // Hex for "FIRM". For easy comparing.
 
 int save_firm = 0;
 const char *save_path = "/cakes/patched_firm.bin";
@@ -26,7 +22,7 @@ int prepare_files()
 {
     int rc;
 
-    rc = read_file(firm_loc_encrypted, "/firmware.bin", firm_size_encrypted);
+    rc = read_file(firm_loc_encrypted, "/firmware.bin", 0);
     if (rc != 0) {
         print("Failed to load FIRM");
         draw_message("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at /firmware.bin");
@@ -58,18 +54,20 @@ int decrypt_firm()
     aes_use_keyslot(0x11);
     aes(curloc, curloc, cursize / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    if (*(uint32_t *)(curloc + 0x100) != ncch_magic) {
+    if (*(uint32_t *)(curloc + 0x100) != NCCH_MAGIC) {
         print("Failed to decrypt the NCCH");
         draw_message("Failed to decrypt the NCCH", "Please double check your firmware.bin and firmkey.bin are right.");
         return 1;
     }
 
-    memcpy(exefs_key, curloc, 16);
-    ncch_getctr(curloc, exefs_iv, NCCHTYPE_EXEFS);
+    ncch_h *ncch = (ncch_h *)curloc;
+
+    memcpy(exefs_key, ncch, 16);
+    ncch_getctr(ncch, exefs_iv, NCCHTYPE_EXEFS);
 
     // Get the exefs offset and size from the NCCH
-    cursize = *(uint32_t *)(curloc + 0x1A4) * 0x200;
-    curloc += *(uint32_t *)(curloc + 0x1A0) * 0x200;
+    cursize = ncch->exeFSSize * MEDIA_UNITS;
+    curloc += ncch->exeFSOffset * MEDIA_UNITS;
 
     print("Decrypting the exefs");
     aes_setkey(0x2C, exefs_key, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
@@ -78,13 +76,15 @@ int decrypt_firm()
 
     // Get the decrypted FIRM
     // We assume the firm.bin is always the first file
-    cursize = firm_size;
-    curloc += 0x200;  // The offset right behind the exefs header; the first file.
+    exefs_h *exefs = (exefs_h *)curloc;
+    cursize = exefs->fileHeaders[0].size;
+    curloc += sizeof(exefs_h);  // The offset right behind the exefs header; the first file.
 
     print("Copying the FIRM");
     memcpy32(firm_loc, curloc, cursize);
 
-    if (*(uint32_t *)firm_loc != firm_magic) {
+    firm_h *firm = (firm_h *)firm_loc;
+    if (firm->magic != FIRM_MAGIC) {
         print("Failed to decrypt the exefs");
         draw_message("Failed to decrypt the exefs", "I just don't know what went wrong");
         return 1;
@@ -98,7 +98,6 @@ void boot_firm()
     print("Booting FIRM...");
 
     __asm__ (
-        "push {r4-r12}\n\t"
         "msr cpsr_c, #0xDF\n\t"
         "ldr r0, =0x10000035\n\t"
         "mcr p15, 0, r0, c6, c3, 0\n\t"
@@ -130,17 +129,19 @@ void boot_firm()
         "mcr p15, 0, r0, c2, c0, 0\n\t"
         "mcr p15, 0, r1, c2, c0, 1\n\t"
         "mcr p15, 0, r2, c3, c0, 0\n\t"
-        "pop {r4-r12}\n\t"
+        ::: "r0", "r1", "r2", "r3", "r4", "r12"
     );
     print("Set up MPU");
 
-    struct firm_section *sections = firm_loc + 0x40;
-    memcpy32(sections[0].address, firm_loc + (uintptr_t)sections[0].offset, sections[0].size);
-    memcpy32(sections[1].address, firm_loc + (uintptr_t)sections[1].offset, sections[1].size);
-    memcpy32(sections[2].address, firm_loc + (uintptr_t)sections[2].offset, sections[2].size);
+    firm_h *firm = (firm_h *)firm_loc;
+    firm_section_h *sections = firm->section;
+
+    memcpy32(sections[0].address, firm_loc + sections[0].offset, sections[0].size);
+    memcpy32(sections[1].address, firm_loc + sections[1].offset, sections[1].size);
+    memcpy32(sections[2].address, firm_loc + sections[2].offset, sections[2].size);
     print("Copied FIRM");
 
-    *(uint32_t *)0x1FFFFFF8 = *(uint32_t *)(firm_loc + 8);
+    *(uint32_t *)0x1FFFFFF8 = (uint32_t)firm->a11Entry;
     print("Prepared arm11 entry");
 
     print("Booting...");

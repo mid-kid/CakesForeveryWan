@@ -36,7 +36,6 @@ static void *temp = (void *)0x24300000;
 
 static const int nand_size_toshiba = 0x1D7800;
 static const int nand_size_samsung = 0x1DD000;
-static const uint32_t ncsd_magic = 0x4453434E;  // Hex for "NCSD". For easy comparing.
 
 void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
 {
@@ -74,7 +73,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
         uint32_t header = 0;
 
         if (sdmmc_sdcard_readsectors(1, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == (uint32_t)ncsd_magic) {
+            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
                 print("emuNAND detected: redNAND");
                 offset = 1;
                 header = 1;
@@ -82,7 +81,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
         }
 
         if (sdmmc_sdcard_readsectors(nand_size_toshiba, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == (uint32_t)ncsd_magic) {
+            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
                 print("emuNAND detected: Toshiba GW");
                 offset = 0;
                 header = nand_size_toshiba;
@@ -90,7 +89,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
         }
 
         if (sdmmc_sdcard_readsectors(nand_size_samsung, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == (uint32_t)ncsd_magic) {
+            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
                 print("emuNAND detected: Samsung GW");
                 offset = 0;
                 header = nand_size_samsung;
@@ -148,15 +147,32 @@ int patch_firm(char *filename)
     print(&firm_patch_temp->name);
 
     struct patch *patches = (void *)firm_patch_temp + firm_patch_temp->patches_offset;
-    struct firm_section *sections = firm_loc + 0x40;
-    struct firm_section process9;
 
-    // TODO: Don't hard-code the offsets, use proper headers 'n stuff.
-    process9.offset = (void *)0x7C700;
-    process9.address = *(void **)(firm_loc + 0x7BD10);
-    process9.size = *(uint32_t *)(firm_loc + 0x7C50C);
+    firm_h *firm = (firm_h* )firm_loc;
+    firm_section_h *sections = firm->section;
+    firm_section_h process9;
+    memset(&process9, 0, sizeof(firm_section_h));
 
-    // For some reason, patch 0 and 1 are the only ones not in Process9
+    // Assuming Process9 is in section 2
+    uint32_t *arm9section = (uint32_t *)(firm_loc + sections[2].offset);
+    for (uint32_t i = 0; i < (sections[2].size / sizeof(uint32_t)); i += 2) {
+        // 'Process9' <- this will be in exheader
+        if (arm9section[i] == 0x636F7250 && arm9section[i + 1] == 0x39737365) {
+            ncch_h *ncch = (ncch_h *)((uint8_t *)arm9section + (i * 4)
+                    - sizeof(ncch_h));
+            if (ncch->magic == NCCH_MAGIC) {
+                ncch_ex_h *p9exheader = (ncch_ex_h *)&ncch[1];
+                exefs_h* p9exefs = (exefs_h *)&p9exheader[1];
+                process9.address = (void *)p9exheader->sci.textCodeSet.address;
+                process9.size = p9exefs->fileHeaders[0].size;
+                process9.offset = ((uint32_t) ncch - (uint32_t) firm_loc)
+                        + sizeof(ncch_h) + sizeof(ncch_ex_h) + sizeof(exefs_h);
+                break;
+            }
+        }
+    }
+    // Can't find process9
+    if (process9.address == 0) return 1;
 
     for (uint8_t i = 0; i < firm_patch_temp->count; i++) {
         if (patches[i].address >= process9.address &&

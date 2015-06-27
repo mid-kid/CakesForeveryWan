@@ -4,44 +4,7 @@
 #define __CRYPTO_H
 
 #include <stdint.h>
-
-// From ctr/include/headers.h
-// http://3dbrew.org/wiki/NCCH
-typedef struct ncch_h
-{
-	uint8_t sig[0x100];		// RSA-2048 signature of the NCCH header, using SHA-256.
-	uint32_t magic; 			// NCCH
-	uint32_t contentSize;	// Content size, in media units (1 media unit = 0x200 bytes)
-	uint8_t partitionID[8];
-	uint8_t makerCode[2];
-	uint16_t version;
-	uint8_t reserved1[4];
-	uint8_t programID[8];
-	uint8_t reserved2[0x10];
-	uint8_t logoHash[0x20];	// Logo Region SHA-256 hash. (For applications built with SDK 5+) (Supported from firmware: 5.0.0-11)
-	uint8_t productCode[0x10];
-	uint8_t exHeaderHash[0x20]; // Extended header SHA-256 hash (SHA256 of 2x Alignment Size, beginning at 0x0 of ExHeader)
-	uint32_t exHeaderSize;	// Extended header size
-	uint32_t reserved3;
-	uint8_t flags[8];
-	uint32_t plainOffset;	// media unit
-	uint32_t plainSize;		// media unit
-	uint32_t logoOffset;		// media unit
-	uint32_t logoSize;		// media unit
-	uint32_t exeFSOffset;	// media unit
-	uint32_t exeFSSize;		// media unit
-	uint32_t exeFSHashSize;	// media unit ExeFS hash region size
-	uint32_t reserved4;
-	uint32_t romFSOffset;	// media unit
-	uint32_t romFSSize;		// media unit
-	uint32_t romFSHashSize;	// media unit RomFS hash region size
-	uint32_t reserved5;
-	uint8_t exeFSHash[0x20];	// ExeFS superblock SHA-256 hash - (SHA-256 hash, starting at 0x0 of the ExeFS over the number of media units specified in the ExeFS hash region size)
-	uint8_t romFSHash[0x20]; // RomFS superblock SHA-256 hash - (SHA-256 hash, starting at 0x0 of the RomFS over the number of media units specified in the RomFS hash region size)
-} ncch_h; // 0x200
-
-// From ctr/include/headers.h
-#define MEDIA_UNITS 0x200
+#include "headers.h"
 
 /**************************AES****************************/
 #define REG_AESCNT				((volatile uint32_t*)0x10009000)
