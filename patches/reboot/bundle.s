@@ -4,6 +4,8 @@
 
 ; Header
 .byte 2  ; Amount of patches
+.byte 0x49  ; Firmware v9.6
+.byte 0  ; Reserved
 .byte patches
 .ascii "Survive reboots when launching some titles", 0
 

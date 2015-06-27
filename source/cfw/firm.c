@@ -16,7 +16,19 @@ static const int firm_size_encrypted = 0xF0000;
 static uint8_t firm_key[16] = {0};
 
 int save_firm = 0;
+uint8_t firm_ver = 0;
 const char *save_path = "/cakes/patched_firm.bin";
+
+// We use the firm's section 0's hash to identify the version
+firm_sig_h firm_sig[] = {
+    {.sig = {0xEE, 0xE2, 0x81, 0x2E, 0xB9, 0x10, 0x0D, 0x03, 0xFE, 0xA2, 0x3F, 0x44, 0xB5, 0x1C, 0xB3, 0x5E},
+     .ver = 0x1F},
+    {.sig = {0x3F, 0xBF, 0x14, 0x06, 0x33, 0x77, 0x82, 0xDE, 0xB2, 0x68, 0x83, 0x01, 0x6B, 0x1A, 0x71, 0x69},
+     .ver = 0x38},
+    {.sig = {0x5C, 0x6A, 0x51, 0xF3, 0x79, 0x4D, 0x21, 0x91, 0x0B, 0xBB, 0xFD, 0x17, 0x7B, 0x72, 0x6B, 0x59},
+     .ver = 0x49},
+    {.ver = 0}
+};
 
 int prepare_files()
 {
@@ -90,7 +102,19 @@ int decrypt_firm()
         return 1;
     }
 
+    // Determine firmware version
+    for (int i = 0; firm_sig[i].ver != 0; i++) {
+        if (memcmp(firm_sig[i].sig, firm->section[0].hash, 0x10) == 0) {
+            firm_ver = firm_sig[i].ver;
+        }
+    }
+
     return 0;
+}
+
+uint8_t get_firm_ver()
+{
+    return firm_ver;
 }
 
 void boot_firm()
@@ -148,15 +172,22 @@ void boot_firm()
     ((void (*)())*(void **)(firm_loc + 0xC))();
 }
 
+int load_firm()
+{
+    char *title = "Loading firm";
+
+    draw_loading(title, "Loading...");
+    if (prepare_files() != 0) return 1;
+
+    draw_loading(title, "Decrypting...");
+    if (decrypt_firm() != 0) return 1;
+
+    return 0;
+}
+
 void boot_cfw()
 {
     char *title = "Booting CFW";
-
-    draw_loading(title, "Loading...");
-    if (prepare_files() != 0) return;
-
-    draw_loading(title, "Decrypting...");
-    if (decrypt_firm() != 0) return;
 
     draw_loading(title, "Patching...");
     if (patch_firm_all() != 0) return;

@@ -4,6 +4,8 @@
 
 ; Header
 .byte 5  ; Amount of patches
+.byte 0x49  ; Firmware v9.6
+.byte 0  ; Reserved
 .byte patches
 .ascii "Enable emuNAND", 0
 

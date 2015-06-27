@@ -47,7 +47,9 @@ void main()
     int rc;
 
     rc = mount_sd();
-    rc = load_cakes_info();
-
-    menu_main();
+    if(rc == 0 && load_firm() == 0)
+    {
+        rc = load_cakes_info();
+        menu_main();
+    }
 }

@@ -4,6 +4,8 @@
 
 ; Header
 .byte 2  ; Amount of patches
+.byte 0x49  ; Firmware v9.6
+.byte 0  ; Reserved
 .byte patches  ; Offset to start of patches
 .ascii "Disable signature checks", 0
 

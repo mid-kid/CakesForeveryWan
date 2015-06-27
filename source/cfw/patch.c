@@ -8,11 +8,12 @@
 #include "firm.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
-
 struct cake_header {
     uint8_t count: 8;
+    uint8_t firm_ver;
+    uint8_t reserved;
     uint8_t patches_offset: 8;
-    char name;
+    char name[];
 } __attribute__((packed));
 
 struct patch {
@@ -144,7 +145,7 @@ int patch_firm(char *filename)
         return 1;
     }
     print("Applying patch:");
-    print(&firm_patch_temp->name);
+    print(firm_patch_temp->name);
 
     struct patch *patches = (void *)firm_patch_temp + firm_patch_temp->patches_offset;
 
@@ -258,21 +259,23 @@ int load_cakes_info()
         fr = f_open(&handle, cake_list[cake_count].path, FA_READ);
         if (fr != FR_OK) goto error;
 
-        // Get the 2-byte header
+        // Get the header
         unsigned int bytes_read = 0;
         struct cake_header header;
-        fr = f_read(&handle, &header, 2, &bytes_read);
+        fr = f_read(&handle, &header, sizeof(header), &bytes_read);
         if (fr != FR_OK) goto error;
 
         // Get the patch description
-        const int desc_size = header.patches_offset - 2;
+        const int desc_size = header.patches_offset - sizeof(header);
         fr = f_read(&handle, cake_list[cake_count].description, desc_size, &bytes_read);
         if (fr != FR_OK) goto error;
 
         fr = f_close(&handle);
         if (fr != FR_OK) goto error;
 
-        cake_count++;
+        // Only add patches applicable to the loaded firm
+        if(header.firm_ver == get_firm_ver())
+            cake_count++;
     }
     f_closedir(&dir);
 
