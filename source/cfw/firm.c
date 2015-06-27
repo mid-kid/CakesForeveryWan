@@ -164,7 +164,6 @@ void boot_firm()
     print("Prepared arm11 entry");
 
     print("Booting...");
-    // TODO: Use struct
     ((void (*)())firm_loc->a9Entry)();
 }
 

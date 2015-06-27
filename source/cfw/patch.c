@@ -151,8 +151,7 @@ int patch_firm(char *filename)
 
     struct patch *patches = (void *)firm_patch_temp + firm_patch_temp->patches_offset;
 
-    firm_h *firm = (firm_h* )firm_loc;
-    firm_section_h *sections = firm->section;
+    firm_section_h *sections = firm_loc->section;
     firm_section_h process9;
     memset(&process9, 0, sizeof(firm_section_h));
 
