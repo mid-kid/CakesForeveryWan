@@ -5,8 +5,7 @@ sdmmc_unk0			equ 0x08062A28
 sdmmc_unk1			equ 0x08078970
 sdmmc_unk2			equ 0x08078750
 
-.create "patch1.bin", 0x0801A4C0
-.org 0x0801A4C0
+.create "patch1.bin"
 .arm
 patch000_00:
 	stmfd sp!, {r0-r3}
@@ -149,8 +148,7 @@ slot0x25keyX:
 .ascii "slot0x25keyXhere"
 .close
 
-.create "patch2.bin", 0x0801B564
-.org 0x0801B564
+.create "patch2.bin"
 .arm
 	.word 0x360003
 	.word 0x10100000
@@ -165,8 +163,7 @@ slot0x25keyX:
 	.byte 0x1C
 .close
 
-.create "patch3.bin", 0x080282F8
-.org 0x080282F8
+.create "patch3.bin"
 .thumb
 	ldr r2, =slot0x25keyX
 	mov r1, #5
@@ -177,16 +174,14 @@ slot0x25keyX:
 .pool
 .close
 
-.create "patch4.bin", 0x0807882C
-.org 0x0807882C
+.create "patch4.bin"
 .thumb
 	ldr r4, =patch000_00
 	bx r4
 .pool
 .close
 
-.create "patch5.bin", 0x0807886C
-.org 0x0807886C
+.create "patch5.bin"
 .thumb
 	ldr r4, =patch000_01
 	bx r4

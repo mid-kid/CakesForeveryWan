@@ -1,0 +1,16 @@
+Here I'll detail the structure of the header of a cake file:
+
+format: size | description | comments
+
+Main header:
+1 | Amount of patches
+1 | Firmware version
+1 | Unused | Just here to make the full byte
+1 | Offset to the end of the description string | At this offset we'll place the patch headers
+? | Description string + 0 byte
+
+Patch header:
+4 | Offset in memory | Where the patch will be copied
+4 | Offset in this file
+4 | Size of this patches
+1 | Options byte | See options.txt

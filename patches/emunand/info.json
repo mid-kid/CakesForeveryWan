@@ -1,0 +1,36 @@
+{
+    "name": "emunand",
+    "description": "Enable emuNAND",
+    "patches": [
+        {
+            "name": "patch1.bin",
+            "options": 3
+        }, {
+            "name": "patch2.bin"
+        }, {
+            "name": "patch3.bin"
+        }, {
+            "name": "patch4.bin"
+        }, {
+            "name": "patch5.bin"
+        }
+    ],
+    "version_specific": [
+        {
+            "version": "0x49",
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B564"
+                }, {
+                    "offset": "0x080282F8"
+                }, {
+                    "offset": "0x0807882C"
+                }, {
+                    "offset": "0x0807886C"
+                }
+            ]
+        }
+    ]
+}

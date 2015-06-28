@@ -1,0 +1,23 @@
+{
+    "name": "signatures",
+    "description": "Disable signature checks",
+    "patches": [
+        {
+            "name": "patch1.bin"
+        }, {
+            "name": "patch2.bin"
+        }
+    ],
+    "version_specific": [
+        {
+            "version": "0x49",
+            "patches": [
+                {
+                    "offset": "0x080632B8"
+                }, {
+                    "offset": "0x0805D628"
+                }
+            ]
+        }
+    ]
+}

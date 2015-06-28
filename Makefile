@@ -12,6 +12,12 @@ ifneq ($(PYTHON_VER_MAJOR),2)
 	PYTHON := python2
 endif
 
+PYTHON3 := python
+PYTHON3_VER_MAJOR := $(word 3,$(subst ., ,$(shell $(PYTHON3) --version 2>&1)))
+ifneq ($(PYTHON_VER_MAJOR),3)
+	PYTHON3 := python3
+endif
+
 dir_source := source
 dir_build := build
 dir_out := out
@@ -54,9 +60,7 @@ rops := $(dir_build)/mset_4x/rop.dat $(dir_build)/mset_4x_dg/rop.dat \
 		$(dir_build)/spider_4x/rop.dat $(dir_build)/spider_5x/rop.dat \
 		$(dir_build)/spider_9x/rop.dat
 
-patch_files := $(dir_out)/cakes/patches/signatures.cake \
-			   $(dir_out)/cakes/patches/emunand.cake \
-	           $(dir_out)/cakes/patches/reboot.cake
+baked_files := $(patsubst $(dir_patches)/%/, $(dir_build)/patches/%.baked, $(wildcard $(dir_patches)/*/))
 
 provide_files := $(dir_out)/firmware_bin.here \
 				 $(dir_out)/slot0x25keyX_bin.here \
@@ -72,7 +76,7 @@ release: Cakes_$(revision).zip
 launcher: $(dir_out)/Cakes.dat
 
 .PHONY: patches
-patches: $(patch_files)
+patches: $(baked_files)
 
 .PHONY: clean
 clean:
@@ -96,9 +100,11 @@ $(dir_out)/Cakes.dat: $(rops) $(dir_build)/cfw/main.bin
 	dd if=$(dir_build)/spider_9x/rop.dat of=$@ bs=512 seek=208
 	dd if=$(dir_build)/cfw/main.bin of=$@ bs=512 seek=256
 
-$(dir_out)/cakes/patches/%.cake: $(dir_build)/patches/%/*.cake
-	@mkdir -p "$(@D)"
-	mv $(<D)/$*.cake $@
+$(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
+	@mkdir -p $(dir_out)/cakes/patches
+	@mkdir -p $(dir_build)/patches/$*
+	$(PYTHON3) $(dir_patches)/bundle.py $^ $(dir_build)/patches/$* $(dir_out)/cakes/patches
+	@touch $@
 
 $(dir_build)/mset_4x/rop.dat: $(dir_build)/mset_4x/main.bin
 	$(PYTHON) $(dir_tools)/build-rop.py MSET_4X $< $@
@@ -162,11 +168,6 @@ $(dir_build)/spider_9x/main.elf: CFLAGS := -DENTRY_SPIDER -DENTRY_SPIDER_9x \
 								 $(ARM11FLAGS) $(CFLAGS)
 $(dir_build)/spider_9x/main.elf: $(objects_spider_9x)
 	$(LD) $(LDFLAGS) -T linker_spider.ld $(OUTPUT_OPTION) $^
-
-$(dir_build)/patches/%/*.cake: $(dir_patches)/%
-	@mkdir -p $(@D)
-	sh -c "cd $(@D); armips $(dir_top)/$</patches.s"
-	sh -c "cd $(@D); armips $(dir_top)/$</bundle.s"
 
 $(dir_build)/%.o: $(dir_source)/%.c
 	@mkdir -p "$(@D)"

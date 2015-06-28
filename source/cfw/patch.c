@@ -264,7 +264,7 @@ int load_cakes_info(const char *dirpath)
 
         // Make sure the filename ends in .cake
         if (!memsearch(cake_list[cake_count].path, ".cake",
-                sizeof(cake_list[cake_count].path), 5)) {
+                sizeof(cake_list[cake_count].path), 6)) {
             continue;
         }
 

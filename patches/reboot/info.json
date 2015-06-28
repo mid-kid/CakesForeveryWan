@@ -1,0 +1,24 @@
+{
+    "name": "reboot",
+    "description": "Survive reboots when launching some titles",
+    "patches": [
+        {
+            "name": "patch1.bin",
+            "options": 4
+        }, {
+            "name": "patch2.bin"
+        }
+    ],
+    "version_specific": [
+        {
+            "version": "0x49",
+            "patches": [
+                {
+                    "offset": "0x080859C8"
+                }, {
+                    "offset": "0x08094454"
+                }
+            ]
+        }
+    ]
+}
