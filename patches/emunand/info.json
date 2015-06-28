@@ -19,9 +19,12 @@
         {
             "version": "0x49",
             "variables": {
+                "sdmmc": "0x080D8670",
                 "sdmmc_unk0": "0x08062A28",
                 "sdmmc_unk1": "0x08078970",
-                "sdmmc_unk2": "0x08078750"
+                "sdmmc_unk2": "0x08078750",
+                "aes_setkey": "0x080575B4",
+                "aes_unk": "0x0805FB48"
             },
             "patches": [
                 {
@@ -34,6 +37,78 @@
                     "offset": "0x0807882C"
                 }, {
                     "offset": "0x0807886C"
+                }
+            ]
+        },
+        {
+            "version": "0x38",
+            "variables": {
+                "sdmmc": "0x080D8670",
+                "sdmmc_unk0": "0x08062840",
+                "sdmmc_unk1": "0x08078868",
+                "sdmmc_unk2": "0x08078648",
+                "aes_setkey": "0x080573EC",
+                "aes_unk": "0x0805F994"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B564"
+                }, {
+                    "offset": "0x080282F8"
+                }, {
+                    "offset": "0x08078724"
+                }, {
+                    "offset": "0x08078764"
+                }
+            ]
+        },
+        {
+            "version": "0x37",
+            "variables": {
+                "sdmmc": "0x080D84F0",
+                "sdmmc_unk0": "0x080628A4",
+                "sdmmc_unk1": "0x080787D0",
+                "sdmmc_unk2": "0x080785B0",
+                "aes_setkey": "0x08057434",
+                "aes_unk": "0x0805FA00"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B564"
+                }, {
+                    "offset": "0x080282F8"
+                }, {
+                    "offset": "0x0807868C"
+                }, {
+                    "offset": "0x080786CC"
+                }
+            ]
+        },
+        {
+            "version": "0x1F",
+            "variables": {
+                "sdmmc": "0x080D8CD0",
+                "sdmmc_unk0": "0x08063C40",
+                "sdmmc_unk1": "0x08078D84",
+                "sdmmc_unk2": "0x08078B5C",
+                "aes_setkey": "0x080573EC",
+                "aes_unk": "0x0805F994"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B568"
+                }, {
+                    "offset": "0x080282F8"
+                }, {
+                    "offset": "0x08078C30"
+                }, {
+                    "offset": "0x08078C70"
                 }
             ]
         }

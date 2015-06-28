@@ -13,6 +13,7 @@
         {
             "version": "0x49",
             "variables": {
+                "firm_size": "0x000EB000",
                 "firm_addr": "0x24000000",
                 "fopen": "0x0805B180",
                 "fread": "0x0804D9B0",
@@ -23,6 +24,57 @@
                     "offset": "0x080859C8"
                 }, {
                     "offset": "0x08094454"
+                }
+            ]
+        },
+        {
+            "version": "0x38",
+            "variables": {
+                "firm_size": "0x000E9000",
+                "firm_addr": "0x24000000",
+                "fopen": "0x0805AF20",
+                "fread": "0x0804D828",
+                "pxi_wait_recv": "0x08054FB0"
+            },
+            "patches": [
+                {
+                    "offset": "0x080858E0"
+                }, {
+                    "offset": "0x08094200"
+                }
+            ]
+        },
+        {
+            "version": "0x37",
+            "variables": {
+                "firm_size": "0x000E9000",
+                "firm_addr": "0x24000000",
+                "fopen": "0x0805AF88",
+                "fread": "0x0804D828",
+                "pxi_wait_recv": "0x08055054"
+            },
+            "patches": [
+                {
+                    "offset": "0x08085860"
+                }, {
+                    "offset": "0x080943A4"
+                }
+            ]
+        },
+        {
+            "version": "0x1F",
+            "variables": {
+                "firm_size": "0x000EF000",
+                "firm_addr": "0x24000000",
+                "fopen": "0x0805CF04",
+                "fread": "0x0804E314",
+                "pxi_wait_recv": "0x08056A04"
+            },
+            "patches": [
+                {
+                    "offset": "0x08086B30"
+                }, {
+                    "offset": "0x0809744C"
                 }
             ]
         }

@@ -18,6 +18,36 @@
                     "offset": "0x0805D628"
                 }
             ]
+        },
+        {
+            "version": "0x38",
+            "patches": [
+                {
+                    "offset": "0x08063324"
+                }, {
+                    "offset": "0x0805D458"
+                }
+            ]
+        },
+        {
+            "version": "0x37",
+            "patches": [
+                {
+                    "offset": "0x080632BC"
+                }, {
+                    "offset": "0x0805D4C0"
+                }
+            ]
+        },
+        {
+            "version": "0x1F",
+            "patches": [
+                {
+                    "offset": "0x0804D5C0"
+                }, {
+                    "offset": "0x0805FAC0"
+                }
+            ]
         }
     ]
 }

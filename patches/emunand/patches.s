@@ -10,12 +10,12 @@ patch000_00:
 	ldr r1, =orig_sector
 	ldr r2, [r3,#4]
 	str r2, [r1,#4]
-	ldr r0, =0x80D8670
+	ldr r0, =sdmmc
 	cmp r2, r0
 	ldr r2, [r3,#8]
 	str r2, [r1]
 	beq @@orig_code
-	ldr r1, =0x80D8670
+	ldr r1, =sdmmc
 	str r1, [r3,#4]
 	cmp r2, #0
 	ldr r0, =nand_offset
@@ -75,12 +75,12 @@ patch000_01:
 	ldr r1, =orig_sector
 	ldr r2, [r3,#4]
 	str r2, [r1,#4]
-	ldr r0, =0x80D8670
+	ldr r0, =sdmmc
 	cmp r2, r0
 	ldr r2, [r3,#8]
 	str r2, [r1]
 	beq @@orig_code
-	ldr r1, =0x80D8670
+	ldr r1, =sdmmc
 	str r1, [r3,#4]
 	cmp r2, #0
 	ldr r0, =nand_offset
@@ -151,13 +151,13 @@ slot0x25keyX:
 	.word 0x10100000
 	.word 0x1000001
 	.word 0x360003
-	.word 0x20000035
+	.word 0x20000000
 	.word 0x1010101
 	.word 0x200603
 	.word 0x8000000
 	.word 0x1010101
-	.halfword 0x0603
-	.byte 0x1C
+	.word 0x1C0603
+	.word 0x8020000
 .close
 
 .create "patch3.bin"
@@ -165,8 +165,8 @@ slot0x25keyX:
 	ldr r2, =slot0x25keyX
 	mov r1, #5
 	mov r0, #0x25
-	bl 0x80575B4
-	bl 0x805FB48
+	bl aes_setkey
+	bl aes_unk
 	.halfword 0xBD70		;pop {r4-r6, pc}
 .pool
 .close

@@ -32,7 +32,7 @@ patch005:
 	ldr r0, =0x2000E000
 	ldr r1, =0x2000E100
 	mov r2, #firm_addr
-	mov r3, #0x000EB000
+	mov r3, #firm_size
 	blx fread
 
 	ldr r4, =0x44846
