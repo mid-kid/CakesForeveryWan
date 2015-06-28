@@ -6,14 +6,12 @@ LD := arm-none-eabi-ld
 OC := arm-none-eabi-objcopy
 OPENSSL := openssl
 
-PYTHON := python
-PYTHON_VER_MAJOR := $(word 2,$(subst ., ,$(shell $(PYTHON) --version 2>&1)))
-ifneq ($(PYTHON_VER_MAJOR),2)
-	PYTHON := python2
-endif
-
-PYTHON3 := python
-ifneq ($(PYTHON_VER_MAJOR),3)
+PYTHON_VER_MAJOR := $(word 2, $(subst ., , $(shell python --version 2>&1)))
+ifeq ($(PYTHON_VER_MAJOR), 3)
+	PYTHON2 := python2
+	PYTHON3 := python
+else
+	PYTHON2 := python
 	PYTHON3 := python3
 endif
 
@@ -106,25 +104,25 @@ $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patche
 	@touch $@
 
 $(dir_build)/mset_4x/rop.dat: $(dir_build)/mset_4x/main.bin
-	$(PYTHON) $(dir_tools)/build-rop.py MSET_4X $< $@
+	$(PYTHON2) $(dir_tools)/build-rop.py MSET_4X $< $@
 
 $(dir_build)/mset_4x_dg/rop.dat: $(dir_build)/mset_4x_dg/main.bin
-	$(PYTHON) $(dir_tools)/build-rop.py MSET_4X_DG $< $@
+	$(PYTHON2) $(dir_tools)/build-rop.py MSET_4X_DG $< $@
 
 $(dir_build)/spider_4x/rop.dat: $(dir_build)/spider_4x/rop.dat.dec
-	$(PYTHON) $(dir_tools)/spider-encrypt.py $< $@
+	$(PYTHON2) $(dir_tools)/spider-encrypt.py $< $@
 $(dir_build)/spider_4x/rop.dat.dec: $(dir_build)/spider_4x/main.bin
-	$(PYTHON) $(dir_tools)/build-rop.py SPIDER_4X $< $@
+	$(PYTHON2) $(dir_tools)/build-rop.py SPIDER_4X $< $@
 
 $(dir_build)/spider_5x/rop.dat: $(dir_build)/spider_5x/rop.dat.dec
-	$(PYTHON) $(dir_tools)/spider-encrypt.py $< $@
+	$(PYTHON2) $(dir_tools)/spider-encrypt.py $< $@
 $(dir_build)/spider_5x/rop.dat.dec: $(dir_build)/spider_5x/main.bin
-	$(PYTHON) $(dir_tools)/build-rop.py SPIDER_5X $< $@
+	$(PYTHON2) $(dir_tools)/build-rop.py SPIDER_5X $< $@
 
 $(dir_build)/spider_9x/rop.dat: $(dir_build)/spider_9x/rop.dat.dec
-	$(PYTHON) $(dir_tools)/spider-encrypt.py $< $@
+	$(PYTHON2) $(dir_tools)/spider-encrypt.py $< $@
 $(dir_build)/spider_9x/rop.dat.dec: $(dir_build)/spider_9x/main.bin
-	$(PYTHON) $(dir_tools)/build-rop.py SPIDER_9X $< $@
+	$(PYTHON2) $(dir_tools)/build-rop.py SPIDER_9X $< $@
 
 # Create bin from elf
 $(dir_build)/%/main.bin: $(dir_build)/%/main.elf
