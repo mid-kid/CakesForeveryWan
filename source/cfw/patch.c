@@ -39,7 +39,6 @@ static void *temp = (void *)0x24300000;
 static const int nand_size_toshiba = 0x1D7800;
 static const int nand_size_samsung = 0x1DD000;
 
-// TODO: memcmp32?
 void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
 {
     // Searching backwards, since most of the stuff we'll search with this are near the end.
@@ -222,15 +221,14 @@ int patch_firm_all()
     return 0;
 }
 
-int load_cakes_info()
+int load_cakes_info(const char *dirpath)
 {
     FRESULT fr;
     DIR dir;
     FILINFO fno;
     FIL handle;
 
-    static const char *dirpath = "/cakes/patches";
-    static const int pathlen = 14;
+    const int pathlen = strlen(dirpath);
 
     static char lfn[_MAX_LFN + 1];
     fno.lfname = lfn;
@@ -255,6 +253,20 @@ int load_cakes_info()
         cake_list[cake_count].path[pathlen] = '/';
         memcpy(&cake_list[cake_count].path[pathlen + 1], fn, flen);
         cake_list[cake_count].path[pathlen + 1 + flen] = 0;
+
+        // Recurse into subdirectories
+        if (fno.fattrib & AM_DIR) {
+            // Using the path stored in the current cake.
+            fr = load_cakes_info(cake_list[cake_count].path);
+            if (fr != FR_OK) return fr;
+            continue;
+        }
+
+        // Make sure the filename ends in .cake
+        if (!memsearch(cake_list[cake_count].path, ".cake",
+                sizeof(cake_list[cake_count].path), 5)) {
+            continue;
+        }
 
         // Open the file
         fr = f_open(&handle, cake_list[cake_count].path, FA_READ);

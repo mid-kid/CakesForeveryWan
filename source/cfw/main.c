@@ -50,9 +50,9 @@ void main()
     }
 
     // This function already correctly draws error messages
-    if (load_firm() != 0) return;  
+    if (load_firm() != 0) return;
 
-    if (load_cakes_info() != 0) {
+    if (load_cakes_info("/cakes/patches") != 0) {
         draw_loading("Failed to read some cakes", "Make sure your cakes are up to date\n  and your SD card can be read correctly");
         return;
     }

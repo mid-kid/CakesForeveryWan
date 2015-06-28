@@ -134,7 +134,7 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y, ui
     }
 }
 
-int draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t color)
+int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, uint32_t color)
 {
     int length = strlen(string);
     for (int i = 0, line_i = 0; i < length; i++, line_i++) {
@@ -150,7 +150,7 @@ int draw_string(enum screen screen, char *string, int pos_x, int pos_y, uint32_t
     return pos_y;
 }
 
-void print(char *string)
+void print(const char *string)
 {
     // I'll just assume both screens have the same height.
     if (*print_pos > (screen_top_height - 30) / 10) {

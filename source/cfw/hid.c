@@ -23,7 +23,7 @@ uint16_t wait_key()
                 break;
             }
         }
-        
+
     } while (old_status == new_status);
 
     uint16_t return_status = new_status ^ old_status;

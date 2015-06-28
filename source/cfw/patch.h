@@ -16,6 +16,6 @@ int cake_count;
 
 int patch_firm();
 int patch_firm_all();
-int load_cakes_info();
+int load_cakes_info(const char *dirpath);
 
 #endif
