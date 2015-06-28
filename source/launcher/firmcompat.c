@@ -87,7 +87,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF76B38;
             fw->pdn_regs = 0xFFFD0000;
             fw->pxi_regs = 0xFFFD2000;
-            fw->gpu_regs = 0xFFFBC000;
+            fw->gpu_regs = 0xFFFCE000;
             break;
 
         case 0x022C0600:  // 2.44-6 8.0.0
@@ -100,7 +100,7 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF66F30;
             fw->pdn_regs = 0xFFFBE000;
             fw->pxi_regs = 0xFFFC0000;
-            fw->gpu_regs = 0xFFFC6000;
+            fw->gpu_regs = 0xFFFBC000;
             break;
 
         case 0x022E0000:  // 2.26-0 9.0.0
@@ -113,7 +113,6 @@ int set_firmware_offsets()
             fw->func_patch_return = 0xFFF279D8;
             fw->pdn_regs = 0xFFFC2000;
             fw->pxi_regs = 0xFFFC4000;
-            //fw->gpu_regs = 0xFFFC6000;
             fw->gpu_regs = 0xFFFC0000;
             break;
 
