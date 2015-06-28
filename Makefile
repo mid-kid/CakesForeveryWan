@@ -13,7 +13,6 @@ ifneq ($(PYTHON_VER_MAJOR),2)
 endif
 
 PYTHON3 := python
-PYTHON3_VER_MAJOR := $(word 3,$(subst ., ,$(shell $(PYTHON3) --version 2>&1)))
 ifneq ($(PYTHON_VER_MAJOR),3)
 	PYTHON3 := python3
 endif
