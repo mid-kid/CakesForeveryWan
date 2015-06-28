@@ -12,6 +12,12 @@
     "version_specific": [
         {
             "version": "0x49",
+            "variables": {
+                "firm_addr": "0x24000000",
+                "fopen": "0x0805B180",
+                "fread": "0x0804D9B0",
+                "pxi_wait_recv": "0x08055178"
+            },
             "patches": [
                 {
                     "offset": "0x080859C8"

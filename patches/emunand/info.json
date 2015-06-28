@@ -18,6 +18,11 @@
     "version_specific": [
         {
             "version": "0x49",
+            "variables": {
+                "sdmmc_unk0": "0x08062A28",
+                "sdmmc_unk1": "0x08078970",
+                "sdmmc_unk2": "0x08078750"
+            },
             "patches": [
                 {
                     "offset": "0x0801A4C0"

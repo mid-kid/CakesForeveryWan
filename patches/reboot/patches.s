@@ -11,14 +11,9 @@
 	.endif
 .endmacro
 
-; Variables
-firm_addr			equ 0x24000000
-fopen				equ 0x0805B180
-fread				equ 0x0804D9B0
-pxi_wait_recv		equ 0x08055178
+#!variables
 
-.create "patch1.bin", 0x080859C8
-.org 0x080859C8
+.create "patch1.bin"
 .arm
 patch005:
 	ldr r0, =0x2000E000
@@ -58,8 +53,7 @@ patch005:
 firm_fname:
 .close
 
-.create "patch2.bin", 0x08094454
-.org 0x08094454
+.create "patch2.bin"
 .arm
 	stmfd sp!, {r4-r11,lr}
 	sub sp, sp, #0x3C

@@ -1,9 +1,6 @@
 .nds
 
-; Variables
-sdmmc_unk0			equ 0x08062A28
-sdmmc_unk1			equ 0x08078970
-sdmmc_unk2			equ 0x08078750
+#!variables
 
 .create "patch1.bin"
 .arm

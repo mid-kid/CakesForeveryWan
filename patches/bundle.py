@@ -42,6 +42,13 @@ for version in info["version_specific"]:
         replaceby = ".create \"%(name)s\", %(offset)s\n.org %(offset)s" % patch
         verfile = verfile.replace(toreplace, replaceby)
 
+    # Set the version-specific variables
+    if "variables" in version:
+        vartext = ""
+        for variable in version["variables"]:
+            vartext += "%s equ %s\n" % (variable, version["variables"][variable])
+        verfile = verfile.replace("#!variables\n", vartext)
+
     # Build dir for this version
     try:
         mkdir(dir_build + "/" + ver)
