@@ -79,8 +79,8 @@ int set_firmware_offsets()
 
         case 0x02280000:  // 2.40-0 7.2.0
             fw->kernel_patch_address = 0xEFF8372B;
-            fw->reboot_patch_address = 0xEFFF4974;
-            fw->reboot_func_address = 0xFFF54BAC;
+            fw->reboot_patch_address = 0xEFFF4978;
+            fw->reboot_func_address = 0xFFF64AAC;
             fw->jump_table_address = 0xEFFF4C80;
             fw->fcram_address = 0xF0000000;
             fw->func_patch_address = 0xEFFE5B30;
