@@ -1,8 +1,8 @@
 #include "firm.h"
 
 #include <stdint.h>
-#include <draw.h>
-#include <memfuncs.h>
+#include "draw.h"
+#include "memfuncs.h"
 #include "fs.h"
 #include "menu.h"
 #include "crypto.h"

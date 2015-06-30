@@ -1,3 +1,6 @@
 [submodule "p3ds"]
 	path = p3ds
 	url = https://github.com/mid-kid/p3ds
+[submodule "CakeHax"]
+	path = CakeHax
+	url = https://github.com/mid-kid/CakeHax

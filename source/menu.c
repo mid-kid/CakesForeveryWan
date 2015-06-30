@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <memfuncs.h>
-#include <draw.h>
+#include "memfuncs.h"
+#include "draw.h"
 #include "hid.h"
 
 #define COLOR_TITLE 0x0000FF
