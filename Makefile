@@ -16,8 +16,6 @@ dir_source := source
 dir_build := build
 dir_out := out
 dir_patches := patches
-
-dir_p3ds := p3ds
 dir_cakehax := CakeHax
 
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
