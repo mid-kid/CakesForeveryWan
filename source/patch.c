@@ -9,6 +9,9 @@
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
 
+#define DHS_PATCH_COMPAT_DATA
+#include "../tools/dhs/include/dhs_patch/dhs_patch_compat.h"
+
 struct cake_header {
     uint8_t count: 8;
     uint8_t firm_ver;
@@ -27,7 +30,8 @@ struct patch {
 enum patch_options {
     patch_option_keyx = 0b00000001,
     patch_option_emunand = 0b00000010,
-    patch_option_save = 0b00000100
+    patch_option_save = 0b00000100,
+    patch_option_dhs = 0b00001000
 };
 
 struct cake_info *cake_list = (struct cake_info *)0x24300000;
@@ -133,6 +137,35 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
         }
 
         memset(offset, 0, 4);
+    }
+    if (options & patch_option_dhs) {
+        // Load the patch/hooks to itcm
+        void* itcm = (void*) 0x01FF8000;
+
+        if (read_file(itcm, "/dhs_patch.bin", 0x1000) == 0) {
+            print("dhs_patch loaded to itcm");
+
+            dhs_a9_compat_s *compat = NULL;
+            switch(firm_ver) {
+            case 0x49:
+                compat = &dhs_a9_compat_49;
+                break;
+            case 0x38:
+                compat = &dhs_a9_compat_38;
+                break;
+            case 0x1F:
+                compat = &dhs_a9_compat_1F;
+                break;
+            }
+            if(compat)
+                memcpy(itcm + 4, compat, sizeof(dhs_a9_compat_s));
+            else {
+                print("DHS unsupported for this firm version");
+                return 1;
+            }
+        } else {
+            print("Failed to open dhs_patch.bin");
+        }
     }
 
     return 0;

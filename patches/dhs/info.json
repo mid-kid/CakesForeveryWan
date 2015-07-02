@@ -1,0 +1,54 @@
+{
+    "name": "dhs",
+    "description": "DHS",
+    "patches": [
+        {
+            "name": "patch1.bin",
+            "options": 8
+        }, {
+            "name": "patch2.bin"
+        }
+    ],
+    "version_specific": [
+        {
+            "version": "0x49",
+            "patches": [
+                {
+                    "offset": "0x08086140"
+                }, {
+                    "offset": "0x08086174"
+                }
+            ]
+        },
+        {
+            "version": "0x38",
+            "patches": [
+                {
+                    "offset": "0x08086058"
+                }, {
+                    "offset": "0x0808608C"
+                }
+            ]
+        },
+        {
+            "version": "0x37",
+            "patches": [
+                {
+                    "offset": "0x08085FAC"
+                }, {
+                    "offset": "0x08085FE0"
+                }
+            ]
+        },
+        {
+            "version": "0x1F",
+            "patches": [
+                {
+                    "offset": "0x08087250"
+                }, {
+                    "offset": "0x08087284"
+                }
+            ]
+        }
+    ]
+}
