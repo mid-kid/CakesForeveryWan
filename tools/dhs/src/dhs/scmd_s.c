@@ -19,7 +19,7 @@ extern uint32_t __linear_heap;
 
 extern uint32_t pid;
 extern uint32_t firmVersion;
-uint32_t bdArgs[4];
+uint32_t bdArgs[8];
 
 static void _kget_kprocess()
 {
@@ -68,18 +68,128 @@ static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
 	return NULL;
 }
 
+static uint32_t _ktranslate_va_pa(uint32_t* mmu_table, uint32_t addr)
+{
+	uint32_t taddr = 0;
+
+	uint32_t table_offset = addr >> 20;
+	uint32_t l1 = mmu_table[table_offset];
+	if((l1 & 3) == 2)
+	{
+		if(l1 & (1 << 18)) // Supersection
+			taddr = (l1 & 0xFF000000) | (addr & ~0xFF000000);
+		else // Section
+			taddr = (l1 & 0xFFF00000) | (addr & ~0xFFF00000);
+	}
+	else if((l1 & 3) == 1)
+	{
+		uint32_t* mmu_table_l2 = (uint32_t*)((l1 & 0xFFFFFC00) + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
+		uint32_t table_offset = (addr << 12) >> 24;
+		uint32_t l2 = mmu_table_l2[table_offset];
+
+		if((l2 & 3) == 1) // Large page
+			taddr = (l2 & 0xFFFF0000) | (addr & ~0xFFFF0000);
+		else if((l2 & 3) >= 2) // Small page
+			taddr = (l2 & 0xFFFFF000) | (addr & ~0xFFFFF000);
+	}
+
+	return taddr;
+}
+
+static uint32_t _ktranslate_pa_va_l2(uint32_t* mmu_table_l2, uint32_t addr, uint32_t table_l1_offset)
+{
+	uint32_t skip = 1;
+	for(uint32_t table_l2_offset = 0; table_l2_offset < 256; table_l2_offset += skip, skip = 1)
+	{
+		// Page table
+		uint32_t base = 0;
+		uint32_t mask = 0;
+		uint32_t size = 0;
+
+		uint32_t l2 = mmu_table_l2[table_l2_offset];
+		if(l2)
+		{
+			if((l2 & 3) == 1) // Large page
+			{
+				mask = 0xFFFF0000;
+				base = l2 & mask;
+				size = 16 * 4 * 1024;
+
+				skip = 16;
+			}
+			else if((l2 & 3) >= 2) // Small page
+			{
+				mask = 0xFFFFF000;
+				base = l2 & mask;
+				size = 4 * 1024;
+			}
+		}
+
+		if(mask && addr >= base && addr < base + size)
+			return (table_l1_offset << 20) | (table_l2_offset << 12) | (addr & ~mask);
+	}
+
+	return 0;
+}
+
+static uint32_t _ktranslate_pa_va(uint32_t* mmu_table, uint32_t addr)
+{
+	uint32_t taddr = 0;
+	uint32_t skip = 1;
+	for(uint32_t table_l1_offset = 0; table_l1_offset < 4096; table_l1_offset += skip, skip = 1)
+	{
+		uint32_t base = 0;
+		uint32_t mask = 0;
+		uint32_t size = 0;
+
+		uint32_t l1 = mmu_table[table_l1_offset];
+		if((l1 & 3) == 2)
+		{
+			if(l1 & (1 << 18)) // Supersection
+			{
+				mask = 0xFF000000;
+				base = l1 & mask;
+				size = 16 * 1024 * 1024;
+
+				skip = 16;
+			}
+			else // Section
+			{
+				mask = 0xFFF00000;
+				base = l1 & mask;
+				size = 1024 * 1024;
+			}
+
+			if(mask && addr >= base && addr < base + size)
+				return (table_l1_offset << 20) | (addr & ~mask);
+
+			mask = 0;
+		}
+		else if((l1 & 3) == 1)
+		{
+			uint32_t* mmu_table_l2 = (uint32_t*)((l1 & 0xFFFFFC00) + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
+			taddr = _ktranslate_pa_va_l2(mmu_table_l2, addr, table_l1_offset);
+
+			if(taddr) return taddr;
+		}
+	}
+
+	return 0;
+}
+
 static void _ktranslate()
 {
 	asm volatile("cpsid aif");
 
 	uint32_t addr = bdArgs[0];
 	uint32_t from = bdArgs[1];
-	uint32_t namehi = bdArgs[2];
-	uint32_t namelo = bdArgs[3];
+	uint32_t to = bdArgs[2];
+	uint32_t namehi = bdArgs[3];
+	uint32_t namelo = bdArgs[4];
 
 	uint32_t taddr = 0;
 	uint32_t* mmu_table = 0;
-	if(from == MEMTYPE_PROCESS)
+	if(from == MEMTYPE_PROCESS || to == MEMTYPE_PROCESS)
 	{
 		void* kprocess = _kfind_kprocess(namehi, namelo);
 		if(kprocess)
@@ -90,42 +200,27 @@ static void _ktranslate()
 				mmu_table = (uint32_t*)((KProcess_8*)kprocess)->mmu_table;
 		}
 	}
-	else if(from == MEMTYPE_KERNEL)
+	else if(from == MEMTYPE_KERNEL || to == MEMTYPE_KERNEL)
 		mmu_table = (uint32_t*)(0x1FFF8000 + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
 
 	if(mmu_table)
 	{
-		uint32_t table_offset = addr >> 20;
-		uint32_t l1 = mmu_table[table_offset];
-		if((l1 & 3) == 2)
-		{
-			if(l1 & (1 << 18))
-				taddr = (l1 & 0xFF000000) | (addr & ~0xFF000000);
-			else
-				taddr = (l1 & 0xFFF00000) | (addr & ~0xFFF00000);
-		}
-		else if((l1 & 3) == 1)
-		{
-			uint32_t* mmu_table_l2 = (uint32_t*)((l1 & 0xFFFFFC00) + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
-			uint32_t table_offset = (addr << 12) >> 24;
-			uint32_t l2 = mmu_table_l2[table_offset];
-
-			if((l2 & 3) == 1)
-				taddr = (l2 & 0xFFFF0000) | (addr & ~0xFFFF0000);
-			else if((l2 & 3) == 2)
-				taddr = (l2 & 0xFFFFF000) | (addr & ~0xFFFFF000);
-		}
+		if(to == MEMTYPE_PHYSICAL)
+			taddr = _ktranslate_va_pa(mmu_table, addr);
+		else if(from == MEMTYPE_PHYSICAL)
+			taddr = _ktranslate_pa_va(mmu_table, addr);
 	}
 
 	bdArgs[0] = taddr;
 }
 
-static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t namehi, uint32_t namelo)
+static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t to, uint32_t namehi, uint32_t namelo)
 {
 	bdArgs[0] = addr;
 	bdArgs[1] = from;
-	bdArgs[2] = namehi;
-	bdArgs[3] = namelo;
+	bdArgs[2] = to;
+	bdArgs[3] = namehi;
+	bdArgs[4] = namelo;
 	svcBackdoor((void*)_ktranslate);
 
 	return bdArgs[0];
@@ -274,7 +369,7 @@ int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t 
 	int32_t ret = 0;
 
 	scmdres_translate_s res;
-	res.address = ktranslate(cmd->address, cmd->from, cmd->namehi, cmd->namelo);
+	res.address = ktranslate(cmd->address, cmd->from, cmd->to, cmd->namehi, cmd->namelo);
 	res.res = ret;
 	send(sockfd, &res, sizeof(res), 0);
 

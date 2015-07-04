@@ -350,11 +350,15 @@ int cInstallFirm(int sockfd, void* buffer, size_t bufSize)
 	return 0;
 }
 
-int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t from, const char* process)
+int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t from, uint32_t to, const char* process)
 {
-	if(from > MEMTYPE_PROCESS) // Only can convert from kernel/process va to pa now
+	if(from > MEMTYPE_PHYSICAL || to > MEMTYPE_PHYSICAL)
 		return -1;
-	if(from == MEMTYPE_PROCESS && process == NULL)
+	if((from == MEMTYPE_PROCESS || to == MEMTYPE_PROCESS) && process == NULL)
+		return -1;
+	if(from != MEMTYPE_PHYSICAL && to != MEMTYPE_PHYSICAL) // no user va to kernel va or vice versa, yet
+		return -1;
+	if(from == to) // ...
 		return -1;
 
 	fprintf(stdout, "Translate address\n");
@@ -365,6 +369,7 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 	cmd.req.cmd = SCMD_TRANSLATE;
 	cmd.address = (uint32_t)addr;
 	cmd.from = from;
+	cmd.to = to;
 	if(process != NULL)
 	{
 		char namebuf[9];
