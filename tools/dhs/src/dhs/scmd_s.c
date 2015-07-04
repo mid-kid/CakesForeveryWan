@@ -132,11 +132,11 @@ static uint32_t _ktranslate_pa_va_l2(uint32_t* mmu_table_l2, uint32_t addr, uint
 	return 0;
 }
 
-static uint32_t _ktranslate_pa_va(uint32_t* mmu_table, uint32_t addr)
+static uint32_t _ktranslate_pa_va(uint32_t* mmu_table, uint32_t addr, uint32_t range)
 {
 	uint32_t taddr = 0;
 	uint32_t skip = 1;
-	for(uint32_t table_l1_offset = 0; table_l1_offset < 4096; table_l1_offset += skip, skip = 1)
+	for(uint32_t table_l1_offset = 0; table_l1_offset < range; table_l1_offset += skip, skip = 1)
 	{
 		uint32_t base = 0;
 		uint32_t mask = 0;
@@ -188,6 +188,7 @@ static void _ktranslate()
 	uint32_t namelo = bdArgs[4];
 
 	uint32_t taddr = 0;
+	uint32_t mmu_table_size = 0;
 	uint32_t* mmu_table = 0;
 	if(from == MEMTYPE_PROCESS || to == MEMTYPE_PROCESS)
 	{
@@ -195,20 +196,29 @@ static void _ktranslate()
 		if(kprocess)
 		{
 			if(firmVersion < 0x022C0600) // Less than ver 8.0.0
+			{
 				mmu_table = (uint32_t*)((KProcess_4*)kprocess)->mmu_table;
+				mmu_table_size = ((KProcess_4*)kprocess)->mmu_table_size;
+			}
 			else
+			{
 				mmu_table = (uint32_t*)((KProcess_8*)kprocess)->mmu_table;
+				mmu_table_size = ((KProcess_8*)kprocess)->mmu_table_size;
+			}
 		}
 	}
 	else if(from == MEMTYPE_KERNEL || to == MEMTYPE_KERNEL)
+	{
 		mmu_table = (uint32_t*)(0x1FFF8000 + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
+		mmu_table_size = 4096 * sizeof(uint32_t);
+	}
 
 	if(mmu_table)
 	{
 		if(to == MEMTYPE_PHYSICAL)
 			taddr = _ktranslate_va_pa(mmu_table, addr);
 		else if(from == MEMTYPE_PHYSICAL)
-			taddr = _ktranslate_pa_va(mmu_table, addr);
+			taddr = _ktranslate_pa_va(mmu_table, addr, mmu_table_size / sizeof(uint32_t));
 	}
 
 	bdArgs[0] = taddr;

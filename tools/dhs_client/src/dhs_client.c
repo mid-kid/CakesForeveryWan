@@ -80,11 +80,11 @@ void printHelp(char* name)
 	fprintf(stderr, "Commands:\n");
 	fprintf(stderr, "  info - Print server info\n");
 	fprintf(stderr, "  dump - Dump memory\n");
-	fprintf(stderr, "    -addr\t\t Virtual address to dump\n");
+	fprintf(stderr, "    -addr\t\t Kernel virtual address to dump\n");
 	fprintf(stderr, "    -size\t\t Dump size\n");
 	fprintf(stderr, "    -file\t\t Output file (optional)\n");
 	fprintf(stderr, "  patch - Patch memory\n");
-	fprintf(stderr, "    -addr\t\t Virtual address to patch\n");
+	fprintf(stderr, "    -addr\t\t Kernel virtual address to patch\n");
 	fprintf(stderr, "    -size\t\t Patch size (ignored when no input file is specified)\n");
 	fprintf(stderr, "    -file\t\t Input file (optional)\n");
 	fprintf(stderr, "    -value\t\t Value to patch to (optional)\n");
@@ -95,10 +95,12 @@ void printHelp(char* name)
 	fprintf(stderr, "    -titleid\t\t Title id\n");
 	fprintf(stderr, "    -mediatype\t\t Media type, 0 : NAND, 1 : SD\n");
 	fprintf(stderr, "  installfirm - Perform AM:InstallNATIVEFIRM\n");
-	fprintf(stderr, "  translate - Translate virtual address to physical address\n");
-	fprintf(stderr, "    -addr\t\t Virtual address to translate\n");
-	fprintf(stderr, "    -from\t\t 0 : Kernel, 1 : Process\n");
-	fprintf(stderr, "    -process\t\t If \"from\" is 1, the name of the process table to use\n");
+	fprintf(stderr, "  translate - Translate address\n");
+	fprintf(stderr, "    -addr\t\t Address to translate\n");
+	fprintf(stderr, "    -from\t\t 0 : Kernel, 1 : Process, 2: Physical\n");
+	fprintf(stderr, "    -to\t\t\t 0 : Kernel, 1 : Process, 2: Physical\n");
+	fprintf(stderr, "    -process\t\t If \"from\" or \"to\" is 1, the name of the\n");
+	fprintf(stderr, "            \t\t process table to use\n");
 }
 
 typedef struct input_s

@@ -50,7 +50,8 @@ typedef struct KCodeSet
 
 typedef struct KProcess_4
 {
-	uint8_t pad0[0x54];
+	uint8_t pad0[0x50];
+	uint32_t mmu_table_size;// 0x50
 	uint32_t mmu_table;		// 0x54
 	uint8_t pad1[0x50];
 	KCodeSet* kcodeset;		// 0xA8
@@ -59,7 +60,8 @@ typedef struct KProcess_4
 
 typedef struct KProcess_8
 {
-	uint8_t pad0[0x5C];
+	uint8_t pad0[0x58];
+	uint32_t mmu_table_size;// 0x58
 	uint32_t mmu_table;		// 0x5C
 	uint8_t pad1[0x50];
 	KCodeSet* kcodeset;		// 0xB0
