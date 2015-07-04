@@ -16,7 +16,8 @@ enum DHSC_CMD
 	DHSC_EXAMINE,
 	DHSC_INSTALL,
 	DHSC_DELETE,
-	DHSC_INSTALLFIRM
+	DHSC_INSTALLFIRM,
+	DHSC_TRANSLATE
 };
 
 int connectToServer(const char* host, const char* port)
@@ -94,6 +95,10 @@ void printHelp(char* name)
 	fprintf(stderr, "    -titleid\t\t Title id\n");
 	fprintf(stderr, "    -mediatype\t\t Media type, 0 : NAND, 1 : SD\n");
 	fprintf(stderr, "  installfirm - Perform AM:InstallNATIVEFIRM\n");
+	fprintf(stderr, "  translate - Translate virtual address to physical address\n");
+	fprintf(stderr, "    -addr\t\t Virtual address to translate\n");
+	fprintf(stderr, "    -from\t\t 0 : Kernel, 1 : Process\n");
+	fprintf(stderr, "    -process\t\t If \"from\" is 1, the name of the process table to use\n");
 }
 
 typedef struct input_s
@@ -101,10 +106,13 @@ typedef struct input_s
 	uint32_t cmd;
 
 	const char* fname;
+	const char* process;
 	uint32_t mediatype;
 	uint64_t titleid;
 	void* addr;
 	uint32_t size;
+	uint32_t from;
+	uint32_t to;
 	uint32_t value;
 	uint32_t value_set;
 } input_s;
@@ -125,6 +133,8 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		input->cmd = DHSC_DELETE;
 	else if(strcmp(argv[0], "installfirm") == 0)
 		input->cmd = DHSC_INSTALLFIRM;
+	else if(strcmp(argv[0], "translate") == 0)
+		input->cmd = DHSC_TRANSLATE;
 	else
 		return -1;
 
@@ -132,10 +142,16 @@ int parseArgs(input_s* input, int argc, char *argv[])
 	{
 		if(strcmp(argv[i], "-file") == 0 && (i + 1) < argc)
 			input->fname = argv[i + 1];
+		if(strcmp(argv[i], "-process") == 0 && (i + 1) < argc)
+			input->process = argv[i + 1];
 		else if(strcmp(argv[i], "-addr") == 0 && (i + 1) < argc)
 			input->addr = (void*)strtoul(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-size") == 0 && (i + 1) < argc)
 			input->size = strtoul(argv[i + 1], NULL, 0);
+		else if(strcmp(argv[i], "-from") == 0 && (i + 1) < argc)
+			input->from = strtoul(argv[i + 1], NULL, 0);
+		else if(strcmp(argv[i], "-to") == 0 && (i + 1) < argc)
+			input->to = strtoul(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-mediatype") == 0 && (i + 1) < argc)
 			input->mediatype = strtoul(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-titleid") == 0 && (i + 1) < argc)
@@ -195,6 +211,9 @@ int main(int argc, char *argv[])
 			break;
 		case DHSC_INSTALLFIRM:
 			res = cInstallFirm(sockfd, buffer, bufSize);
+			break;
+		case DHSC_TRANSLATE:
+			res = cTranslate(sockfd, buffer, bufSize, input.addr, input.from, input.process);
 			break;
 		default:
 			break;

@@ -159,6 +159,14 @@ void acceptAndServe()
 			case SCMD_INSTALLFIRM:
 				res = sInstallFirm(scmd, sockfd, buffer, bufSize);
 				break;
+			case SCMD_TRANSLATE:
+				if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_translate_s)) == 0)
+				{
+					scmdreq_translate_s scmdTranslate;
+					memcpy(&scmdTranslate, scmd, sizeof(scmdreq_translate_s));
+					res = sTranslate(&scmdTranslate, sockfd, buffer, bufSize);
+				}
+				break;
 			default:
 				send(sockfd, &ack, sizeof(ack), 0);
 				break;
@@ -180,18 +188,6 @@ void init()
 	if((ret = amInit()) != 0)
 		DIE(0x14000010, ret);
 }
-
-typedef struct KProcess_4
-{
-	u8 dummy[0xAC];
-	u32 pid;
-} KProcess_4;
-
-typedef struct KProcess_8
-{
-	u8 dummy[0xB4];
-	u32 pid;
-} KProcess_8;
 
 void patchPid()
 {

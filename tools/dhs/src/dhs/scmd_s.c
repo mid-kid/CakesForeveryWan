@@ -18,6 +18,7 @@ extern uint32_t __heapBase;
 extern uint32_t __linear_heap;
 
 extern uint32_t pid;
+extern uint32_t firmVersion;
 uint32_t bdArgs[4];
 
 static void _kget_kprocess()
@@ -44,6 +45,90 @@ static void kmemcpy(void* buffer, void* addr, uint32_t size)
 	bdArgs[1] = (uint32_t)addr;
 	bdArgs[2] = size;
 	svcBackdoor((void*)_kmemcpy);
+}
+
+static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
+{
+	size_t size = 0;
+	void* currKProcess = (void*)*((uint32_t*)0xFFFF9004);
+	if(firmVersion < 0x022C0600) // Less than ver 8.0.0
+		size = 0x260;
+	else
+		size = 0x268;
+
+	void* offset = currKProcess - pid * size;
+	for(int i = 0; *(uint32_t*)(offset + i * size + 4); i++)
+	{
+		void* toffset = offset + i * size;
+		KCodeSet* codeset = (firmVersion < 0x022C0600) ? ((KProcess_4*)toffset)->kcodeset : ((KProcess_8*)toffset)->kcodeset;
+		if(codeset->namehi == namehi && codeset->namelo == namelo)
+			return toffset;
+	}
+
+	return NULL;
+}
+
+static void _ktranslate()
+{
+	asm volatile("cpsid aif");
+
+	uint32_t addr = bdArgs[0];
+	uint32_t from = bdArgs[1];
+	uint32_t namehi = bdArgs[2];
+	uint32_t namelo = bdArgs[3];
+
+	uint32_t taddr = 0;
+	uint32_t* mmu_table = 0;
+	if(from == MEMTYPE_PROCESS)
+	{
+		void* kprocess = _kfind_kprocess(namehi, namelo);
+		if(kprocess)
+		{
+			if(firmVersion < 0x022C0600) // Less than ver 8.0.0
+				mmu_table = (uint32_t*)((KProcess_4*)kprocess)->mmu_table;
+			else
+				mmu_table = (uint32_t*)((KProcess_8*)kprocess)->mmu_table;
+		}
+	}
+	else if(from == MEMTYPE_KERNEL)
+		mmu_table = (uint32_t*)(0x1FFF8000 + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
+
+	if(mmu_table)
+	{
+		uint32_t table_offset = addr >> 20;
+		uint32_t l1 = mmu_table[table_offset];
+		if((l1 & 3) == 2)
+		{
+			if(l1 & (1 << 18))
+				taddr = (l1 & 0xFF000000) | (addr & ~0xFF000000);
+			else
+				taddr = (l1 & 0xFFF00000) | (addr & ~0xFFF00000);
+		}
+		else if((l1 & 3) == 1)
+		{
+			uint32_t* mmu_table_l2 = (uint32_t*)((l1 & 0xFFFFFC00) + ((firmVersion < 0x022C0600) ? 0xD0000000 : 0xC0000000));
+			uint32_t table_offset = (addr << 12) >> 24;
+			uint32_t l2 = mmu_table_l2[table_offset];
+
+			if((l2 & 3) == 1)
+				taddr = (l2 & 0xFFFF0000) | (addr & ~0xFFFF0000);
+			else if((l2 & 3) == 2)
+				taddr = (l2 & 0xFFFFF000) | (addr & ~0xFFFFF000);
+		}
+	}
+
+	bdArgs[0] = taddr;
+}
+
+static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t namehi, uint32_t namelo)
+{
+	bdArgs[0] = addr;
+	bdArgs[1] = from;
+	bdArgs[2] = namehi;
+	bdArgs[3] = namelo;
+	svcBackdoor((void*)_ktranslate);
+
+	return bdArgs[0];
 }
 
 int32_t sGetInfo(scmdreq_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
@@ -178,6 +263,18 @@ int32_t sInstallFirm(scmdreq_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
 	int32_t ret = AM_InstallNativeFirm();
 
 	scmdres_installfirm_s res;
+	res.res = ret;
+	send(sockfd, &res, sizeof(res), 0);
+
+	return ret;
+}
+
+int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
+{
+	int32_t ret = 0;
+
+	scmdres_translate_s res;
+	res.address = ktranslate(cmd->address, cmd->from, cmd->namehi, cmd->namelo);
 	res.res = ret;
 	send(sockfd, &res, sizeof(res), 0);
 

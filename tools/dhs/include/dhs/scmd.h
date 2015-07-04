@@ -12,8 +12,59 @@ enum SCMD
 	SCMD_PATCH = 3,
 	SCMD_INSTALL = 4,
 	SCMD_DELETE = 5,
-	SCMD_INSTALLFIRM = 6
+	SCMD_INSTALLFIRM = 6,
+	SCMD_TRANSLATE = 7
 };
+
+enum SCMD_MEMTYPE
+{
+	MEMTYPE_KERNEL = 0,
+	MEMTYPE_PROCESS,
+	MEMTYPE_PHYSICAL
+};
+
+typedef struct KMemInfo
+{
+	void* addr;
+	uint32_t total_pages;
+	uint32_t binfo_count;		// KBlockInfo count for section
+	void* binfo_first;			// Pointer to KLinkedListNode that holds a pointer to the first KBlockInfo object for that section
+	void* binfo_last;			// Pointer to KLinkedListNode that holds a pointer to the last KBlockInfo object for that section
+} KMemInfo;
+
+typedef struct KCodeSet
+{
+	void* vtable;
+	uint32_t ref_count;
+	KMemInfo text;
+	KMemInfo rodata;
+	KMemInfo data;
+	uint32_t text_pages;
+	uint32_t ro_pages;
+	uint32_t rw_pages;
+	uint32_t namehi;
+	uint32_t namelo;
+	uint32_t unk;
+	uint64_t titleid;
+} KCodeSet;
+
+typedef struct KProcess_4
+{
+	uint8_t pad0[0x54];
+	uint32_t mmu_table;		// 0x54
+	uint8_t pad1[0x50];
+	KCodeSet* kcodeset;		// 0xA8
+	uint32_t pid;			// 0xAC
+} KProcess_4;
+
+typedef struct KProcess_8
+{
+	uint8_t pad0[0x5C];
+	uint32_t mmu_table;		// 0x5C
+	uint8_t pad1[0x50];
+	KCodeSet* kcodeset;		// 0xB0
+	uint32_t pid;			// 0xB4
+} KProcess_8;
 
 typedef struct scmdreq_s
 {
@@ -102,5 +153,21 @@ typedef struct scmdres_installfirm_s
 {
 	uint32_t res;
 } scmdres_installfirm_s;
+
+typedef struct scmdreq_translate_s
+{
+	scmdreq_s req;
+	uint32_t from;
+	uint32_t to;
+	uint32_t namehi;
+	uint32_t namelo;
+	uint32_t address;
+} scmdreq_translate_s;
+
+typedef struct scmdres_translate_s
+{
+	uint32_t res;
+	uint32_t address;
+} scmdres_translate_s;
 
 #endif /*__SCMD_H_*/
