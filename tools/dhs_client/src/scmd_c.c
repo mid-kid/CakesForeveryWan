@@ -249,6 +249,7 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 		return -1;
 
 	fprintf(stdout, "Installing: %s\n", fname);
+	fprintf(stdout, " mediatype : %s\n", mediatype == 0 ? "NAND" : "SD");
 
 	ssize_t readBytes = 0;
 	FILE* file = fopen(fname, "rb");
@@ -260,7 +261,7 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 		scmdreq_install_s cmd;
 		cmd.req.magic = SCMD_MAGIC;
 		cmd.req.cmd = SCMD_INSTALL;
-		cmd.media = 1;
+		cmd.media = mediatype;
 		cmd.filesize = size;
 
 		send(sockfd, &cmd, sizeof(cmd), 0);
@@ -339,6 +340,50 @@ int cInstallFirm(int sockfd, void* buffer, size_t bufSize)
 	if(readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_installfirm_s)) == sizeof(scmdres_installfirm_s))
 	{
 		printResponse(((scmdres_installfirm_s*)buffer)->res);
+	}
+	else
+	{
+		fprintf(stderr, "No response from server\n");
+		exit(-1);
+	}
+
+	return 0;
+}
+
+int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t from, const char* process)
+{
+	if(from > MEMTYPE_PROCESS) // Only can convert from kernel/process va to pa now
+		return -1;
+	if(from == MEMTYPE_PROCESS && process == NULL)
+		return -1;
+
+	fprintf(stdout, "Translate address\n");
+	fprintf(stdout, " input : 0x%08X\n", (uint32_t)addr);
+
+	scmdreq_translate_s cmd;
+	cmd.req.magic = SCMD_MAGIC;
+	cmd.req.cmd = SCMD_TRANSLATE;
+	cmd.address = (uint32_t)addr;
+	cmd.from = from;
+	if(process != NULL)
+	{
+		char namebuf[9];
+		memset(namebuf, 0, 9);
+		sprintf(namebuf, "%s", process);
+
+		cmd.namehi = *(uint32_t*)(namebuf);
+		cmd.namelo = *(uint32_t*)(namebuf + 4);
+
+		printf("%08X%08X\n", cmd.namehi, cmd.namelo);
+
+		fprintf(stdout, " process : %s\n", process);
+	}
+
+	send(sockfd, &cmd, sizeof(cmd), 0);
+	if(readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_translate_s)) == sizeof(scmdres_translate_s))
+	{
+		printResponse(((scmdres_translate_s*)buffer)->res);
+		fprintf(stdout, "Address : 0x%08X\n", ((scmdres_translate_s*)buffer)->address);
 	}
 	else
 	{
