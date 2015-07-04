@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 			res = cInstallFirm(sockfd, buffer, bufSize);
 			break;
 		case DHSC_TRANSLATE:
-			res = cTranslate(sockfd, buffer, bufSize, input.addr, input.from, input.process);
+			res = cTranslate(sockfd, buffer, bufSize, input.addr, input.from, input.to, input.process);
 			break;
 		default:
 			break;
