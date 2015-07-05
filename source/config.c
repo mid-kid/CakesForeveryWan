@@ -30,22 +30,22 @@ void load_config()
             }
         }
     }
-    
+
     print("Loaded config file");
 }
 
 void save_config()
 {
-    // This is the maximum size our file could be.
-    int max_size = sizeof(struct config_file) + sizeof(config->autoboot_list[0]) * cake_count;
+    // This is the maximum size the autoboot_list could be
+    unsigned int autoboot_size = sizeof(config->autoboot_list[0]) * cake_count;
 
     // Boundary checking. We expect 0x24500000 to be used.
-    if (max_size > 0x100000) {
-        max_size = 0x100000;
+    if (autoboot_size > 0x100000 - sizeof(struct config_file)) {
+        autoboot_size = 0x100000 - sizeof(struct config_file);
     }
 
     // Clean the memory area. We don't want to dump random bytes.
-    memset32(config, 0, max_size);
+    memset32(config->autoboot_list, 0, autoboot_size);
 
     // More boundary checking. Make absolutely sure we don't write on 0x24500000.
     const int max_autoboot = (0x100000 - sizeof(struct config_file)) /

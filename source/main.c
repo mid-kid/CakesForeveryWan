@@ -5,6 +5,7 @@
 #include "firm.h"
 #include "draw.h"
 #include "fs.h"
+#include "hid.h"
 
 void menu_select_patches()
 {
@@ -22,11 +23,24 @@ void menu_select_patches()
     memcpy(cake_selected, result, cake_count * sizeof(int));
 }
 
+void menu_config()
+{
+    char *options[] = {"Enable autoboot (Press \"L\" to enter the menu)"};
+    int preselected[] = {config->autoboot_enabled};
+
+    int *result = draw_selection_menu("Configuration", sizeof(options) / sizeof(char *),
+                                      options, preselected);
+
+    // Apply the options
+    config->autoboot_enabled = result[0];
+}
+
 void menu_main()
 {
     while (1) {
         char *options[] = {"Boot CFW",
-                           "Select Patches"};
+                           "Select Patches",
+                           "Configuration"};
         int result = draw_menu("CakesFW", 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -36,6 +50,9 @@ void menu_main()
                 break;
             case 1:
                 menu_select_patches();
+                break;
+            case 2:
+                menu_config();
                 break;
         }
     }
@@ -59,6 +76,11 @@ void main()
     }
 
     load_config();
+
+    // If the L button isn't pressed, autoboot.
+    if (config->autoboot_enabled && *hid_regs ^ 0xFFF ^ key_l) {
+        boot_cfw();
+    }
 
     menu_main();
 }

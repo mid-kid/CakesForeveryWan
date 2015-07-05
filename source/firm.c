@@ -19,6 +19,7 @@ static int firm_size = 0;
 static firm_h *firm_loc_encrypted = (firm_h *)0x24100000;
 static const int firm_size_encrypted = 0xF0000;
 static uint8_t firm_key[16] = {0};
+uint8_t firm_ver = 0xFF;
 
 int save_firm = 0;
 const char *save_path = "/cakes/patched_firm.bin";
@@ -33,7 +34,7 @@ struct firm_signature firm_signatures[] = {
      .ver = 0x38},
     {.sig = {0x5C, 0x6A, 0x51, 0xF3, 0x79, 0x4D, 0x21, 0x91, 0x0B, 0xBB, 0xFD, 0x17, 0x7B, 0x72, 0x6B, 0x59},
      .ver = 0x49},
-    {.ver = 0}
+    {.ver = 0xFF}
 };
 
 int prepare_files()
@@ -106,7 +107,7 @@ int decrypt_firm()
     }
 
     // Determine firmware version
-    for (int i = 0; firm_signatures[i].ver != 0; i++) {
+    for (int i = 0; firm_signatures[i].ver != 0xFF; i++) {
         if (memcmp(firm_signatures[i].sig, firm->section[0].hash, 0x10) == 0) {
             firm_ver = firm_signatures[i].ver;
         }
