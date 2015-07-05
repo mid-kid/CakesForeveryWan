@@ -17,7 +17,10 @@ enum DHSC_CMD
 	DHSC_INSTALL,
 	DHSC_DELETE,
 	DHSC_INSTALLFIRM,
-	DHSC_TRANSLATE
+	DHSC_TRANSLATE,
+
+	// Pseudo commands
+	DHSC_SCREENSHOT = 1000,
 };
 
 int connectToServer(const char* host, const char* port)
@@ -137,6 +140,8 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		input->cmd = DHSC_INSTALLFIRM;
 	else if(strcmp(argv[0], "translate") == 0)
 		input->cmd = DHSC_TRANSLATE;
+	else if(strcmp(argv[0], "screenshot") == 0)
+		input->cmd = DHSC_SCREENSHOT;
 	else
 		return -1;
 
@@ -200,7 +205,7 @@ int main(int argc, char *argv[])
 			res = cGetInfo(sockfd, buffer, bufSize);
 			break;
 		case DHSC_DUMP:
-			res = cDump(sockfd, buffer, bufSize, input.addr, input.size, input.fname);
+			res = cDump(sockfd, buffer, bufSize, input.addr, input.size, input.fname, NULL);
 			break;
 		case DHSC_PATCH:
 			res = cPatch(sockfd, buffer, bufSize, input.addr, input.size, input.fname, input.value, input.value_set);
@@ -216,6 +221,9 @@ int main(int argc, char *argv[])
 			break;
 		case DHSC_TRANSLATE:
 			res = cTranslate(sockfd, buffer, bufSize, input.addr, input.from, input.to, input.process);
+			break;
+		case DHSC_SCREENSHOT:
+			res = cScreenshot(sockfd, buffer, bufSize, input.fname);
 			break;
 		default:
 			break;

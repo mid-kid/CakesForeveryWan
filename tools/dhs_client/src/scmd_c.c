@@ -92,7 +92,7 @@ int cGetInfo(int sockfd, void* buffer, size_t bufSize)
 	return 0;
 }
 
-int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, const char* fname)
+int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, const char* fname, void* dbuffer)
 {
 	if(addr == NULL || size == 0)
 		return -1;
@@ -126,8 +126,8 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 					if(readBytes)
 					{
 						fwrite(buffer + filled, readBytes, 1, file);
-						readBytes = filled = 0;
 						size -= readBytes;
+						readBytes = filled = 0;
 					}
 					if(size)
 					{
@@ -135,7 +135,6 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 						if(readBytes <= 0)
 							break;
 					}
-
 				} while(size && readBytes);
 
 				fclose(file);
@@ -145,6 +144,24 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 				fprintf(stderr, "Failed to open file : %s\n", fname);
 				exit(-1);
 			}
+		}
+		else if(dbuffer)
+		{
+			do
+			{
+				if(readBytes)
+				{
+					memcpy(dbuffer + (cmd.size - size), buffer + filled, readBytes);
+					size -= readBytes;
+					readBytes = filled = 0;
+				}
+				if(size)
+				{
+					readBytes = recv(sockfd, buffer, bufSize, 0);
+					if(readBytes <= 0)
+						break;
+				}
+			} while(size && readBytes);
 		}
 		else
 		{
@@ -394,6 +411,137 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 	{
 		fprintf(stderr, "No response from server\n");
 		exit(-1);
+	}
+
+	return 0;
+}
+
+typedef struct lcd_fb_setup
+{
+	uint16_t height;			// 0x5C
+	uint16_t width;				// 0x5E
+	uint8_t pad0[0x68 - 0x60];
+	void* fb_left1;				// 0x68
+	void* fb_left2;
+	uint32_t format;
+	uint32_t pad1;
+	uint32_t select;			// 0x78
+	uint8_t pad2[0x90 - 0x7C];
+	uint32_t stride;			// 0x90
+	void* fb_right1;			// 0x94
+	void* fb_right2;
+} lcd_fb_setup;
+
+#pragma pack(push, 2)
+
+typedef struct dib_h
+{
+	uint32_t header_size;
+	uint32_t width;
+	uint32_t height;
+	uint16_t plane;
+	uint16_t bits;
+	uint32_t comp;
+	uint32_t data_size;
+	uint32_t junk[4];
+} dib_h;
+
+typedef struct bm_h
+{
+	uint16_t magic;
+	uint32_t file_size;
+	uint32_t pad;
+	uint32_t offset;
+	dib_h dib;
+} bm_h;
+
+#pragma pack(pop)
+
+int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
+{
+	int res = -1;
+	if(fname == NULL)
+		return -1;
+
+	if((res = cTranslate(sockfd, buffer, bufSize, (void*)0x10400400, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
+		return 1;
+
+	void* lcd_fb_setup_top_addr = (void*)((scmdres_translate_s*)buffer)->address + 0x5C;
+	void* lcd_fb_setup_sub_addr = (void*)((scmdres_translate_s*)buffer)->address + 0x15C;
+
+	lcd_fb_setup top_setup;
+	lcd_fb_setup sub_setup;
+	if((res = cDump(sockfd, buffer, bufSize, lcd_fb_setup_top_addr, sizeof(lcd_fb_setup), NULL, &top_setup)) != 0)
+		return 1;
+	if((res = cDump(sockfd, buffer, bufSize, lcd_fb_setup_sub_addr, sizeof(lcd_fb_setup), NULL, &sub_setup)) != 0)
+		return 1;
+
+	if((res = cTranslate(sockfd, buffer, bufSize, top_setup.fb_left1, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
+		return 1;
+	void* fb_top_left_addr = (void*)((scmdres_translate_s*)buffer)->address;
+
+	if((res = cTranslate(sockfd, buffer, bufSize, top_setup.fb_right1, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
+		return 1;
+	void* fb_top_right_addr = (void*)((scmdres_translate_s*)buffer)->address;
+
+	if((res = cTranslate(sockfd, buffer, bufSize, sub_setup.fb_left1, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
+		return 1;
+	void* fb_sub_addr = (void*)((scmdres_translate_s*)buffer)->address;
+
+	char tfname[0x100];
+	void* bmpBuffer = malloc(1024 * 1024);
+	bm_h* bm = (bm_h*) bmpBuffer;
+
+	memset(bm, 0, sizeof(bm_h));
+	bm->magic = 0x4D42;
+	bm->offset = sizeof(bm_h);
+	bm->dib.header_size = sizeof(dib_h);
+	bm->dib.plane = 1;
+	bm->dib.bits = 24;
+
+	sprintf(tfname, "%s-top-l.bmp", fname);
+	bm->dib.width = top_setup.height;
+	bm->dib.height = -top_setup.width;
+	bm->dib.data_size = top_setup.width * top_setup.height * 3;
+	bm->file_size = sizeof(bm_h) + bm->dib.data_size;
+	if((res = cDump(sockfd, buffer, bufSize, fb_top_left_addr, bm->dib.data_size, NULL, bmpBuffer + sizeof(bm_h))) != 0)
+		return 1;
+
+	FILE* bm_file = fopen(tfname, "wb");
+	if(bm_file)
+	{
+		fwrite(bmpBuffer, bm->file_size, 1, bm_file);
+		fclose(bm_file);
+	}
+
+	sprintf(tfname, "%s-top-r.bmp", fname);
+	bm->dib.width = top_setup.height;
+	bm->dib.height = -top_setup.width;
+	bm->dib.data_size = top_setup.width * top_setup.height * 3;
+	bm->file_size = sizeof(bm_h) + bm->dib.data_size;
+	if((res = cDump(sockfd, buffer, bufSize, fb_top_right_addr, bm->dib.data_size, NULL, bmpBuffer + sizeof(bm_h))) != 0)
+		return 1;
+
+	bm_file = fopen(tfname, "wb");
+	if(bm_file)
+	{
+		fwrite(bmpBuffer, bm->file_size, 1, bm_file);
+		fclose(bm_file);
+	}
+
+	sprintf(tfname, "%s-sub.bmp", fname);
+	bm->dib.width = sub_setup.height;
+	bm->dib.height = -sub_setup.width;
+	bm->dib.data_size = sub_setup.width * sub_setup.height * 3;
+	bm->file_size = sizeof(bm_h) + bm->dib.data_size;
+	if((res = cDump(sockfd, buffer, bufSize, fb_sub_addr, bm->dib.data_size, NULL, bmpBuffer + sizeof(bm_h))) != 0)
+		return 1;
+
+	bm_file = fopen(tfname, "wb");
+	if(bm_file)
+	{
+		fwrite(bmpBuffer, bm->file_size, 1, bm_file);
+		fclose(bm_file);
 	}
 
 	return 0;

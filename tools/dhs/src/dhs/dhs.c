@@ -105,74 +105,78 @@ void acceptAndServe()
 	const u32 bufSize = __heap_size - 0x48000 - 0x200;
 	u8* buffer = (u8*)(__heapBase + 0x200);
 
-	scmdack_s ack;
-	ack.magic = SCMD_MAGIC;
-
-	Result res = -1;
-	ssize_t bytesRead = readAtLeast(sockfd, buffer, bufSize, sizeof(scmdreq_s));
-	if(bytesRead >= sizeof(scmdreq_s))
+	ssize_t bytesRead = 0;
+	do
 	{
-		scmdreq_s* scmd = (scmdreq_s*) buffer;
-		if(scmd->magic == SCMD_MAGIC)
+		scmdack_s ack;
+		ack.magic = SCMD_MAGIC;
+
+		Result res = -1;
+		bytesRead = readAtLeast(sockfd, buffer, bufSize, sizeof(scmdreq_s));
+		if(bytesRead >= sizeof(scmdreq_s))
 		{
-			switch(scmd->cmd)
+			scmdreq_s* scmd = (scmdreq_s*) buffer;
+			if(scmd->magic == SCMD_MAGIC)
 			{
-			case SCMD_INFO:
-				res = sGetInfo(scmd, sockfd, buffer, bufSize);
-				break;
-			case SCMD_DUMP:
-				if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_dump_s)) == 0)
+				switch(scmd->cmd)
 				{
-					scmdreq_dump_s scmdDump;
-					memcpy(&scmdDump, scmd, sizeof(scmdreq_dump_s));
-					res = sDump(&scmdDump, sockfd, buffer, bufSize);
-				}
-				break;
-			case SCMD_PATCH:
-				if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_patch_s)) == 0)
-				{
-					send(sockfd, &ack, sizeof(ack), 0);
+				case SCMD_INFO:
+					res = sGetInfo(scmd, sockfd, buffer, bufSize);
+					break;
+				case SCMD_DUMP:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_dump_s)) == 0)
+					{
+						scmdreq_dump_s scmdDump;
+						memcpy(&scmdDump, scmd, sizeof(scmdreq_dump_s));
+						res = sDump(&scmdDump, sockfd, buffer, bufSize);
+					}
+					break;
+				case SCMD_PATCH:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_patch_s)) == 0)
+					{
+						send(sockfd, &ack, sizeof(ack), 0);
 
-					scmdreq_patch_s scmdPatch;
-					memcpy(&scmdPatch, scmd, sizeof(scmdreq_patch_s));
-					res = sPatch(&scmdPatch, sockfd, buffer, bufSize);
-				}
-				break;
-			case SCMD_INSTALL:
-				if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_install_s)) == 0)
-				{
-					send(sockfd, &ack, sizeof(ack), 0);
+						scmdreq_patch_s scmdPatch;
+						memcpy(&scmdPatch, scmd, sizeof(scmdreq_patch_s));
+						res = sPatch(&scmdPatch, sockfd, buffer, bufSize);
+					}
+					break;
+				case SCMD_INSTALL:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_install_s)) == 0)
+					{
+						send(sockfd, &ack, sizeof(ack), 0);
 
-					scmdreq_install_s scmdInstall;
-					memcpy(&scmdInstall, scmd, sizeof(scmdreq_install_s));
-					res = sInstallCia(&scmdInstall, sockfd, buffer, bufSize);
+						scmdreq_install_s scmdInstall;
+						memcpy(&scmdInstall, scmd, sizeof(scmdreq_install_s));
+						res = sInstallCia(&scmdInstall, sockfd, buffer, bufSize);
+					}
+					break;
+				case SCMD_DELETE:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_delete_s)) == 0)
+					{
+						scmdreq_delete_s scmdDelete;
+						memcpy(&scmdDelete, scmd, sizeof(scmdreq_delete_s));
+						res = sDeleteCia(&scmdDelete, sockfd, buffer, bufSize);
+					}
+					break;
+				case SCMD_INSTALLFIRM:
+					res = sInstallFirm(scmd, sockfd, buffer, bufSize);
+					break;
+				case SCMD_TRANSLATE:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_translate_s)) == 0)
+					{
+						scmdreq_translate_s scmdTranslate;
+						memcpy(&scmdTranslate, scmd, sizeof(scmdreq_translate_s));
+						res = sTranslate(&scmdTranslate, sockfd, buffer, bufSize);
+					}
+					break;
+				default:
+					send(sockfd, &ack, sizeof(ack), 0);
+					break;
 				}
-				break;
-			case SCMD_DELETE:
-				if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_delete_s)) == 0)
-				{
-					scmdreq_delete_s scmdDelete;
-					memcpy(&scmdDelete, scmd, sizeof(scmdreq_delete_s));
-					res = sDeleteCia(&scmdDelete, sockfd, buffer, bufSize);
-				}
-				break;
-			case SCMD_INSTALLFIRM:
-				res = sInstallFirm(scmd, sockfd, buffer, bufSize);
-				break;
-			case SCMD_TRANSLATE:
-				if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_translate_s)) == 0)
-				{
-					scmdreq_translate_s scmdTranslate;
-					memcpy(&scmdTranslate, scmd, sizeof(scmdreq_translate_s));
-					res = sTranslate(&scmdTranslate, sockfd, buffer, bufSize);
-				}
-				break;
-			default:
-				send(sockfd, &ack, sizeof(ack), 0);
-				break;
 			}
 		}
-	}
+	} while(bytesRead >= 0);
 
 	closesocket(sockfd);
 }
