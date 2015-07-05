@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define SPACING_VERT 10
+#define SPACING_HORIZ 8
+
 enum screen {
     screen_top_left,
     screen_top_right,

@@ -14,7 +14,6 @@
 int selected_options[MAX_SELECTED_OPTIONS];
 
 // TODO: Clean up the first two functions. They have too much in common.
-// TODO: Use SPACING_HORIZ and SPACING_VERT, in the brahma commits
 // No boundary checks, use this responsibly.
 int draw_menu(char *title, int back, int count, char *options[])
 {
@@ -25,14 +24,14 @@ int draw_menu(char *title, int back, int count, char *options[])
 
     draw_string(screen_top_left, options[0], 10, 40, COLOR_SELECTED);
     for (int i = 1; i < count; i++) {
-        draw_string(screen_top_left, options[i], 10, 40 + 10 * i, COLOR_NEUTRAL);
+        draw_string(screen_top_left, options[i], 10, 40 + SPACING_VERT * i, COLOR_NEUTRAL);
     }
 
     while (1) {
         uint16_t key = wait_key();
 
         if (key == (key_released | key_up)) {
-            draw_string(screen_top_left, options[current], 10, 40 + 10 * current, COLOR_NEUTRAL);
+            draw_string(screen_top_left, options[current], 10, 40 + SPACING_VERT * current, COLOR_NEUTRAL);
 
             if (current <= 0) {
                 current = count - 1;
@@ -40,9 +39,9 @@ int draw_menu(char *title, int back, int count, char *options[])
                 current--;
             }
 
-            draw_string(screen_top_left, options[current], 10, 40 + 10 * current, COLOR_SELECTED);
+            draw_string(screen_top_left, options[current], 10, 40 + SPACING_VERT * current, COLOR_SELECTED);
         } else if (key == (key_released | key_down)) {
-            draw_string(screen_top_left, options[current], 10, 40 + 10 * current, COLOR_NEUTRAL);
+            draw_string(screen_top_left, options[current], 10, 40 + SPACING_VERT * current, COLOR_NEUTRAL);
 
             if (current >= count - 1) {
                 current = 0;
@@ -50,7 +49,7 @@ int draw_menu(char *title, int back, int count, char *options[])
                 current++;
             }
 
-            draw_string(screen_top_left, options[current], 10, 40 + 10 * current, COLOR_SELECTED);
+            draw_string(screen_top_left, options[current], 10, 40 + SPACING_VERT * current, COLOR_SELECTED);
         } else if (key == (key_released | key_a)) {
             return current;
         } else if (key == (key_released | key_b) && back) {
@@ -68,7 +67,7 @@ int *draw_selection_menu(char *title, int count, char *options[], const int *pre
     memset32(selected_options, 0, sizeof(selected_options));
 
     int current = 0;
-    int pos_x_text = 10 + 4 * 8;
+    int pos_x_text = 10 + 4 * SPACING_HORIZ;
 
     clear_screen(screen_top_left);
     draw_string(screen_top_left, title, 10, 10, COLOR_TITLE);
@@ -77,14 +76,14 @@ int *draw_selection_menu(char *title, int count, char *options[], const int *pre
     draw_string(screen_top_left, options[0], pos_x_text, 40, COLOR_SELECTED);
     int i;
     for (i = 1; i < count; i++) {
-        draw_string(screen_top_left, "[ ]", 10, 40 + 10 * i, COLOR_NEUTRAL);
-        draw_string(screen_top_left, options[i], pos_x_text, 40 + 10 * i, COLOR_NEUTRAL);
+        draw_string(screen_top_left, "[ ]", 10, 40 + SPACING_VERT * i, COLOR_NEUTRAL);
+        draw_string(screen_top_left, options[i], pos_x_text, 40 + SPACING_VERT * i, COLOR_NEUTRAL);
     }
-    draw_string(screen_top_left, "Press START to confirm", 10, 40 + 10 * (i + 2), COLOR_SELECTED);
+    draw_string(screen_top_left, "Press START to confirm", 10, 40 + SPACING_VERT * (i + 2), COLOR_SELECTED);
 
     for (int i = 0; i < count; i++) {
         if (preselected[i]) {
-            draw_character(screen_top_left, 'x', 10 + 8, 40 + 10 * i, COLOR_NEUTRAL);
+            draw_character(screen_top_left, 'x', 10 + SPACING_HORIZ, 40 + SPACING_VERT * i, COLOR_NEUTRAL);
             selected_options[i] = 1;
         }
     }
@@ -93,7 +92,7 @@ int *draw_selection_menu(char *title, int count, char *options[], const int *pre
         uint16_t key = wait_key();
 
         if (key == (key_released | key_up)) {
-            draw_string(screen_top_left, options[current], pos_x_text, 40 + 10 * current, COLOR_NEUTRAL);
+            draw_string(screen_top_left, options[current], pos_x_text, 40 + SPACING_VERT * current, COLOR_NEUTRAL);
 
             if (current <= 0) {
                 current = count - 1;
@@ -101,9 +100,9 @@ int *draw_selection_menu(char *title, int count, char *options[], const int *pre
                 current--;
             }
 
-            draw_string(screen_top_left, options[current], pos_x_text, 40 + 10 * current, COLOR_SELECTED);
+            draw_string(screen_top_left, options[current], pos_x_text, 40 + SPACING_VERT * current, COLOR_SELECTED);
         } else if (key == (key_released | key_down)) {
-            draw_string(screen_top_left, options[current], pos_x_text, 40 + 10 * current, COLOR_NEUTRAL);
+            draw_string(screen_top_left, options[current], pos_x_text, 40 + SPACING_VERT * current, COLOR_NEUTRAL);
 
             if (current >= count - 1) {
                 current = 0;
@@ -111,13 +110,13 @@ int *draw_selection_menu(char *title, int count, char *options[], const int *pre
                 current++;
             }
 
-            draw_string(screen_top_left, options[current], pos_x_text, 40 + 10 * current, COLOR_SELECTED);
+            draw_string(screen_top_left, options[current], pos_x_text, 40 + SPACING_VERT * current, COLOR_SELECTED);
         } else if (key == (key_released | key_a)) {
             if (selected_options[current]) {
-                draw_character(screen_top_left, 'x', 10 + 8, 40 + 10 * current, COLOR_BACKGROUND);
+                draw_character(screen_top_left, 'x', 10 + SPACING_HORIZ, 40 + SPACING_VERT * current, COLOR_BACKGROUND);
                 selected_options[current] = 0;
             } else {
-                draw_character(screen_top_left, 'x', 10 + 8, 40 + 10 * current, COLOR_NEUTRAL);
+                draw_character(screen_top_left, 'x', 10 + SPACING_HORIZ, 40 + SPACING_VERT * current, COLOR_NEUTRAL);
                 selected_options[current] = 1;
             }
         } else if (key == (key_released | key_start) || key == (key_released | key_b)) {

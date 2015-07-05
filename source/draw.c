@@ -96,12 +96,12 @@ int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, ui
     int length = strlen(string);
     for (int i = 0, line_i = 0; i < length; i++, line_i++) {
         if (string[i] == '\n') {
-            pos_y += 10;
+            pos_y += SPACING_VERT;
             line_i = 0;
             i++;
         }
 
-        draw_character(screen, string[i], pos_x + line_i * 8, pos_y, color);
+        draw_character(screen, string[i], pos_x + line_i * SPACING_HORIZ, pos_y, color);
     }
 
     return pos_y;
@@ -110,11 +110,11 @@ int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, ui
 void print(const char *string)
 {
     // I'll just assume both screens have the same height.
-    if (print_pos > (screen_top_height - 30) / 10) {
+    if (print_pos > (screen_top_height - 30) / SPACING_VERT) {
         clear_screen(print_screen);
         print_pos = 0;
     }
 
-    int pos = draw_string(print_screen, string, 10, 10 + 10 * print_pos, 0xFFFFFF);
-    print_pos = pos / 10;
+    int pos = draw_string(print_screen, string, 10, 10 + SPACING_VERT * print_pos, 0xFFFFFF);
+    print_pos = pos / SPACING_VERT;
 }

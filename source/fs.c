@@ -1,5 +1,6 @@
 #include "fs.h"
 
+#include <stddef.h>
 #include "draw.h"
 #include "fatfs/ff.h"
 
@@ -17,7 +18,7 @@ int mount_sd()
 
 int unmount_sd()
 {
-    if (f_mount((void *)0, "0:", 1) != FR_OK) {
+    if (f_mount(NULL, "0:", 1) != FR_OK) {
         print("Failed to mount SD card!");
         return 1;
     }

@@ -1,6 +1,7 @@
 #include "patch.h"
 
 #include <stdint.h>
+#include <stddef.h>
 #include <assert.h>
 #include "draw.h"
 #include "memfuncs.h"
@@ -49,7 +50,7 @@ void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_sear
         }
     }
 
-    return (void *)0;
+    return NULL;
 }
 
 int patch_options(void *address, uint32_t size, uint8_t options) {
