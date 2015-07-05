@@ -275,7 +275,7 @@ int32_t sDump(scmdreq_dump_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
 		uint32_t size = bufSize - filled;
 		size = size < cmd->size ? size : cmd->size;
 
-		kmemcpy((uint8_t*)buffer + filled, cmd->addr, size);
+		kmemcpy((uint8_t*)buffer + filled, cmd->addr + (res->size - cmd->size), size);
 		send(sockfd, buffer, size + filled, 0);
 
 		filled = 0;
