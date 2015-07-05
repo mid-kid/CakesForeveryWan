@@ -1,6 +1,7 @@
 #include "patch.h"
 
 #include <stdint.h>
+#include <assert.h>
 #include "draw.h"
 #include "memfuncs.h"
 #include "fs.h"
@@ -237,6 +238,9 @@ int load_cakes_info(const char *dirpath)
     fr = f_opendir(&dir, dirpath);
     if (fr != FR_OK) goto error;
 
+    static_assert(MAX_CAKES < 0x100000 / sizeof(struct cake_info),
+                  "This function will overflow it's buffer");
+
     while (cake_count < MAX_CAKES) {
         fr = f_readdir(&dir, &fno);
         if (fr != FR_OK) {
@@ -246,13 +250,11 @@ int load_cakes_info(const char *dirpath)
         }
 
         char *fn = *fno.lfname ? fno.lfname : fno.fname;
-        const int flen = strlen(fn);
 
         // Build the path string
         memcpy(cake_list[cake_count].path, dirpath, pathlen);
         cake_list[cake_count].path[pathlen] = '/';
-        memcpy(&cake_list[cake_count].path[pathlen + 1], fn, flen);
-        cake_list[cake_count].path[pathlen + 1 + flen] = 0;
+        strncpy(&cake_list[cake_count].path[pathlen + 1], fn, sizeof(cake_list->path) - pathlen - 1);
 
         // Recurse into subdirectories
         if (fno.fattrib & AM_DIR) {

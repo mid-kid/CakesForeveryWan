@@ -40,7 +40,7 @@ int prepare_files()
 {
     int rc;
 
-    rc = read_file(firm_loc_encrypted, "/firmware.bin", 0);
+    rc = read_file(firm_loc_encrypted, "/firmware.bin", 0x100000);
     if (rc != 0) {
         print("Failed to load FIRM");
         draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at /firmware.bin");

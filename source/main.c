@@ -1,11 +1,10 @@
-#include <stdint.h>
+#include "patch.h"
+#include "menu.h"
 #include "memfuncs.h"
+#include "config.h"
+#include "firm.h"
 #include "draw.h"
 #include "fs.h"
-#include "menu.h"
-#include "firm.h"
-#include "patch.h"
-#include "fatfs/ff.h"
 
 void menu_select_patches()
 {
@@ -19,6 +18,7 @@ void menu_select_patches()
     }
 
     int *result = draw_selection_menu("Select your cakes", cake_count, options, cake_selected);
+    // The result location will be reused for other selection menus, so we memcpy it.
     memcpy(cake_selected, result, cake_count * sizeof(int));
 }
 
@@ -31,6 +31,7 @@ void menu_main()
 
         switch (result) {
             case 0:
+                save_config();
                 boot_cfw();
                 break;
             case 1:
@@ -56,6 +57,8 @@ void main()
         draw_loading("Failed to read some cakes", "Make sure your cakes are up to date\n  and your SD card can be read correctly");
         return;
     }
+
+    load_config();
 
     menu_main();
 }

@@ -47,7 +47,7 @@ patches: $(baked_files)
 
 .PHONY: clean
 clean:
-	@make dir_out=$(abspath $(dir_out)) -C $(dir_cakehax) clean
+	@$(MAKE) dir_out=$(abspath $(dir_out)) -C $(dir_cakehax) clean
 	rm -rf $(dir_out) $(dir_build) Cakes_$(revision).zip
 
 $(dir_out)/%.here:
@@ -57,9 +57,10 @@ $(dir_out)/%.here:
 Cakes_$(revision).zip: launcher patches $(provide_files)
 	sh -c "cd $(dir_out); zip -r ../$@ *"
 
+.PHONY: $(dir_out)/Cakes.dat
 $(dir_out)/Cakes.dat: $(dir_build)/main.bin
 	@mkdir -p "$(@D)"
-	@make dir_out=$(abspath $(@D)) -C $(dir_cakehax) launcher
+	@$(MAKE) dir_out=$(abspath $(@D)) -C $(dir_cakehax) launcher
 	dd if=$(dir_build)/main.bin of=$@ bs=512 seek=256
 
 $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
