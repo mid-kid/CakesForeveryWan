@@ -7,6 +7,7 @@
 #include "menu.h"
 
 struct config_file *config = (struct config_file *)0x24400000;
+int patches_modified = 0;
 
 void load_config()
 {

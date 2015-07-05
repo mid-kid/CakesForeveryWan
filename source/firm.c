@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "crypto.h"
 #include "patch.h"
+#include "config.h"
 #include "fatfs/ff.h"
 
 struct firm_signature {
@@ -190,7 +191,7 @@ void boot_cfw()
     draw_loading(title, "Patching...");
     if (patch_firm_all() != 0) return;
 
-    if (save_firm) {
+    if (save_firm && patches_modified) {
         draw_loading(title, "Saving FIRM...");
         print("Saving patched FIRM");
         if (write_file(firm_loc, save_path, firm_size) != 0) {

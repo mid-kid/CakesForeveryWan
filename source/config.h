@@ -10,6 +10,7 @@ struct config_file {
 } __attribute__((packed));
 
 struct config_file *config;
+extern int patches_modified;
 
 void load_config();
 void save_config();

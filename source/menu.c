@@ -59,7 +59,7 @@ int draw_menu(char *title, int back, int count, char *options[])
     }
 }
 
-int *draw_selection_menu(char *title, int count, char *options[], int *preselected) {
+int *draw_selection_menu(char *title, int count, char *options[], const int *preselected) {
     // The caller has to make sure it does not exceed MAX_SELECTED_OPTIONS
     if (count > MAX_SELECTED_OPTIONS) {
         return NULL;
