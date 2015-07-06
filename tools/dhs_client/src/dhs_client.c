@@ -18,6 +18,8 @@ enum DHSC_CMD
 	DHSC_DELETE,
 	DHSC_INSTALLFIRM,
 	DHSC_TRANSLATE,
+	DHSC_GETHANDLE,
+	DHSC_SERVICE,
 
 	// Pseudo commands
 	DHSC_SCREENSHOT = 1000,
@@ -120,6 +122,11 @@ typedef struct input_s
 	uint32_t to;
 	uint32_t value;
 	uint32_t value_set;
+	const char* service;
+	uint32_t handle;
+	uint32_t header_code;
+	uint32_t argc;
+	uint32_t* argv;
 } input_s;
 
 int parseArgs(input_s* input, int argc, char *argv[])
@@ -140,6 +147,10 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		input->cmd = DHSC_INSTALLFIRM;
 	else if(strcmp(argv[0], "translate") == 0)
 		input->cmd = DHSC_TRANSLATE;
+	else if(strcmp(argv[0], "gethandle") == 0)
+		input->cmd = DHSC_GETHANDLE;
+	else if(strcmp(argv[0], "service") == 0)
+		input->cmd = DHSC_SERVICE;
 	else if(strcmp(argv[0], "screenshot") == 0)
 		input->cmd = DHSC_SCREENSHOT;
 	else
@@ -163,6 +174,27 @@ int parseArgs(input_s* input, int argc, char *argv[])
 			input->mediatype = strtoul(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-titleid") == 0 && (i + 1) < argc)
 			input->titleid = strtoull(argv[i + 1], NULL, 16);
+		else if(strcmp(argv[i], "-srvname") == 0 && (i + 1) < argc)
+			input->service = argv[i + 1];
+		else if(strcmp(argv[i], "-handle") == 0 && (i + 1) < argc)
+			input->handle = strtoull(argv[i + 1], NULL, 16);
+		else if(strcmp(argv[i], "-headercode") == 0 && (i + 1) < argc)
+			input->header_code = strtoull(argv[i + 1], NULL, 16);
+		else if(strcmp(argv[i], "-args") == 0 && (i + 1) < argc)
+		{
+			input->argv = malloc(sizeof(uint32_t) * 0x20);
+
+			char* str = argv[i + 1];
+			char* next;
+			do
+			{
+				input->argv[input->argc] = strtoull(str, &next, 16);
+				input->argc++;
+				if(*next == ',') next++;
+
+				str = next;
+			} while(str[0]);
+		}
 		else if(strcmp(argv[i], "-value") == 0 && (i + 1) < argc)
 		{
 			input->value = strtoul(argv[i + 1], NULL, 0);
@@ -221,6 +253,12 @@ int main(int argc, char *argv[])
 			break;
 		case DHSC_TRANSLATE:
 			res = cTranslate(sockfd, buffer, bufSize, input.addr, input.from, input.to, input.process);
+			break;
+		case DHSC_GETHANDLE:
+			res = cGetHandle(sockfd, buffer, bufSize, input.service);
+			break;
+		case DHSC_SERVICE:
+			res = cService(sockfd, buffer, bufSize, input.handle, input.header_code, input.argc, input.argv, input.size);
 			break;
 		case DHSC_SCREENSHOT:
 			res = cScreenshot(sockfd, buffer, bufSize, input.fname);

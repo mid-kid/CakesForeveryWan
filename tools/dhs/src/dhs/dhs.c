@@ -170,6 +170,22 @@ void acceptAndServe()
 						res = sTranslate(&scmdTranslate, sockfd, buffer, bufSize);
 					}
 					break;
+				case SCMD_GETHANDLE:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_gethandle_s)) == 0)
+					{
+						scmdreq_gethandle_s scmdGetHandle;
+						memcpy(&scmdGetHandle, scmd, sizeof(scmdreq_gethandle_s));
+						res = sGetHandle(&scmdGetHandle, sockfd, buffer, bufSize);
+					}
+					break;
+				case SCMD_SERVICE:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_service_s)) == 0)
+					{
+						scmdreq_service_s scmdService;
+						memcpy(&scmdService, scmd, sizeof(scmdreq_service_s));
+						res = sService(&scmdService, sockfd, buffer, bufSize);
+					}
+					break;
 				default:
 					send(sockfd, &ack, sizeof(ack), 0);
 					break;

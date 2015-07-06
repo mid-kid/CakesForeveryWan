@@ -92,6 +92,44 @@ int cGetInfo(int sockfd, void* buffer, size_t bufSize)
 	return 0;
 }
 
+typedef struct dump_ctx
+{
+	uint32_t processed;
+	uint32_t size;
+	void* data;
+} dump_ctx;
+
+int dumpFileCb(void* buffer, uint32_t size, dump_ctx* data)
+{
+	data->processed += size;
+	return fwrite(buffer, size, 1, (FILE*)(data->data)) != 1;
+}
+
+int dumpMemCb(void* buffer, uint32_t size, dump_ctx* data)
+{
+	memcpy(data->data + (data->size - data->processed), buffer, size);
+	data->processed += size;
+
+	return 0;
+}
+
+int dumpPrintCb(void* buffer, uint32_t size, dump_ctx* data)
+{
+	if(data->processed == 0)
+		fprintf(stdout, "0x%08X : ", (uint32_t)data->data);
+
+	for(int i = 0; i < size; i++, data->processed++)
+	{
+		fprintf(stdout, "%02X ", ((uint8_t*)buffer)[i]);
+
+		uint32_t total = data->processed + 1;
+		if(total % 16 == 0 && total != (data->size))
+			fprintf(stdout, "\n0x%08X : ", (uint32_t)data->data + total);
+	}
+
+	return 0;
+}
+
 int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, const char* fname, void* dbuffer)
 {
 	if(addr == NULL || size == 0)
@@ -116,78 +154,51 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 		uint32_t filled = sizeof(scmdres_dump_s);
 		readBytes -= filled;
 
+		dump_ctx ctx;
+		ctx.size = cmd.size;
+		ctx.processed = 0;
+
+		int(*dumpCb)(void*, uint32_t, dump_ctx*) = NULL;
+
 		if(fname)
 		{
 			FILE* file = fopen(fname, "wb");
 			if(file)
 			{
-				do
-				{
-					if(readBytes)
-					{
-						fwrite(buffer + filled, readBytes, 1, file);
-						size -= readBytes;
-						readBytes = filled = 0;
-					}
-					if(size)
-					{
-						readBytes = recv(sockfd, buffer, bufSize, 0);
-						if(readBytes <= 0)
-							break;
-					}
-				} while(size && readBytes);
-
-				fclose(file);
-			}
-			else
-			{
-				fprintf(stderr, "Failed to open file : %s\n", fname);
-				exit(-1);
+				ctx.data = file;
+				dumpCb = dumpFileCb;
 			}
 		}
 		else if(dbuffer)
 		{
+			ctx.data = dbuffer;
+			dumpCb = dumpMemCb;
+		}
+		else
+		{
+			ctx.data = addr;
+			dumpCb = dumpPrintCb;
+		}
+
+		if(dumpCb)
+		{
+			uint32_t left = size;
+
 			do
 			{
 				if(readBytes)
 				{
-					memcpy(dbuffer + (cmd.size - size), buffer + filled, readBytes);
-					size -= readBytes;
+					dumpCb(buffer + filled, readBytes, &ctx);
+					left -= readBytes;
 					readBytes = filled = 0;
 				}
-				if(size)
+				if(left)
 				{
 					readBytes = recv(sockfd, buffer, bufSize, 0);
 					if(readBytes <= 0)
 						break;
 				}
-			} while(size && readBytes);
-		}
-		else
-		{
-			size_t total = 1;
-			fprintf(stdout, "\n0x%08X : ", addr);
-			do
-			{
-				if(readBytes)
-				{
-					for(int i = 0; i < readBytes; i++, total++)
-					{
-						fprintf(stdout, "%02X ", ((uint8_t*)buffer + filled)[i]);
-
-						if(total % 16 == 0 && total != (cmd.size))
-							fprintf(stdout, "\n0x%08X : ", addr + total);
-					}
-					readBytes = filled = 0;
-					size -= readBytes;
-				}
-				if(size)
-				{
-					readBytes = recv(sockfd, buffer, bufSize, 0);
-					if(readBytes < 0)
-						break;
-				}
-			} while(size && readBytes);
+			} while(left && readBytes);
 		}
 	}
 
@@ -411,6 +422,97 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 	{
 		fprintf(stderr, "No response from server\n");
 		exit(-1);
+	}
+
+	return 0;
+}
+
+int cGetHandle(int sockfd, void* buffer, size_t bufSize, const char* name)
+{
+	if(strlen(name) > 8)
+		return -1;
+
+	fprintf(stdout, "Get handle\n");
+
+	scmdreq_gethandle_s cmd;
+	cmd.req.magic = SCMD_MAGIC;
+	cmd.req.cmd = SCMD_GETHANDLE;
+	memset(cmd.name, 0, sizeof(cmd.name));
+	strncpy(cmd.name, name, 8);
+
+	send(sockfd, &cmd, sizeof(cmd), 0);
+	if(readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_gethandle_s)) == sizeof(scmdres_gethandle_s))
+	{
+		printResponse(((scmdres_gethandle_s*)buffer)->res);
+		fprintf(stdout, " Handle : 0x%08X\n", ((scmdres_gethandle_s*)buffer)->handle);
+	}
+	else
+	{
+		fprintf(stderr, "No response from server\n");
+		exit(-1);
+	}
+
+	return 0;
+}
+
+int cService(int sockfd, void* buffer, size_t bufSize, uint32_t handle, uint32_t headerCode, uint32_t argc, uint32_t* argv, uint32_t outputSize)
+{
+	if(!handle)
+		return -1;
+	if(!headerCode)
+		return -1;
+
+	fprintf(stdout, "Service\n");
+	fprintf(stdout, "Handle : 0x%08X\n", handle);
+	fprintf(stdout, " 0x%08X\n", headerCode);
+
+	scmdreq_service_s cmd;
+	cmd.req.magic = SCMD_MAGIC;
+	cmd.req.cmd = SCMD_SERVICE;
+	cmd.handle = handle;
+	cmd.header_code = headerCode;
+	cmd.argc = argc;
+	cmd.output_size = outputSize;
+	for(uint32_t i = 0; i < argc; ++i)
+	{
+		cmd.argv[i] = argv[i];
+		fprintf(stdout, " 0x%08X\n", argv[i]);
+	}
+
+	send(sockfd, &cmd, sizeof(cmd), 0);
+	ssize_t readBytes = readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_service_s));
+	scmdres_service_s* res = (scmdres_service_s*)buffer;
+	if(res->res == 0)
+	{
+		uint32_t filled = sizeof(scmdres_dump_s);
+		readBytes -= filled;
+
+		dump_ctx ctx;
+		ctx.size = cmd.output_size;
+		ctx.processed = 0;
+
+		int(*dumpCb)(void*, uint32_t, dump_ctx*) = dumpPrintCb;
+
+		uint32_t left = outputSize;
+		do
+		{
+			if(readBytes)
+			{
+				dumpCb(buffer + filled, readBytes, &ctx);
+				left -= readBytes;
+				readBytes = filled = 0;
+			}
+			if(left)
+			{
+				readBytes = recv(sockfd, buffer, bufSize, 0);
+				if(readBytes <= 0)
+					break;
+			}
+		} while(left && readBytes);
+	}
+	else
+	{
+		printResponse(((scmdres_service_s*)buffer)->res);
 	}
 
 	return 0;

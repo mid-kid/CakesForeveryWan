@@ -4,6 +4,7 @@
 #include "3ds/services/fs.h"
 #include "3ds/services/am.h"
 #include "3ds/svc.h"
+#include "3ds/srv.h"
 #include "3ds/os.h"
 
 #include <sys/socket.h>
@@ -382,6 +383,53 @@ int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t 
 	res.address = ktranslate(cmd->address, cmd->from, cmd->to, cmd->namehi, cmd->namelo);
 	res.res = ret;
 	send(sockfd, &res, sizeof(res), 0);
+
+	return ret;
+}
+
+int32_t sGetHandle(scmdreq_gethandle_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
+{
+	Handle handle;
+	int32_t ret = srvGetServiceHandle(&handle, cmd->name);
+
+	scmdres_gethandle_s res;
+	res.res = ret;
+	res.handle = handle;
+	send(sockfd, &res, sizeof(res), 0);
+
+	return ret;
+}
+
+int32_t sService(scmdreq_service_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
+{
+	Result ret = 0;
+
+	u32* cmdbuf = getThreadCommandBuffer();
+	cmdbuf[0] = cmd->header_code;
+	for(uint32_t i = 0; i < cmd->argc; ++i)
+	{
+		cmdbuf[i + 1] = cmd->argv[i];
+	}
+
+	ret = svcSendSyncRequest(cmd->handle);
+
+	scmdres_service_s* res = (scmdres_service_s*) buffer;
+	res->res = ret;
+	res->size = cmd->output_size;
+
+	uint32_t filled = sizeof(scmdres_service_s);
+	uint32_t left = cmd->output_size;
+	do
+	{
+		uint32_t size = bufSize - filled;
+		size = size < cmd->output_size ? size : left;
+
+		memcpy((uint8_t*)buffer + filled, (u8*)cmdbuf + (res->size - left), size);
+		send(sockfd, buffer, size + filled, 0);
+
+		filled = 0;
+		left -= size;
+	} while(left != 0);
 
 	return ret;
 }
