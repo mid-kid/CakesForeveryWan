@@ -107,7 +107,7 @@ int dumpFileCb(void* buffer, uint32_t size, dump_ctx* data)
 
 int dumpMemCb(void* buffer, uint32_t size, dump_ctx* data)
 {
-	memcpy(data->data + (data->size - data->processed), buffer, size);
+	memcpy(data->data + data->processed, buffer, size);
 	data->processed += size;
 
 	return 0;
