@@ -8,12 +8,14 @@
 enum SCMD
 {
 	SCMD_INFO = 1,
-	SCMD_DUMP = 2,
-	SCMD_PATCH = 3,
-	SCMD_INSTALL = 4,
-	SCMD_DELETE = 5,
-	SCMD_INSTALLFIRM = 6,
-	SCMD_TRANSLATE = 7
+	SCMD_DUMP,
+	SCMD_PATCH ,
+	SCMD_INSTALL,
+	SCMD_DELETE,
+	SCMD_INSTALLFIRM,
+	SCMD_TRANSLATE,
+	SCMD_GETHANDLE,
+	SCMD_SERVICE,
 };
 
 enum SCMD_MEMTYPE
@@ -171,5 +173,33 @@ typedef struct scmdres_translate_s
 	uint32_t res;
 	uint32_t address;
 } scmdres_translate_s;
+
+typedef struct scmdreq_gethandle_s
+{
+	scmdreq_s req;
+	char name[8];
+} scmdreq_gethandle_s;
+
+typedef struct scmdres_gethandle_s
+{
+	uint32_t res;
+	uint32_t handle;
+} scmdres_gethandle_s;
+
+typedef struct scmdreq_service_s
+{
+	scmdreq_s req;
+	uint32_t handle;
+	uint32_t header_code;
+	uint32_t output_size;
+	uint32_t argc;
+	uint32_t argv[0x20]; // Variable length is nicer though..
+} scmdreq_service_s;
+
+typedef struct scmdres_service_s
+{
+	uint32_t res;
+	uint32_t size;
+} scmdres_service_s;
 
 #endif /*__SCMD_H_*/
