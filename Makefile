@@ -17,9 +17,15 @@ dir_build := build
 dir_out := out
 dir_patches := patches
 dir_cakehax := CakeHax
+dir_cakebrah := CakeBrah
 
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
 CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main
+CAKEFLAGS := dir_out=$(abspath $(dir_out)) 
+BRAHFLAGS := dir_out=$(abspath $(dir_out)/3ds/Cakes) \
+			 APP_DESCRIPTION="CFW for 3DS" \
+			 APP_AUTHOR="mid-kid" \
+			 ICON=$(abspath icon.png)
 
 revision := $(shell git rev-list HEAD --count)
 
@@ -34,7 +40,7 @@ provide_files := $(dir_out)/firmware_bin.here \
 				 $(dir_out)/cakes/firmkey_bin.here
 
 .PHONY: all
-all: launcher patches
+all: launcher patches ninjhax
 
 .PHONY: release
 release: Cakes_$(revision).zip
@@ -45,22 +51,26 @@ launcher: $(dir_out)/Cakes.dat
 .PHONY: patches
 patches: $(baked_files)
 
+.PHONY: ninjhax
+ninjhax: $(dir_out)/3ds/Cakes/Cakes.3dsx
+
 .PHONY: clean
 clean:
-	@$(MAKE) dir_out=$(abspath $(dir_out)) -C $(dir_cakehax) clean
+	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) clean
+	@$(MAKE) $(BRAHFLAGS) -C $(dir_cakebrah) clean
 	rm -rf $(dir_out) $(dir_build) Cakes_$(revision).zip
+
+Cakes_$(revision).zip: launcher patches ninjhax $(provide_files)
+	sh -c "cd $(dir_out); zip -r ../$@ *"
 
 $(dir_out)/%.here:
 	@mkdir -p "$(@D)"
 	touch $@
 
-Cakes_$(revision).zip: launcher patches $(provide_files)
-	sh -c "cd $(dir_out); zip -r ../$@ *"
-
 .PHONY: $(dir_out)/Cakes.dat
 $(dir_out)/Cakes.dat: $(dir_build)/main.bin
 	@mkdir -p "$(@D)"
-	@$(MAKE) dir_out=$(abspath $(@D)) -C $(dir_cakehax) launcher
+	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) launcher
 	dd if=$(dir_build)/main.bin of=$@ bs=512 seek=256
 
 $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
@@ -68,6 +78,11 @@ $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patche
 	@mkdir -p $(dir_build)/patches/$*
 	$(PYTHON3) $(dir_patches)/bundle.py $^ $(dir_build)/patches/$* $(dir_out)/cakes/patches
 	@touch $@
+
+.PHONY: $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh
+$(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh:
+	@mkdir -p "$(@D)"
+	@$(MAKE) $(BRAHFLAGS) -C $(dir_cakebrah) all
 
 $(dir_build)/main.bin: $(dir_build)/main.elf
 	$(OC) -S -O binary $< $@
