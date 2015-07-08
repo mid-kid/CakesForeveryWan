@@ -2,25 +2,6 @@
 #include "dhs_patch.h"
 #include <stdint.h>
 
-typedef struct proc_section
-{
-	void* addr;
-	uint32_t pages;
-} proc_section;
-
-typedef struct proc_data
-{
-	uint32_t name_lo;
-	uint32_t name_hi;
-	uint32_t unk[2];
-	proc_section text;
-	proc_section ro;
-	proc_section data;
-	uint32_t x_pages;
-	uint32_t ro_pages;
-	uint32_t rw_pages;
-} proc_data;
-
 // Dirty trick to get PIC, I'm going to regret this
 dhs_a11_compat_s* get_compat();
 

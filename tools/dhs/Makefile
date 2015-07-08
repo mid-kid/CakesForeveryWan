@@ -55,7 +55,7 @@ obj/%.o: src/%.s | dirs
 obj/%.o: src/%.S | dirs
 	@echo Compiling $<
 	$(CC) -c $(CFLAGS) $(C9FLAGS) $< -o $@
-	
+
 obj/dhs_patch/%.o: src/dhs_patch/%.c | dirs
 	@echo Compiling $<
 	$(CC) -c $(CFLAGS) $(C9FLAGS) -fshort-wchar -Iinclude $< -o $@

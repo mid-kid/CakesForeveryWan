@@ -1,9 +1,9 @@
-#ifndef __ERRSTR_H_
-#define __ERRSTR_H_
+#ifndef DHS_CLIENT_ERRSTR_H
+#define DHS_CLIENT_ERRSTR_H
 
 #include <stdint.h>
 #include <stddef.h>
 
 void errstr(uint32_t errCode, const char** descStr, const char** summaryStr, const char** moduleStr, const char** levelStr);
 
-#endif /*__ERRSTR_H_*/
+#endif /*DHS_CLIENT_ERRSTR_H*/

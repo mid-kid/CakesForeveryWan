@@ -1,5 +1,5 @@
-#ifndef __SCMD_H_
-#define __SCMD_H_
+#ifndef DHS_SCMD_H
+#define DHS_SCMD_H
 
 #include <stdint.h>
 
@@ -202,4 +202,4 @@ typedef struct scmdres_service_s
 	uint32_t size;
 } scmdres_service_s;
 
-#endif /*__SCMD_H_*/
+#endif /*DHS_SCMD_H*/

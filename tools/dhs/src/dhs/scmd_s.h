@@ -1,5 +1,5 @@
-#ifndef __SCMD_S_H_
-#define __SCMD_S_H_
+#ifndef DHS_SCMD_S_H
+#define DHS_SCMD_S_H
 
 #include "dhs/scmd.h"
 
@@ -13,4 +13,4 @@ int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t 
 int32_t sGetHandle(scmdreq_gethandle_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 int32_t sService(scmdreq_service_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 
-#endif /*__SCMD_S_H_*/
+#endif /*DHS_SCMD_S_H*/

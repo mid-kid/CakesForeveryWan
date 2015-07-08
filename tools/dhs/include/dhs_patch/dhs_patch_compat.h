@@ -1,10 +1,43 @@
-#ifndef __DHS_PATCH_COMPAT_H
-#define __DHS_PATCH_COMPAT_H
+#ifndef DHS_PATCH_COMPAT_H
+#define DHS_PATCH_COMPAT_H
 
 #include <stdint.h>
 #include <stddef.h>
 
-typedef struct IFILE IFILE;
+#define FILE_R 0x1
+#define FILE_W 0x6
+
+typedef struct IFILE
+{
+	uint32_t unk[4];
+	uint64_t fptr;
+	uint64_t size;
+} IFILE;
+
+typedef struct DFILE
+{
+	IFILE file;
+} DFILE;
+
+int df_open(DFILE* file, const char* path, uint32_t flags);
+void df_close(DFILE* file);
+void df_getsize(DFILE* file, uint64_t* size);
+void df_seek(DFILE* file, uint64_t offset);
+void df_tell(DFILE* file, uint64_t* offset);
+
+size_t df_read(DFILE* file, void* buffer, size_t size);
+size_t df_write(DFILE* file, const void* buffer, size_t size);
+
+/**Utility functions**/
+int dump_to_mem(const char* path, void* buffer, size_t size);
+int dump_to_file(const char* path, const void* buffer, size_t size);
+
+int(*IFile_Open)(IFILE* file, const wchar_t* path, uint32_t flags);
+void(*IFile_Close)(IFILE* file);
+void(*IFile_GetSize)(IFILE* file, uint64_t* size);
+
+void(*IFile_Read)(IFILE* file, uint32_t* read, void* buffer, uint32_t size);
+void(*IFile_Write)(IFILE* file, uint32_t* written, const void* buffer, uint32_t size, uint32_t flush);
 
 typedef struct dhs_a9_compat_s
 {
@@ -131,4 +164,4 @@ dhs_a9_compat_s dhs_a9_compat_49 = {
 
 #endif /*DHS_PATCH_COMPAT_DATA*/
 
-#endif /*__DHS_PATCH_COMPAT_H*/
+#endif /*DHS_PATCH_COMPAT_H*/

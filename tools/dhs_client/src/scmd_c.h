@@ -1,5 +1,8 @@
-#ifndef __SCMD_C_H_
-#define __SCMD_C_H_
+#ifndef DHS_CLIENT_SCMD_C_H
+#define DHS_CLIENT_SCMD_C_H
+
+#include <stddef.h>
+#include <stdint.h>
 
 int cGetInfo(int sockfd, void* buffer, size_t bufSize);
 int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, const char* fname, void* dbuffer);
@@ -13,4 +16,4 @@ int cService(int sockfd, void* buffer, size_t bufSize, uint32_t handle, uint32_t
 
 int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname);
 
-#endif /*__SCMD_C_H_*/
+#endif /*DHS_CLIENT_SCMD_C_H*/

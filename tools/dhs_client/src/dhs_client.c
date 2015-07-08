@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,15 +26,13 @@ enum DHSC_CMD
 	DHSC_SCREENSHOT = 1000,
 };
 
-int connectToServer(const char* host, const char* port)
+static int connectToServer(const char* host, const char* port)
 {
 	socketStartup();
 
-	int sockfd;
-	struct sockaddr_in serv_addr;
-	struct hostent *server;
+	int sockfd = INVALID_SOCKET;
 
-	struct addrinfo *result = NULL, *ptr = NULL, hints;
+	struct addrinfo *result = NULL, hints;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_protocol = IPPROTO_TCP;
@@ -51,12 +50,12 @@ int connectToServer(const char* host, const char* port)
 		sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if(sockfd == INVALID_SOCKET)
 		{
-			printf("socket failed with error: %ld\n", socketGetError());
+			printf("socket failed with error: %d\n", socketGetError());
 			socketCleanup();
 			exit(-1);
 		}
 
-		res = connect(sockfd, ptr->ai_addr, (int) ptr->ai_addrlen);
+		res = connect(sockfd, ptr->ai_addr, ptr->ai_addrlen);
 		if(res == SOCKET_ERROR)
 		{
 			close(sockfd);
@@ -79,7 +78,7 @@ int connectToServer(const char* host, const char* port)
 	return sockfd;
 }
 
-void printHelp(char* name)
+static void printHelp(char* name)
 {
 	fprintf(stderr, "Usage %s hostname command\n", name);
 	fprintf(stderr, "Commands:\n");
@@ -129,9 +128,35 @@ typedef struct input_s
 	uint32_t* argv;
 } input_s;
 
-int parseArgs(input_s* input, int argc, char *argv[])
+static uint64_t strtou64OrError(const char* nptr, char **endptr, int base)
 {
-	input->mediatype = -1;
+	unsigned long long out = strtoull(nptr, endptr, base);
+
+	if (out > UINT64_MAX)
+	{
+		fprintf(stderr, "%s too large (expected %" PRIu64 ").", nptr, UINT64_MAX);
+		exit(EXIT_FAILURE);
+	}
+
+	return (uint64_t)out;
+}
+
+static uint32_t strtou32OrError(const char* nptr, char **endptr, int base)
+{
+	unsigned long out = strtoul(nptr, endptr, base);
+
+	if (out > UINT32_MAX)
+	{
+		fprintf(stderr, "%s too large (expected %" PRIu32 ").", nptr, UINT32_MAX);
+		exit(EXIT_FAILURE);
+	}
+
+	return (uint32_t)out;
+}
+
+static int parseArgs(input_s* input, int argc, char *argv[])
+{
+	input->mediatype = (uint32_t)-1;
 
 	if(strcmp(argv[0], "info") == 0)
 		input->cmd = DHSC_INFO;
@@ -163,23 +188,23 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		if(strcmp(argv[i], "-process") == 0 && (i + 1) < argc)
 			input->process = argv[i + 1];
 		else if(strcmp(argv[i], "-addr") == 0 && (i + 1) < argc)
-			input->addr = (void*)strtoul(argv[i + 1], NULL, 0);
+			input->addr = (void*)(uintptr_t)strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-size") == 0 && (i + 1) < argc)
-			input->size = strtoul(argv[i + 1], NULL, 0);
+			input->size = strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-from") == 0 && (i + 1) < argc)
-			input->from = strtoul(argv[i + 1], NULL, 0);
+			input->from = strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-to") == 0 && (i + 1) < argc)
-			input->to = strtoul(argv[i + 1], NULL, 0);
+			input->to = strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-mediatype") == 0 && (i + 1) < argc)
-			input->mediatype = strtoul(argv[i + 1], NULL, 0);
+			input->mediatype = strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-titleid") == 0 && (i + 1) < argc)
-			input->titleid = strtoull(argv[i + 1], NULL, 16);
+			input->titleid = strtou64OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-srvname") == 0 && (i + 1) < argc)
 			input->service = argv[i + 1];
 		else if(strcmp(argv[i], "-handle") == 0 && (i + 1) < argc)
-			input->handle = strtoull(argv[i + 1], NULL, 16);
+			input->handle = strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-headercode") == 0 && (i + 1) < argc)
-			input->header_code = strtoull(argv[i + 1], NULL, 16);
+			input->header_code = strtou32OrError(argv[i + 1], NULL, 0);
 		else if(strcmp(argv[i], "-args") == 0 && (i + 1) < argc)
 		{
 			input->argv = malloc(sizeof(uint32_t) * 0x20);
@@ -188,7 +213,7 @@ int parseArgs(input_s* input, int argc, char *argv[])
 			char* next;
 			do
 			{
-				input->argv[input->argc] = strtoull(str, &next, 16);
+				input->argv[input->argc] = strtou32OrError(str, &next, 16);
 				input->argc++;
 				if(*next == ',') next++;
 
@@ -197,7 +222,7 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		}
 		else if(strcmp(argv[i], "-value") == 0 && (i + 1) < argc)
 		{
-			input->value = strtoul(argv[i + 1], NULL, 0);
+			input->value = strtou32OrError(argv[i + 1], NULL, 0);
 			input->value_set = 1;
 		}
 	}
@@ -267,14 +292,19 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		if(res)
+		if(res > 0)
 		{
 			printHelp(argv[0]);
-			exit(0);
+			return EXIT_SUCCESS;
+		}
+		else if(res < 0)
+		{
+			fprintf(stdout, "Communication error: %d\n", socketGetError());
+			return EXIT_FAILURE;
 		}
 
 		close(sockfd);
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
