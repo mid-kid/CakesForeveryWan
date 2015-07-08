@@ -2,7 +2,6 @@
 #include "dhs_patch/dhs_patch_compat.h"
 #include "dhs_patch.h"
 #include "svc.h"
-#include "file.h"
 
 #define REG_HID					((volatile uint32_t*)0x10146000)
 #define HID_RT					((uint32_t)0x100)
@@ -18,7 +17,7 @@ void ld11_hook();
 extern uint32_t dump_only;
 
 __attribute__((naked))
-int main()
+int main(void)
 {
 	doExploit();
 
@@ -32,7 +31,7 @@ int main()
 }
 
 __attribute__((naked))
-void mpuSetup()
+void mpuSetup(void)
 {
 	asm
 	(
@@ -51,7 +50,7 @@ void mpuSetup()
 }
 
 __attribute__((naked))
-void mpuSetupWrap()
+void mpuSetupWrap(void)
 {
 	asm
 	(
@@ -93,7 +92,7 @@ uint32_t getBranchInst(int32_t from, int32_t to, int link)
 extern uint8_t _a11_hook_start;
 extern uint8_t _a11_hook_end;
 
-void patchARM11Kernel()
+void patchARM11Kernel(void)
 {
 	a11compat.buffer = a9compat.buffer_va;
 	a11compat.translate_va = a9compat.translate_va;
@@ -113,7 +112,7 @@ void patchARM11Kernel()
 	*(uint32_t*)(a11_base_pa + offset) = getBranchInst(a11_base_va + offset, a9compat.hooks_va + ((uint8_t*)ld11_hook - &_a11_hook_start), 1);
 }
 
-void dumpAXIWRAM()
+void dumpAXIWRAM(void)
 {
 	dump_to_file("sdmc:/axiwram.bin", (void*)0x1FF80000, 0x80000);
 }
@@ -126,7 +125,7 @@ void readARM11CodeBin(uint32_t* text, uint32_t size)
 	dump_to_mem("sdmc:/dhs.bin", text, 0);
 }
 
-void processA11Hooks()
+void processA11Hooks(void)
 {
 	ld_data_s* data = (ld_data_s*) (a9compat.buffer_pa + 0x200);
 	if(data->magic == HAXX)
@@ -148,7 +147,7 @@ void processA11Hooks()
 	}
 }
 
-void bgThreadEntry()
+void bgThreadEntry(void)
 {
 	if(!dump_only)
 	{
@@ -171,15 +170,14 @@ void bgThreadEntry()
 	}
 }
 
-void doExploit()
+void doExploit(void)
 {
 	svcBackdoor(mpuSetupWrap);
 	if(!dump_only)
 		patchARM11Kernel();
 
 	Handle thread;
-	void* entry = (void*)bgThreadEntry;
 	void* arg = NULL;
 	void* stackTop = (void*)0x1FFAFB4;
-	svcCreateThread(&thread, entry, arg, stackTop, 0x3F, -2);
+	svcCreateThread(&thread, bgThreadEntry, arg, stackTop, 0x3F, -2);
 }

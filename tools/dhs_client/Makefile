@@ -1,11 +1,12 @@
 CC=gcc
-CP=g++
 LD=ld
 
 TARGET=dhs_client
 DHS_DIR=../dhs
 
-CFLAGS=-std=gnu99 -Os -g -I$(DHS_DIR)/include
+CFLAGS=-std=c99 -Wall -Wextra -pedantic -Os -g -I$(DHS_DIR)/include -Wno-padded -Wno-cast-align -Wno-unused-function
+# C99 feature test macro for struct addrinfo
+CFLAGS+=-D_POSIX_SOURCE
 LDFLAGS=
 
 OUT_DIR=obj

@@ -1,7 +1,7 @@
 #include "svc.h"
 
 __attribute__((naked))
-void svcExitThread()
+void svcExitThread(void)
 {
 	asm
 	(
@@ -31,7 +31,7 @@ void svcFlushProcessDataCache(Handle process, void const* addr, uint32_t size)
 }
 
 __attribute__((naked))
-void svcBackdoor(void* funcptr)
+void svcBackdoor(void(*funcptr)(void))
 {
 	asm
 	(

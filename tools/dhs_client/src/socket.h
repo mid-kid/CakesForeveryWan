@@ -1,5 +1,5 @@
-#ifndef __SOCKET_H_
-#define __SOCKET_H_
+#ifndef DHS_CLIENT_SOCKET_H
+#define DHS_CLIENT_SOCKET_H
 
 #ifdef __WIN32__
 #define _WIN32_WINNT  0x501
@@ -27,4 +27,4 @@
 #define SOCKET_ERROR	-1
 #endif
 
-#endif /*__SOCKET_H_*/
+#endif /*DHS_CLIENT_SOCKET_H*/

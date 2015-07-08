@@ -18,6 +18,9 @@ dir_out := out
 dir_patches := patches
 dir_cakehax := CakeHax
 
+dir_dhs := tools/dhs
+dir_dhs_client := tools/dhs_client
+
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
 CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main
 
@@ -34,7 +37,7 @@ provide_files := $(dir_out)/firmware_bin.here \
 				 $(dir_out)/cakes/firmkey_bin.here
 
 .PHONY: all
-all: launcher patches
+all: launcher patches dhs
 
 .PHONY: release
 release: Cakes_$(revision).zip
@@ -45,9 +48,16 @@ launcher: $(dir_out)/Cakes.dat
 .PHONY: patches
 patches: $(baked_files)
 
+.PHONY: dhs
+dhs:
+	@make -C $(dir_dhs) all
+	@make -C $(dir_dhs_client) all
+
 .PHONY: clean
 clean:
 	@make dir_out=$(abspath $(dir_out)) -C $(dir_cakehax) clean
+	@make -C $(dir_dhs) clean
+	@make -C $(dir_dhs_client) clean
 	rm -rf $(dir_out) $(dir_build) Cakes_$(revision).zip
 
 $(dir_out)/%.here:

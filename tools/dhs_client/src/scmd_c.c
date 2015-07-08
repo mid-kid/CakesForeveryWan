@@ -1,36 +1,43 @@
 #include "dhs/scmd.h"
+#include "scmd_c.h"
 #include "errstr.h"
+#include "filecompat.h"
+
+#include <limits.h>
+#include <inttypes.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <stddef.h>
 #include <unistd.h>
 #include "socket.h"
 
-ssize_t readAtLeast(int sockfd, void* buffer, size_t bufSize, size_t size)
+static ssize_t readAtLeast(int sockfd, void* buffer, size_t bufSize, size_t size)
 {
 	ssize_t bytesRead = 0;
 	ssize_t totalRead = 0;
+	uint8_t *bufBytes = buffer;
 	do
 	{
-		bytesRead = recv(sockfd, buffer + totalRead, bufSize - totalRead, 0);
+		bytesRead = recv(sockfd, bufBytes + totalRead, bufSize - (size_t)totalRead, 0);
 		if(bytesRead <= 0)
 			break;
 
 		totalRead += bytesRead;
-	} while(totalRead < size);
+	} while((size_t)totalRead < size);
 
-	return (bytesRead != -1 && totalRead >= size) ? totalRead : -1;
+	return (bytesRead != -1 && (size_t)totalRead >= size) ? totalRead : -1;
 }
 
-int dumpToSocket(int sockfd, void* buffer, size_t bufSize, FILE* file, size_t size)
+static int dumpToSocket(int sockfd, void* buffer, size_t bufSize, FILE* file, size_t size)
 {
 	fseek(file, 0, SEEK_SET);
 	size_t count;
 	do
 	{
-		ssize_t readBytes = bufSize < size ? bufSize : size;
+		size_t readBytes = bufSize < size ? bufSize : size;
 		count = fread(buffer, readBytes, 1, file);
 		if(!count)
 			break;
@@ -42,7 +49,7 @@ int dumpToSocket(int sockfd, void* buffer, size_t bufSize, FILE* file, size_t si
 	return size != 0;
 }
 
-void printResponse(uint32_t res)
+static void printResponse(uint32_t res)
 {
 	const char* descStr = NULL;
 	const char* summaryStr = NULL;
@@ -68,6 +75,9 @@ int cGetInfo(int sockfd, void* buffer, size_t bufSize)
 	send(sockfd, &cmd, sizeof(cmd), 0);
 
 	ssize_t readBytes = readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_info_s));
+
+	if(readBytes != 0)
+		return -1;
 
 	scmdres_info_s* res = (scmdres_info_s*)buffer;
 	fprintf(stdout, "Response : 0x%08X\n", res->res);
@@ -99,32 +109,32 @@ typedef struct dump_ctx
 	void* data;
 } dump_ctx;
 
-int dumpFileCb(void* buffer, uint32_t size, dump_ctx* data)
+static int dumpFileCb(void* buffer, size_t size, dump_ctx* data)
 {
 	data->processed += size;
 	return fwrite(buffer, size, 1, (FILE*)(data->data)) != 1;
 }
 
-int dumpMemCb(void* buffer, uint32_t size, dump_ctx* data)
+static int dumpMemCb(void* buffer, size_t size, dump_ctx* data)
 {
-	memcpy(data->data + data->processed, buffer, size);
+	memcpy((uint8_t*)data->data + data->processed, buffer, size);
 	data->processed += size;
 
 	return 0;
 }
 
-int dumpPrintCb(void* buffer, uint32_t size, dump_ctx* data)
+static int dumpPrintCb(void* buffer, size_t size, dump_ctx* data)
 {
 	if(data->processed == 0)
-		fprintf(stdout, "0x%08X : ", (uint32_t)data->data);
+		fprintf(stdout, "0x%08" PRIXPTR " : ", (uintptr_t)data->data);
 
-	for(int i = 0; i < size; i++, data->processed++)
+	for(size_t i = 0; i < size; i++, data->processed++)
 	{
 		fprintf(stdout, "%02X ", ((uint8_t*)buffer)[i]);
 
 		uint32_t total = data->processed + 1;
 		if(total % 16 == 0 && total != (data->size))
-			fprintf(stdout, "\n0x%08X : ", (uint32_t)data->data + total);
+			fprintf(stdout, "\n0x%08" PRIXPTR " : ", (uintptr_t)data->data + total);
 	}
 
 	return 0;
@@ -132,7 +142,7 @@ int dumpPrintCb(void* buffer, uint32_t size, dump_ctx* data)
 
 int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, const char* fname, void* dbuffer)
 {
-	if(addr == NULL || size == 0)
+	if(addr == NULL || size == 0 || size > UINT32_MAX)
 		return -1;
 
 	fprintf(stdout, "Dumping\n");
@@ -142,7 +152,7 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 	cmd.req.cmd = SCMD_DUMP;
 	cmd.addr = addr;
 	cmd.is_pa = 0;
-	cmd.size = size;
+	cmd.size = (uint32_t)size;
 
 	send(sockfd, &cmd, sizeof(cmd), 0);
 
@@ -158,7 +168,7 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 		ctx.size = cmd.size;
 		ctx.processed = 0;
 
-		int(*dumpCb)(void*, uint32_t, dump_ctx*) = NULL;
+		int(*dumpCb)(void*, size_t, dump_ctx*) = NULL;
 
 		if(fname)
 		{
@@ -182,14 +192,14 @@ int cDump(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, con
 
 		if(dumpCb)
 		{
-			uint32_t left = size;
+			size_t left = size;
 
 			do
 			{
 				if(readBytes)
 				{
-					dumpCb(buffer + filled, readBytes, &ctx);
-					left -= readBytes;
+					dumpCb((uint8_t*)buffer + filled, (size_t)readBytes, &ctx);
+					left -= (size_t)readBytes;
 					readBytes = filled = 0;
 				}
 				if(left)
@@ -216,19 +226,28 @@ int cPatch(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, co
 	if(fname)
 	{
 		file = fopen(fname, "rb");
-		if(file)
-		{
-			if(size == 0)
-			{
-				fseek(file, 0, SEEK_END);
-				size = ftell(file);
-			}
-		}
-		else
+		if(!file)
 		{
 			fprintf(stderr, "Failed to open file : %s\n", fname);
-			exit(-1);
+			exit(EXIT_FAILURE);
 		}
+
+		if(size == 0)
+		{
+			ssize_t fsize = getFileSize(fname);
+			if(fsize < 0)
+			{
+				fprintf(stderr, "Failed to get size of file : %s\n", fname);
+				exit(EXIT_FAILURE);
+			}
+			size = (size_t)fsize;
+		}
+	}
+
+	if(size > UINT32_MAX)
+	{
+		fprintf(stderr, "File %s too large (more than %" PRIu32 " bytes).\n", fname, UINT32_MAX);
+		exit(EXIT_FAILURE);
 	}
 
 	scmdreq_patch_s cmd;
@@ -236,7 +255,7 @@ int cPatch(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, co
 	cmd.req.cmd = SCMD_PATCH;
 	cmd.addr = addr;
 	cmd.is_pa = 0;
-	cmd.size = size;
+	cmd.size = (uint32_t)size;
 
 	send(sockfd, &cmd, sizeof(cmd), 0);
 
@@ -244,8 +263,8 @@ int cPatch(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, co
 	scmdack_s* ack = (scmdack_s*) buffer;
 	if(readBytes < 0 || ack->magic != SCMD_MAGIC)
 	{
-		fprintf(stderr, "Invalid response from server, size : %d\n", readBytes);
-		exit(-1);
+		fprintf(stderr, "Invalid response from server, size : %zd\n", readBytes);
+		exit(EXIT_FAILURE);
 	}
 
 	if(file)
@@ -265,7 +284,7 @@ int cPatch(int sockfd, void* buffer, size_t bufSize, void* addr, size_t size, co
 	else
 	{
 		fprintf(stderr, "No response from server\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
@@ -280,17 +299,29 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 	fprintf(stdout, " mediatype : %s\n", mediatype == 0 ? "NAND" : "SD");
 
 	ssize_t readBytes = 0;
+
+	ssize_t fsize = getFileSize(fname);
+	if(fsize < 0)
+	{
+		fprintf(stderr, "Failed to get size of file : %s\n", fname);
+		exit(EXIT_FAILURE);
+	}
+
+	size_t size = (size_t)fsize;
+	if(size > UINT32_MAX)
+	{
+		fprintf(stderr, "File %s too large (more than %" PRIu32 " bytes).\n", fname, UINT32_MAX);
+		exit(EXIT_FAILURE);
+	}
+
 	FILE* file = fopen(fname, "rb");
 	if(file)
 	{
-		fseek(file, 0, SEEK_END);
-		size_t size = ftell(file);
-
 		scmdreq_install_s cmd;
 		cmd.req.magic = SCMD_MAGIC;
 		cmd.req.cmd = SCMD_INSTALL;
 		cmd.media = mediatype;
-		cmd.filesize = size;
+		cmd.filesize = (uint32_t)size;
 
 		send(sockfd, &cmd, sizeof(cmd), 0);
 
@@ -298,8 +329,8 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 		scmdack_s* ack = (scmdack_s*) buffer;
 		if(readBytes < 0 || ack->magic != SCMD_MAGIC)
 		{
-			fprintf(stderr, "Invalid response from server, size : %d\n", readBytes);
-			exit(-1);
+			fprintf(stderr, "Invalid response from server, size : %zd\n", readBytes);
+			exit(EXIT_FAILURE);
 		}
 
 		dumpToSocket(sockfd, buffer, bufSize, file, size);
@@ -309,7 +340,7 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 	else
 	{
 		fprintf(stderr, "Failed to open cia : %s\n", fname);
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	fprintf(stdout, "File sent to server\n");
@@ -322,7 +353,7 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 	else
 	{
 		fprintf(stderr, "No response from server\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
@@ -333,7 +364,7 @@ int cDeleteCia(int sockfd, void* buffer, size_t bufSize, uint64_t titleid, uint3
 	if(titleid == 0 || mediatype > 1) // Only for NAND and SD
 		return -1;
 
-	fprintf(stdout, "Deleting : %016llX\n", titleid);
+	fprintf(stdout, "Deleting : %016" PRIX64 "\n", titleid);
 	fprintf(stdout, " mediatype : %s\n", mediatype == 0 ? "NAND" : "SD");
 
 	scmdreq_delete_s cmd;
@@ -350,7 +381,7 @@ int cDeleteCia(int sockfd, void* buffer, size_t bufSize, uint64_t titleid, uint3
 	else
 	{
 		fprintf(stderr, "No response from server\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
@@ -372,7 +403,7 @@ int cInstallFirm(int sockfd, void* buffer, size_t bufSize)
 	else
 	{
 		fprintf(stderr, "No response from server\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
@@ -390,22 +421,23 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 		return -1;
 
 	fprintf(stdout, "Translate address\n");
-	fprintf(stdout, " input : 0x%08X\n", (uint32_t)addr);
+	fprintf(stdout, " input : 0x%08" PRIXPTR "\n", (uintptr_t)addr);
 
 	scmdreq_translate_s cmd;
 	cmd.req.magic = SCMD_MAGIC;
 	cmd.req.cmd = SCMD_TRANSLATE;
-	cmd.address = (uint32_t)addr;
+	cmd.address = (uint32_t)(uintptr_t)addr;
 	cmd.from = from;
 	cmd.to = to;
 	if(process != NULL)
 	{
-		char namebuf[9];
-		memset(namebuf, 0, 9);
-		sprintf(namebuf, "%s", process);
-
-		cmd.namehi = *(uint32_t*)(namebuf);
-		cmd.namelo = *(uint32_t*)(namebuf + 4);
+		for (unsigned int i = 0; i < 4 && process[i] != '\0'; i++) {
+			// (unsigned int) because {,unsigned} char is always promoted to signed int
+			cmd.namehi |= (unsigned int)process[i] << (i * 8);
+		}
+		for (unsigned int i = 0; i < 4 && process[i + 4] != '\0'; i++) {
+			cmd.namelo |= (unsigned int)process[i + 4] << (i * 8);
+		}
 
 		printf("%08X%08X\n", cmd.namehi, cmd.namelo);
 
@@ -421,7 +453,7 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 	else
 	{
 		fprintf(stderr, "No response from server\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
@@ -449,7 +481,7 @@ int cGetHandle(int sockfd, void* buffer, size_t bufSize, const char* name)
 	else
 	{
 		fprintf(stderr, "No response from server\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
@@ -491,14 +523,14 @@ int cService(int sockfd, void* buffer, size_t bufSize, uint32_t handle, uint32_t
 		ctx.size = cmd.output_size;
 		ctx.processed = 0;
 
-		int(*dumpCb)(void*, uint32_t, dump_ctx*) = dumpPrintCb;
+		int(*dumpCb)(void*, size_t, dump_ctx*) = dumpPrintCb;
 
 		uint32_t left = outputSize;
 		do
 		{
 			if(readBytes)
 			{
-				dumpCb(buffer + filled, readBytes, &ctx);
+				dumpCb((uint8_t*)buffer + filled, (size_t)readBytes, &ctx);
 				left -= readBytes;
 				readBytes = filled = 0;
 			}
@@ -568,8 +600,8 @@ int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
 	if((res = cTranslate(sockfd, buffer, bufSize, (void*)0x10400400, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
 		return 1;
 
-	void* lcd_fb_setup_top_addr = (void*)((scmdres_translate_s*)buffer)->address + 0x5C;
-	void* lcd_fb_setup_sub_addr = (void*)((scmdres_translate_s*)buffer)->address + 0x15C;
+	void* lcd_fb_setup_top_addr = (void*)(uintptr_t)(((scmdres_translate_s*)buffer)->address + 0x5C);
+	void* lcd_fb_setup_sub_addr = (void*)(uintptr_t)(((scmdres_translate_s*)buffer)->address + 0x15C);
 
 	lcd_fb_setup top_setup;
 	lcd_fb_setup sub_setup;
@@ -580,15 +612,15 @@ int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
 
 	if((res = cTranslate(sockfd, buffer, bufSize, top_setup.fb_left1, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
 		return 1;
-	void* fb_top_left_addr = (void*)((scmdres_translate_s*)buffer)->address;
+	void* fb_top_left_addr = (void*)(uintptr_t)((scmdres_translate_s*)buffer)->address;
 
 	if((res = cTranslate(sockfd, buffer, bufSize, top_setup.fb_right1, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
 		return 1;
-	void* fb_top_right_addr = (void*)((scmdres_translate_s*)buffer)->address;
+	void* fb_top_right_addr = (void*)(uintptr_t)((scmdres_translate_s*)buffer)->address;
 
 	if((res = cTranslate(sockfd, buffer, bufSize, sub_setup.fb_left1, MEMTYPE_PHYSICAL, MEMTYPE_KERNEL, NULL)) != 0)
 		return 1;
-	void* fb_sub_addr = (void*)((scmdres_translate_s*)buffer)->address;
+	void* fb_sub_addr = (void*)(uintptr_t)((scmdres_translate_s*)buffer)->address;
 
 	char tfname[0x100];
 	void* bmpBuffer = malloc(1024 * 1024);
@@ -606,7 +638,7 @@ int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
 	bm->dib.height = -top_setup.width;
 	bm->dib.data_size = top_setup.width * top_setup.height * 3;
 	bm->file_size = sizeof(bm_h) + bm->dib.data_size;
-	if((res = cDump(sockfd, buffer, bufSize, fb_top_left_addr, bm->dib.data_size, NULL, bmpBuffer + sizeof(bm_h))) != 0)
+	if((res = cDump(sockfd, buffer, bufSize, fb_top_left_addr, bm->dib.data_size, NULL, (uint8_t*)bmpBuffer + sizeof(bm_h))) != 0)
 		return 1;
 
 	FILE* bm_file = fopen(tfname, "wb");
@@ -621,7 +653,7 @@ int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
 	bm->dib.height = -top_setup.width;
 	bm->dib.data_size = top_setup.width * top_setup.height * 3;
 	bm->file_size = sizeof(bm_h) + bm->dib.data_size;
-	if((res = cDump(sockfd, buffer, bufSize, fb_top_right_addr, bm->dib.data_size, NULL, bmpBuffer + sizeof(bm_h))) != 0)
+	if((res = cDump(sockfd, buffer, bufSize, fb_top_right_addr, bm->dib.data_size, NULL, (uint8_t*)bmpBuffer + sizeof(bm_h))) != 0)
 		return 1;
 
 	bm_file = fopen(tfname, "wb");
@@ -636,7 +668,7 @@ int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
 	bm->dib.height = -sub_setup.width;
 	bm->dib.data_size = sub_setup.width * sub_setup.height * 3;
 	bm->file_size = sizeof(bm_h) + bm->dib.data_size;
-	if((res = cDump(sockfd, buffer, bufSize, fb_sub_addr, bm->dib.data_size, NULL, bmpBuffer + sizeof(bm_h))) != 0)
+	if((res = cDump(sockfd, buffer, bufSize, fb_sub_addr, bm->dib.data_size, NULL, (uint8_t*)bmpBuffer + sizeof(bm_h))) != 0)
 		return 1;
 
 	bm_file = fopen(tfname, "wb");

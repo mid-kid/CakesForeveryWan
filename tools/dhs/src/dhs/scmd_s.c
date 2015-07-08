@@ -22,22 +22,24 @@ extern uint32_t pid;
 extern uint32_t firmVersion;
 uint32_t bdArgs[8];
 
-static void _kget_kprocess()
+static s32 _kget_kprocess(void)
 {
 	asm volatile("cpsid aif");
 	bdArgs[0] = *((uint32_t*)0xFFFF9004);
+	return 0;
 }
 
-static uint32_t kget_kprocess()
+static uint32_t kget_kprocess(void)
 {
-	svcBackdoor((void*)_kget_kprocess);
+	svcBackdoor(_kget_kprocess);
 	return bdArgs[0];
 }
 
-static void _kmemcpy()
+static s32 _kmemcpy(void)
 {
 	asm volatile("cpsid aif");
 	memcpy((void*)bdArgs[0], (void*)bdArgs[1], bdArgs[2]);
+	return 0;
 }
 
 static void kmemcpy(void* buffer, void* addr, uint32_t size)
@@ -45,7 +47,7 @@ static void kmemcpy(void* buffer, void* addr, uint32_t size)
 	bdArgs[0] = (uint32_t)buffer;
 	bdArgs[1] = (uint32_t)addr;
 	bdArgs[2] = size;
-	svcBackdoor((void*)_kmemcpy);
+	svcBackdoor(_kmemcpy);
 }
 
 static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
@@ -57,7 +59,7 @@ static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
 	else
 		size = 0x268;
 
-	void* offset = currKProcess - pid * size;
+	uint8_t* offset = (uint8_t*)currKProcess - pid * size;
 	for(int i = 0; *(uint32_t*)(offset + i * size + 4); i++)
 	{
 		void* toffset = offset + i * size;
@@ -178,7 +180,7 @@ static uint32_t _ktranslate_pa_va(uint32_t* mmu_table, uint32_t addr, uint32_t r
 	return 0;
 }
 
-static void _ktranslate()
+static s32 _ktranslate(void)
 {
 	asm volatile("cpsid aif");
 
@@ -223,6 +225,8 @@ static void _ktranslate()
 	}
 
 	bdArgs[0] = taddr;
+
+	return 0;
 }
 
 static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t to, uint32_t namehi, uint32_t namelo)
@@ -232,7 +236,7 @@ static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t to, uint32_t n
 	bdArgs[2] = to;
 	bdArgs[3] = namehi;
 	bdArgs[4] = namelo;
-	svcBackdoor((void*)_ktranslate);
+	svcBackdoor(_ktranslate);
 
 	return bdArgs[0];
 }
@@ -276,7 +280,7 @@ int32_t sDump(scmdreq_dump_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
 		uint32_t size = bufSize - filled;
 		size = size < cmd->size ? size : cmd->size;
 
-		kmemcpy((uint8_t*)buffer + filled, cmd->addr + (res->size - cmd->size), size);
+		kmemcpy((uint8_t*)buffer + filled, (uint8_t*)cmd->addr + (res->size - cmd->size), size);
 		send(sockfd, buffer, size + filled, 0);
 
 		filled = 0;

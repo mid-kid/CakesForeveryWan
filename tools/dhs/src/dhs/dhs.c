@@ -28,7 +28,7 @@ u32 pid;
 int listenfd;
 u32 firmVersion;
 
-void initVfp()
+void initVfp(void)
 {
 	asm volatile
 	(
@@ -38,7 +38,7 @@ void initVfp()
 	);
 }
 
-Result startServer()
+Result startServer(void)
 {
 	Result ret;
 	if((ret = SOC_Initialize((u32*) (__heapBase + (__heap_size - 0x48000)), 0x48000)))
@@ -67,6 +67,7 @@ Result startServer()
 int snprintf ( char * s, size_t n, const char * format, ... )
 {
 	// Stub to decrease size : TODO
+	return 0;
 }
 
 ssize_t readAtLeast(int sockfd, void* buffer, size_t bufSize, size_t size)
@@ -75,14 +76,14 @@ ssize_t readAtLeast(int sockfd, void* buffer, size_t bufSize, size_t size)
 	ssize_t totalRead = 0;
 	do
 	{
-		bytesRead = recv(sockfd, buffer + totalRead, bufSize - totalRead, 0);
+		bytesRead = recv(sockfd, (uint8_t*)buffer + totalRead, bufSize - totalRead, 0);
 		if(bytesRead <= 0)
 			break;
 
 		totalRead += bytesRead;
-	} while(totalRead < size);
+	} while((size_t)totalRead < size);
 
-	return (bytesRead != -1 && totalRead >= size) ? totalRead : -1;
+	return (bytesRead != -1 && (size_t)totalRead >= size) ? totalRead : -1;
 }
 
 Result readFullCmd(int sockfd, void* buffer, size_t bufSize, size_t bytesRead, size_t cmdSize)
@@ -90,13 +91,13 @@ Result readFullCmd(int sockfd, void* buffer, size_t bufSize, size_t bytesRead, s
 	ssize_t nBytesRead = 0;
 	if(bytesRead < cmdSize)
 	{
-		nBytesRead = readAtLeast(sockfd, buffer + bytesRead, bufSize, cmdSize - bytesRead);
+		nBytesRead = readAtLeast(sockfd, (uint8_t*)buffer + bytesRead, bufSize, cmdSize - bytesRead);
 	}
 
 	return nBytesRead < 0;
 }
 
-void acceptAndServe()
+void acceptAndServe(void)
 {
 	int sockfd = accept(listenfd, (struct sockaddr*) NULL, NULL);
 	if(sockfd < 0)
@@ -113,7 +114,7 @@ void acceptAndServe()
 
 		Result res = -1;
 		bytesRead = readAtLeast(sockfd, buffer, bufSize, sizeof(scmdreq_s));
-		if(bytesRead >= sizeof(scmdreq_s))
+		if((size_t)bytesRead >= sizeof(scmdreq_s))
 		{
 			scmdreq_s* scmd = (scmdreq_s*) buffer;
 			if(scmd->magic == SCMD_MAGIC)
@@ -197,7 +198,7 @@ void acceptAndServe()
 	closesocket(sockfd);
 }
 
-void init()
+void init(void)
 {
 	svcSleepThread(5000000000LL);
 
@@ -209,7 +210,7 @@ void init()
 		DIE(0x14000010, ret);
 }
 
-void patchPid()
+s32 patchPid(void)
 {
 	asm volatile("cpsid aif");
 
@@ -223,9 +224,11 @@ void patchPid()
 		KProcess_8* kProcess = *(KProcess_8**)0xFFFF9004;
 		kProcess->pid = 0;
 	}
+
+	return 0;
 }
 
-void unpatchPid()
+s32 unpatchPid(void)
 {
 	asm volatile("cpsid aif");
 
@@ -239,9 +242,11 @@ void unpatchPid()
 		KProcess_8* kProcess = *(KProcess_8**)0xFFFF9004;
 		kProcess->pid = pid;
 	}
+
+	return 0;
 }
 
-int main()
+int main(void)
 {
 	Handle handle;
 	asm volatile
@@ -260,13 +265,13 @@ int main()
 	svcGetProcessId(&pid, 0xFFFF8001);
 	firmVersion = osGetFirmVersion();
 
-	svcBackdoor((void*)patchPid);
+	svcBackdoor(patchPid);
 
 	Result ret;
 	if((ret = srvInit()) != 0)
 		DIE(0x14000000, ret);
 
-	svcBackdoor((void*)unpatchPid);
+	svcBackdoor(unpatchPid);
 
 	__system_allocateHeaps();
 	initVfp();
