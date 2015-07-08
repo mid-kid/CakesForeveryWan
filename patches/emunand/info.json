@@ -89,6 +89,30 @@
             ]
         },
         {
+            "version": "0x2A",
+            "variables": {
+                "sdmmc": "0x080D84B0",
+                "sdmmc_unk0": "0x080627F0",
+                "sdmmc_unk1": "0x08078608",
+                "sdmmc_unk2": "0x080783E8",
+                "aes_setkey": "0x080575B4",
+                "aes_unk": "0x0805FB48"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B568"
+                }, {
+                    "offset": "0x0801A6E0"
+                }, {
+                    "offset": "0x080784C4"
+                }, {
+                    "offset": "0x08078504"
+                }
+            ]
+        },
+        {
             "version": "0x1F",
             "variables": {
                 "sdmmc": "0x080D8CD0",
@@ -104,7 +128,7 @@
                 }, {
                     "offset": "0x0801B568"
                 }, {
-                    "offset": "0x080282F8"
+                    "offset": "0x0801A6E0"
                 }, {
                     "offset": "0x08078C30"
                 }, {

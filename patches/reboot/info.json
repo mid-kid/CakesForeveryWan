@@ -62,6 +62,23 @@
             ]
         },
         {
+            "version": "0x2A",
+            "variables": {
+                "firm_size": "0x000E9000",
+                "firm_addr": "0x24000000",
+                "fopen": "0x0805AF88",
+                "fread": "0x0804D9B0",
+                "pxi_wait_recv": "0x08054F88"
+            },
+            "patches": [
+                {
+                    "offset": "0x08085534"
+                }, {
+                    "offset": "0x08093F28"
+                }
+            ]
+        },
+        {
             "version": "0x1F",
             "variables": {
                 "firm_size": "0x000EF000",
