@@ -41,6 +41,16 @@
             ]
         },
         {
+            "version": "0x2A",
+            "patches": [
+                {
+                    "offset": "0x08085C80"
+                }, {
+                    "offset": "0x08085CB4"
+                }
+            ]
+        },
+        {
             "version": "0x1F",
             "patches": [
                 {

@@ -155,6 +155,9 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
             case 0x38:
                 compat = &dhs_a9_compat_38;
                 break;
+            case 0x2A:
+                compat = &dhs_a9_compat_2A;
+                break;
             case 0x1F:
                 compat = &dhs_a9_compat_1F;
                 break;

@@ -74,6 +74,34 @@ dhs_a9_compat_s dhs_a9_compat_1F = {
 	.IFile_Write = (void*)0x0805E181,
 };
 
+// Firmware 6.1
+dhs_a9_compat_s dhs_a9_compat_2A = {
+    .hook_load = 0x080CAB68,
+    .hook_return = 0x08085C84,
+
+    .buffer_pa = 0x1FFDD000,
+    .buffer_va = 0xFFF3D000,
+    .hooks_pa = 0x1FFF4B10,
+    .hooks_va = 0xFFFF0B10,
+    .kernel_base_pa = 0x1FF80000,
+    .kernel_base_va = 0xFFF50000,
+    .svc_patch_pa = (uint32_t*)0x1FF822A4, // 0xFFF522A4
+
+    .data_abort_offset = 0x638,
+    .ld11_offset = 0x7FBC,
+
+    .translate_va = (void*)0xFFF6B7D0,
+    .mmu_table_offset = 0x54,
+    .codeset_offset = 0xA8,
+    .exit_process = 0xFFF63820,
+
+    .IFile_Open = (void*)0x0805AF89,
+    .IFile_Close = (void*)0x0805B0D1,
+    .IFile_GetSize = (void*)0x0805C18D,
+    .IFile_Read = (void*)0x0804D8D9,
+    .IFile_Write = (void*)0x0805C397,
+};
+
 dhs_a9_compat_s dhs_a9_compat_38 = {
 	.hook_load = 0x080CB028,
 	.hook_return = 0x0808605C,
