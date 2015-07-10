@@ -48,23 +48,109 @@ int connectToServer(const char* host, const char* port)
 
 	for(struct addrinfo* ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
-		sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-		if(sockfd == INVALID_SOCKET)
-		{
-			printf("socket failed with error: %ld\n", socketGetError());
-			socketCleanup();
-			exit(-1);
-		}
+		uint32_t timeout = 1;
+		const uint32_t retry = 5;
 
-		res = connect(sockfd, ptr->ai_addr, (int) ptr->ai_addrlen);
-		if(res == SOCKET_ERROR)
+		for(uint32_t i = 0; i < retry; i++, timeout *= 2)
 		{
-			close(sockfd);
-			sockfd = INVALID_SOCKET;
-			continue;
-		}
+			sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			if(sockfd == INVALID_SOCKET)
+			{
+				fprintf(stderr, "Socket failed with error: %ld\n", socketGetError());
+				socketCleanup();
+				exit(-1);
+			}
+#ifdef __WIN32__
+			u_long arg = 1;
+			if((res = ioctlsocket(sockfd, FIONBIO, &arg)) != NO_ERROR)
+			{
+				printf("ioctlsocket failed with error: %ld\n", res);
+				exit(-1);
+			}
+#else
+			long arg;
+			if((arg = fcntl(sockfd, F_GETFL, NULL)) < 0)
+			{
+				fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno));
+				exit(-1);
+			}
+			arg |= O_NONBLOCK;
+			if(fcntl(sockfd, F_SETFL, arg) < 0)
+			{
+				fprintf(stderr, "Error fcntl(..., F_SETFL) (%s)\n", strerror(errno));
+				exit(-1);
+			}
+#endif
 
-		break;
+			res = connect(sockfd, ptr->ai_addr, (int) ptr->ai_addrlen);
+			if(res < 0)
+			{
+				if((res = socketGetError()) == EINPROGRESS)
+				{
+					struct timeval tv;
+					fd_set myset;
+
+					tv.tv_sec = timeout;
+					tv.tv_usec = 0;
+					FD_ZERO(&myset);
+					FD_SET(sockfd, &myset);
+					if(select(sockfd + 1, NULL, &myset, NULL, &tv) > 0)
+					{
+						int valopt;
+						socklen_t lon = sizeof(int);
+						getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (void*) (&valopt), &lon);
+						if(valopt)
+						{
+							fprintf(stdout, "Error in connection() %d - %s\n", valopt, strerror(valopt));
+							fprintf(stdout, "Retrying..\n");
+
+							close(sockfd);
+							sockfd = INVALID_SOCKET;
+							continue;
+						}
+					}
+					else
+					{
+						fprintf(stdout, "Timeout : retrying..\n");
+
+						close(sockfd);
+						sockfd = INVALID_SOCKET;
+						continue;
+					}
+				}
+				else
+				{
+					close(sockfd);
+					sockfd = INVALID_SOCKET;
+					break;
+				}
+			}
+
+			if(sockfd != INVALID_SOCKET)
+			{
+#ifdef __WIN32__
+				arg = 0;
+				if((res = ioctlsocket(sockfd, FIONBIO, &arg)) != NO_ERROR)
+				{
+					printf("ioctlsocket failed with error: %ld\n", res);
+					exit(-1);
+				}
+#else
+				if((arg = fcntl(sockfd, F_GETFL, NULL)) < 0)
+				{
+					fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno));
+					exit(-1);
+				}
+				arg &= ~O_NONBLOCK;
+				if(fcntl(sockfd, F_SETFL, arg) < 0)
+				{
+					fprintf(stderr, "Error fcntl(..., F_SETFL) (%s)\n", strerror(errno));
+					exit(-1);
+				}
+#endif
+				break;
+			}
+		}
 	}
 
 	freeaddrinfo(result);

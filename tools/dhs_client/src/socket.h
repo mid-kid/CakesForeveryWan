@@ -12,12 +12,14 @@
 
 #define socketCleanup()  WSACleanup()
 #define socketGetError() WSAGetLastError()
+#define EINPROGRESS WSAEWOULDBLOCK
 
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define socketStartup()
 #define socketCleanup()
