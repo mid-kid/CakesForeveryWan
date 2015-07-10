@@ -14,6 +14,7 @@ extern dhs_a11_compat_s a11compat;
 void doExploit();
 void dataabort_hook();
 void ld11_hook();
+void svcDevHandler(void(*fun)());
 
 extern uint32_t dump_only;
 
@@ -122,6 +123,8 @@ void readARM11CodeBin(uint32_t* text, uint32_t size)
 {
 	// SVC Handler patch, allow all svcs
 	*a9compat.svc_patch_pa = 0;
+	// SVC handler for svc 0x3F
+	*a9compat.svc_dev_patch_pa = a9compat.hooks_va + ((uint8_t*)svcDevHandler - &_a11_hook_start);;
 
 	dump_to_mem("sdmc:/dhs.bin", text, 0);
 }

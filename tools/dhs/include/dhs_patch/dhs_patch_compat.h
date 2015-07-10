@@ -22,6 +22,7 @@ typedef struct dhs_a9_compat_s
 	uint32_t ld11_offset;
 
 	uint32_t* svc_patch_pa;
+	uint32_t* svc_dev_patch_pa;
 
 	void*(*translate_va)(void* mmu_vt, void* addr_va);
 	uint32_t mmu_table_offset;
@@ -58,6 +59,7 @@ dhs_a9_compat_s dhs_a9_compat_1F = {
 	.kernel_base_pa = 0x1FF80000,
 	.kernel_base_va = 0xFFF60000,
 	.svc_patch_pa = (uint32_t*)0x1FF827CC,
+	.svc_dev_patch_pa = (uint32_t*)0x1FF2968,
 
 	.data_abort_offset = 0x348,
 	.ld11_offset = 0x8344,
@@ -86,6 +88,7 @@ dhs_a9_compat_s dhs_a9_compat_2A = {
     .kernel_base_pa = 0x1FF80000,
     .kernel_base_va = 0xFFF50000,
     .svc_patch_pa = (uint32_t*)0x1FF822A4, // 0xFFF522A4
+    .svc_dev_patch_pa = (uint32_t*)0x1FF82440,
 
     .data_abort_offset = 0x638,
     .ld11_offset = 0x7FBC,
@@ -113,6 +116,7 @@ dhs_a9_compat_s dhs_a9_compat_38 = {
 	.kernel_base_pa = 0x1FF80000,
 	.kernel_base_va = 0xFFF00000,
 	.svc_patch_pa = (uint32_t*)0x1FF82290, // 0xFFF02290
+	.svc_dev_patch_pa = (uint32_t*)0x1FF8242C, // 0xFFF0242C
 
 	.data_abort_offset = 0x634,
 	.ld11_offset = 0x82E8,
@@ -141,6 +145,7 @@ dhs_a9_compat_s dhs_a9_compat_49 = {
 	.kernel_base_pa = 0x1FF80000,
 	.kernel_base_va = 0xFFF00000,
 	.svc_patch_pa = (uint32_t*)0x1FF82284, // 0xFFF02284
+	.svc_dev_patch_pa = (uint32_t*)0x1FF82420,
 
 	.data_abort_offset = 0x620,
 	.ld11_offset = 0x82F4,

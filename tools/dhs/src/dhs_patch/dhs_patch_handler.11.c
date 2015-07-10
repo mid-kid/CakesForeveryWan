@@ -126,3 +126,9 @@ void ldHookHandler(proc_data* procData, void* addr_va)
 	);
 	waitArm9((uint32_t*)data);
 }
+
+__attribute__((section(".text.a11")))
+void svcDevHandler(void(*fun)())
+{
+	fun();
+}

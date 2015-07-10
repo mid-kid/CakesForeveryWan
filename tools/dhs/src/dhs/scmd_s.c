@@ -7,6 +7,8 @@
 #include "3ds/srv.h"
 #include "3ds/os.h"
 
+#include "svccust.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -30,7 +32,7 @@ static void _kget_kprocess()
 
 static uint32_t kget_kprocess()
 {
-	svcBackdoor((void*)_kget_kprocess);
+	svcDev(_kget_kprocess);
 	return bdArgs[0];
 }
 
@@ -45,7 +47,7 @@ static void kmemcpy(void* buffer, void* addr, uint32_t size)
 	bdArgs[0] = (uint32_t)buffer;
 	bdArgs[1] = (uint32_t)addr;
 	bdArgs[2] = size;
-	svcBackdoor((void*)_kmemcpy);
+	svcDev(_kmemcpy);
 }
 
 static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
@@ -232,7 +234,7 @@ static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t to, uint32_t n
 	bdArgs[2] = to;
 	bdArgs[3] = namehi;
 	bdArgs[4] = namelo;
-	svcBackdoor((void*)_ktranslate);
+	svcDev(_ktranslate);
 
 	return bdArgs[0];
 }

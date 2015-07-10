@@ -38,6 +38,16 @@ void initVfp()
 	);
 }
 
+__attribute__((naked))
+void svcDev(void(*fun)())
+{
+	asm volatile
+	(
+		"svc 0x3F\n\t"
+		"bx lr"
+	);
+}
+
 Result startServer()
 {
 	Result ret;
@@ -260,13 +270,13 @@ int main()
 	svcGetProcessId(&pid, 0xFFFF8001);
 	firmVersion = osGetFirmVersion();
 
-	svcBackdoor((void*)patchPid);
+	svcDev(patchPid);
 
 	Result ret;
 	if((ret = srvInit()) != 0)
 		DIE(0x14000000, ret);
 
-	svcBackdoor((void*)unpatchPid);
+	svcDev(unpatchPid);
 
 	__system_allocateHeaps();
 	initVfp();
