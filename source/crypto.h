@@ -27,6 +27,7 @@
 #define AES_CBC_ENCRYPT_MODE	(5u << 27)
 #define AES_ECB_DECRYPT_MODE	(6u << 27)
 #define AES_ECB_ENCRYPT_MODE	(7u << 27)
+#define AES_ALL_MODES			(7u << 27)
 
 #define AES_CNT_START			0x80000000
 #define AES_CNT_INPUT_ORDER		0x02000000
