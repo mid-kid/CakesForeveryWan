@@ -9,13 +9,17 @@ if len(argv) < 5:
     print("Usage: bundle.py <info json> <assembly for patches> <build dir> <out dir>", file=stderr)
     exit(1)
 
-# TODO: Define version-specific variables in info.json
-
 info = loads(open(argv[1]).read())
 patches_file = open(argv[2]).read()
 dir_build = argv[3]
 dir_out = argv[4]
 dir_top = getcwd()
+
+options_dict = {
+    "keyx": 0b00000001,
+    "emunand": 0b00000010,
+    "save": 0b00000100
+}
 
 for version in info["version_specific"]:
     patches = []
@@ -72,9 +76,12 @@ for version in info["version_specific"]:
     patch_header_len = 13
     cur_offset = len(cake_header) + patch_header_len * patch_count
     for patch in patches:
+        options = 0
+        if "options" in patch:
+            for option in patch["options"]:
+                options |= options_dict[option]
+
         patch_len = getsize(patch["name"])
-        # TODO: Parse options
-        options = patch["options"] if "options" in patch else 0
         cake_header += pack("IIIB", int(patch["offset"], 0), cur_offset, patch_len, options)
         cur_offset += patch_len
 
