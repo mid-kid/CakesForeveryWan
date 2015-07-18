@@ -79,7 +79,10 @@ for version in info["version_specific"]:
         options = 0
         if "options" in patch:
             for option in patch["options"]:
-                options |= options_dict[option]
+                if option in options_dict:
+                    options |= options_dict[option]
+                else:
+                    print("I don't know what option %s means, skipping..." % option, file=stderr)
 
         patch_len = getsize(patch["name"])
         cake_header += pack("IIIB", int(patch["offset"], 0), cur_offset, patch_len, options)
