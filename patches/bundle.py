@@ -39,8 +39,8 @@ for version in info["version_specific"]:
     for patch in patches:
         match = search("(.create.*[\"|']%s[\"|'].*)" % patch["name"], verfile)
         if not match:
-            print("Couldn't find where %s is created, skipping..." % patch["name"], file=stderr)
-            continue
+            print("Couldn't find where %s is created." % patch["name"], file=stderr)
+            exit(1)
 
         toreplace = match.group(0)
         replaceby = ".create \"%(name)s\", %(offset)s\n.org %(offset)s" % patch
@@ -82,7 +82,8 @@ for version in info["version_specific"]:
                 if option in options_dict:
                     options |= options_dict[option]
                 else:
-                    print("I don't know what option %s means, skipping..." % option, file=stderr)
+                    print("I don't know what option %s means." % option, file=stderr)
+                    exit(1)
 
         patch_len = getsize(patch["name"])
         cake_header += pack("IIIB", int(patch["offset"], 0), cur_offset, patch_len, options)
