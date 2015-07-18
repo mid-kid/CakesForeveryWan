@@ -1,6 +1,7 @@
 #include "firm.h"
 
 #include <stdint.h>
+#include <stddef.h>
 #include "draw.h"
 #include "memfuncs.h"
 #include "fs.h"
@@ -193,7 +194,9 @@ void boot_cfw()
     draw_loading(title, "Patching...");
     if (patch_firm_all() != 0) return;
 
-    if (save_firm && patches_modified) {
+    // Only save the firm if that option is required,
+    //   and either the patches have been modified, or the file doesn't exist.
+    if (save_firm && (patches_modified || f_stat(save_path, NULL) != 0)) {
         draw_loading(title, "Saving FIRM...");
         print("Saving patched FIRM");
         if (write_file(firm_loc, save_path, firm_size) != 0) {
