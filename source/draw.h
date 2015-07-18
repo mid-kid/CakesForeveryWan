@@ -14,7 +14,6 @@ enum screen {
 
 enum screen print_screen;
 
-void draw_init(uint32_t *data);
 void clear_screen(enum screen screen);
 void clear_screens();
 void draw_character(enum screen screen, char character, int pos_x, int pos_y, uint32_t color);

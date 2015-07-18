@@ -4,9 +4,11 @@
 #include "memfuncs.h"
 #include "font.h"
 
-static uint8_t *buffer_top_left;
-static uint8_t *buffer_top_right;
-static uint8_t *buffer_bottom;
+static struct framebuffers {
+    uint8_t *top_left;
+    uint8_t *top_right;
+    uint8_t *bottom;
+} *framebuffers = (struct framebuffers *)0x23FFFE00;
 
 #define screen_top_width 400
 #define screen_top_height 240
@@ -16,6 +18,7 @@ static uint8_t *buffer_bottom;
 #define screen_bottom_size (screen_bottom_width * screen_bottom_height * 3)
 
 static uint8_t print_pos;
+enum screen print_screen = screen_bottom;
 
 struct buffer_select {
     uint8_t *buffer1;
@@ -23,23 +26,14 @@ struct buffer_select {
     int size;
 };
 
-void draw_init(uint32_t *data)
-{
-    buffer_top_left = (uint8_t *)data[0];
-    buffer_top_right = (uint8_t *)data[1];
-    buffer_bottom = (uint8_t *)data[2];
-    print_screen = screen_bottom;
-    clear_screens();
-}
-
 void set_buffers(enum screen screen, struct buffer_select *select)
 {
     if (screen == screen_top_left || screen == screen_top_right) {
-        select->buffer1 = buffer_top_left;
-        select->buffer2 = buffer_top_right;
+        select->buffer1 = framebuffers->top_left;
+        select->buffer2 = framebuffers->top_right;
         select->size = screen_top_size;
     } else {
-        select->buffer1 = buffer_bottom;
+        select->buffer1 = framebuffers->bottom;
         select->size = screen_bottom_size;
     }
 }
@@ -59,7 +53,6 @@ void clear_screen(enum screen screen)
 void clear_screens()
 {
     clear_screen(screen_top_left);
-    clear_screen(screen_top_right);
     clear_screen(screen_bottom);
     print_pos = 0;
 }
@@ -94,11 +87,24 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y, ui
 int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, uint32_t color)
 {
     int length = strlen(string);
+
+    int screen_width;
+    if (screen == screen_top_left || screen == screen_top_right) {
+        screen_width = screen_top_width;
+    } else {
+        screen_width = screen_bottom_width;
+    }
+
     for (int i = 0, line_i = 0; i < length; i++, line_i++) {
         if (string[i] == '\n') {
             pos_y += SPACING_VERT;
             line_i = 0;
             i++;
+        } else if (line_i >= (screen_width - pos_x - 20) / SPACING_HORIZ) {
+            // Make sure we never get out of the screen.
+            pos_y += SPACING_VERT;
+            line_i = 2;  // Little offset so we know the same string continues.
+            if (string[i] == ' ') i++;  // Spaces at the start look weird
         }
 
         draw_character(screen, string[i], pos_x + line_i * SPACING_HORIZ, pos_y, color);

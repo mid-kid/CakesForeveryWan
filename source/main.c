@@ -63,7 +63,7 @@ void menu_main()
 
 void main()
 {
-    draw_init((uint32_t *)0x23FFFE00);
+    clear_screens();
 
     if(mount_sd() != 0) {
         draw_loading("Failed to mount SD", "Make sure your SD card can be read correctly");
