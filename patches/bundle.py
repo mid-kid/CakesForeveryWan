@@ -18,7 +18,8 @@ dir_top = getcwd()
 options_dict = {
     "keyx": 0b00000001,
     "emunand": 0b00000010,
-    "save": 0b00000100
+    "save": 0b00000100,
+    "dhs" : 0b00001000
 }
 
 for version in info["version_specific"]:

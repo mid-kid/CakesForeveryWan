@@ -4,7 +4,9 @@
     "patches": [
         {
             "name": "patch1.bin",
-            "options": 8
+            "options": [
+                "dhs"
+            ]
         }, {
             "name": "patch2.bin"
         }
