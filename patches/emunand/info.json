@@ -4,7 +4,10 @@
     "patches": [
         {
             "name": "patch1.bin",
-            "options": 3
+            "options": [
+                "keyx",
+                "emunand"
+            ]
         }, {
             "name": "patch2.bin"
         }, {

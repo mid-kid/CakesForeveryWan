@@ -192,12 +192,14 @@ void aes(void* dst, const void* src, uint32_t blockCount, void* iv, uint32_t mod
 	uint32_t blocks;
 	while(blockCount != 0)
 	{
-		aes_setiv(iv, ivMode);
+		if((mode & AES_ALL_MODES) != AES_ECB_ENCRYPT_MODE
+		&& (mode & AES_ALL_MODES) != AES_ECB_DECRYPT_MODE)
+			aes_setiv(iv, ivMode);
 
 		blocks = (blockCount >= 0xFFFF) ? 0xFFFF : blockCount;
 
 		// Save the last block for the next decryption CBC batch's iv
-		if((mode & AES_CBC_DECRYPT_MODE) == AES_CBC_DECRYPT_MODE)
+		if((mode & AES_ALL_MODES) == AES_CBC_DECRYPT_MODE)
 		{
 			memcpy(iv, src + (blocks - 1) * AES_BLOCK_SIZE, AES_BLOCK_SIZE);
 			aes_change_ctrmode(iv, AES_INPUT_BE | AES_INPUT_NORMAL, ivMode);
@@ -207,14 +209,14 @@ void aes(void* dst, const void* src, uint32_t blockCount, void* iv, uint32_t mod
 		aes_batch(dst, src, blocks);
 
 		// Save the last block for the next encryption CBC batch's iv
-		if((mode & AES_CBC_ENCRYPT_MODE) == AES_CBC_ENCRYPT_MODE)
+		if((mode & AES_ALL_MODES) == AES_CBC_ENCRYPT_MODE)
 		{
 			memcpy(iv, dst + (blocks - 1) * AES_BLOCK_SIZE, AES_BLOCK_SIZE);
 			aes_change_ctrmode(iv, AES_INPUT_BE | AES_INPUT_NORMAL, ivMode);
 		}
 		
 		// Advance counter for CTR mode
-		else if((mode & AES_CTR_MODE) == AES_CTR_MODE)
+		else if((mode & AES_ALL_MODES) == AES_CTR_MODE)
 			aes_advctr(iv, blocks, ivMode);
 
 		src += blocks * AES_BLOCK_SIZE;
