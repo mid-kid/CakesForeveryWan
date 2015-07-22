@@ -59,7 +59,7 @@ dhs_a9_compat_s dhs_a9_compat_1F = {
 	.kernel_base_pa = 0x1FF80000,
 	.kernel_base_va = 0xFFF60000,
 	.svc_patch_pa = (uint32_t*)0x1FF827CC,
-	.svc_dev_patch_pa = (uint32_t*)0x1FF2968,
+	.svc_dev_patch_pa = (uint32_t*)0x1FF82968,
 
 	.data_abort_offset = 0x348,
 	.ld11_offset = 0x8344,
