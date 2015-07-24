@@ -5,10 +5,10 @@
 
 #include "headers.h"
 
-firm_h *firm_loc;
-uint8_t firm_ver;
-int save_firm;
-const char *save_path;
+extern firm_h *firm_loc;
+extern unsigned int firm_ver;
+extern int save_firm;
+extern const char *save_path;
 
 int prepare_files();
 int decrypt_firm();

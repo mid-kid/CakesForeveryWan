@@ -13,7 +13,7 @@
 
 struct firm_signature {
     uint8_t sig[0x10];
-    uint8_t ver;
+    unsigned int ver;
 };
 
 firm_h *firm_loc = (firm_h *)0x24000000;
@@ -21,7 +21,7 @@ static int firm_size = 0;
 static firm_h *firm_loc_encrypted = (firm_h *)0x24100000;
 static const int firm_size_encrypted = 0xF0000;
 static uint8_t firm_key[16] = {0};
-uint8_t firm_ver = 0xFF;
+unsigned int firm_ver = 0xFFFFFFFF;
 
 int save_firm = 0;
 const char *save_path = "/cakes/patched_firm.bin";
@@ -196,7 +196,7 @@ void boot_cfw()
 
     // Only save the firm if that option is required,
     //   and either the patches have been modified, or the file doesn't exist.
-    if (save_firm && (patches_modified || f_stat(save_path, NULL) != 0)) {
+    if (save_firm && (config_modified || f_stat(save_path, NULL) != 0)) {
         draw_loading(title, "Saving FIRM...");
         print("Saving patched FIRM");
         if (write_file(firm_loc, save_path, firm_size) != 0) {
