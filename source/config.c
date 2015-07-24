@@ -5,9 +5,12 @@
 #include "draw.h"
 #include "patch.h"
 #include "menu.h"
+#include "firm.h"
+
+static unsigned int config_ver = 1;
 
 struct config_file *config = (struct config_file *)0x24400000;
-int patches_modified = 0;
+int config_modified = 0;
 
 void load_config()
 {
@@ -15,7 +18,18 @@ void load_config()
     memset(config, 0, sizeof(struct config_file));
 
     if (read_file(config, "/cakes/config.dat", 0x100000) != 0) {
-        print("Failed to load the config file.\n  Starting from scratch.");
+        print("Failed to load the config.\n  Starting from scratch.");
+
+        config_modified = 1;
+        return;
+    }
+
+    // Check that we have the correct config & firmware version
+    if (config->config_ver != config_ver || config->firm_ver != firm_ver) {
+        print("Invalid config or firm version.\n  Starting from scratch.");
+
+        memset(config, 0, sizeof(struct config_file));
+        config_modified = 1;
         return;
     }
 
@@ -44,6 +58,12 @@ void save_config()
     if (autoboot_size > 0x100000 - sizeof(struct config_file)) {
         autoboot_size = 0x100000 - sizeof(struct config_file);
     }
+
+    // Set config file version
+    config->config_ver = config_ver;
+
+    // Set the firmware version
+    config->firm_ver = firm_ver;
 
     // Clean the memory area. We don't want to dump random bytes.
     memset32(config->autoboot_list, 0, autoboot_size);
