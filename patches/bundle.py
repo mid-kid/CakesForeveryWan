@@ -1,9 +1,12 @@
+from __future__ import print_function
+
 from sys import argv, exit, stderr
 from os import mkdir, makedirs, chdir, system, getcwd
 from os.path import getsize
 from re import search
 from json import loads
 from struct import pack
+from errno import EEXIST
 
 if len(argv) < 5:
     print("Usage: bundle.py <info json> <assembly for patches> <build dir> <out dir>", file=stderr)
@@ -56,8 +59,11 @@ for version in info["version_specific"]:
     # Build dir for this version
     try:
         mkdir(dir_build + "/" + ver)
-    except FileExistsError:
-        pass
+    except OSError as ex:
+        if ex.errno == EEXIST:
+            pass
+        else:
+            raise
 
     chdir(dir_build + "/" + ver)
 
@@ -99,6 +105,9 @@ for version in info["version_specific"]:
     verdir = dir_out + "/" + ver
     try:
         makedirs(verdir)
-    except FileExistsError:
-        pass
+    except OSError as ex:
+        if ex.errno == EEXIST:
+            pass
+        else:
+            raise
     open(verdir + "/" + info["name"] + ".cake", "wb").write(cake)
