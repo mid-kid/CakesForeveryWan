@@ -6,8 +6,8 @@ This is a homebrew for the 3ds that helps with patching the NATIVE\_FIRM, thus a
 Building
 --------
 
-You need 3 things: Python 2.x/3.x (both), devkitARM, and armips.  
-Make sure the cross compilers (arm-none-eabi-\*), armips and python2/3 are in your $PATH.  
+You need 3 things: Python 3.x, devkitARM, and armips.  
+Make sure the cross compilers (arm-none-eabi-\*), armips and python3 are in your $PATH.  
 If everything's set up, just run make.  
 
 
