@@ -1,5 +1,7 @@
 #include "dhs_patch/dhs_patch_compat.h"
-#include "dhs_patch.h"
+#include "dhs_patch/dhs_patch.h"
+#include "dhs/scmd.h"
+
 #include <stdint.h>
 
 typedef struct proc_section
@@ -23,6 +25,8 @@ typedef struct proc_data
 
 // Dirty trick to get PIC, I'm going to regret this
 dhs_a11_compat_s* get_compat();
+
+typedef uint32_t Handle;
 
 __attribute__((section(".text.a11")))
 void waitArm9(volatile uint32_t* buffer)
@@ -60,7 +64,7 @@ void abortHookHandler(uint32_t* regs)
 	{
 		mmu_table = (void*)(kprocess + compat->mmu_table_offset);
 
-		uint32_t* codeset = (uint32_t*)(kprocess + compat->codeset_offset);
+		KCodeSet* codeset = (KCodeSet*)(kprocess + compat->codeset_offset);
 		if(codeset != NULL)
 		{
 			name_lo = data->name_lo;
@@ -125,6 +129,39 @@ void ldHookHandler(proc_data* procData, void* addr_va)
 		:::"r0"
 	);
 	waitArm9((uint32_t*)data);
+}
+
+__attribute__((section(".text.a11")))
+void ssrHookHandler(Handle handle)
+{
+	dhs_a11_compat_s* compat = get_compat();
+
+	volatile ssr_data_s* data = (volatile ssr_data_s*) compat->buffer;
+	if(data->magic == HAXX)
+	{
+		uint8_t* kprocess = *(uint8_t**) 0xFFFF9004;
+		KCodeSet* codeset = (KCodeSet*)*(uint32_t*)(kprocess + compat->codeset_offset);
+		if(codeset)
+		{
+			if(codeset->namelo == data->name_lo && codeset->namehi == data->name_hi)
+			{
+				uint32_t* tls;
+				asm volatile
+				(
+					"mrc p15, 0, %0, c13, c0, 3"
+					:"=r"(tls)
+				);
+				uint32_t* cmd_buffer = tls + 0x20;
+
+				data->handle = handle;
+				for(int i = 0; i < 0x100 / sizeof(uint32_t); i++)
+					data->cmd_buffer[i] = cmd_buffer[i];
+
+				data->processed = 0;
+				while(!data->processed);
+			}
+		}
+	}
 }
 
 __attribute__((section(".text.a11")))

@@ -37,6 +37,16 @@ typedef struct ld_data_s
 	uint32_t name_hi;
 } ld_data_s;
 
+typedef struct ssr_data_s
+{
+	uint32_t magic;
+	uint32_t name_lo;
+	uint32_t name_hi;
+	uint32_t processed;
+	uint32_t handle;
+	uint32_t cmd_buffer[];
+} ssr_data_s;
+
 typedef struct proc_data proc_data;
 
 #endif /*__DHS_PATCH_H_*/

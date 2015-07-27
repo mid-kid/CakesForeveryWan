@@ -20,6 +20,7 @@ typedef struct dhs_a9_compat_s
 
 	uint32_t data_abort_offset;
 	uint32_t ld11_offset;
+	uint32_t ssr_offset;
 
 	uint32_t* svc_patch_pa;
 	uint32_t* svc_dev_patch_pa;
@@ -63,6 +64,7 @@ dhs_a9_compat_s dhs_a9_compat_1F = {
 
 	.data_abort_offset = 0x348,
 	.ld11_offset = 0x8344,
+	.ssr_offset = 0,
 
 	.translate_va = (void*)0xFFF7A8C4,
 	.mmu_table_offset = 0x54,
@@ -149,6 +151,7 @@ dhs_a9_compat_s dhs_a9_compat_49 = {
 
 	.data_abort_offset = 0x620,
 	.ld11_offset = 0x82F4,
+	.ssr_offset = 0x4AB8,
 
 	.translate_va = (void*)0xFFF1C140,
 	.mmu_table_offset = 0x5C,

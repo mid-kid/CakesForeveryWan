@@ -196,6 +196,14 @@ void acceptAndServe()
 						res = sService(&scmdService, sockfd, buffer, bufSize);
 					}
 					break;
+				case SCMD_SERVICEMON:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_servicemon_s)) == 0)
+					{
+						scmdreq_servicemon_s scmdServiceMon;
+						memcpy(&scmdServiceMon, scmd, sizeof(scmdreq_servicemon_s));
+						res = sServiceMon(&scmdServiceMon, sockfd, buffer, bufSize);
+					}
+					break;
 				default:
 					send(sockfd, &ack, sizeof(ack), 0);
 					break;

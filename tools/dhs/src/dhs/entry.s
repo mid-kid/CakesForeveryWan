@@ -4,7 +4,11 @@
 .global _entry
 _entry:
 	b main
-.pool
+
+.global kbuffer
+kbuffer:
+	.word 0
+.pool							@ pool for entry
 
 .global __service_ptr
 __service_ptr:

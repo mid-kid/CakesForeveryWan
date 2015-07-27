@@ -49,7 +49,7 @@ get_compat:
 
 .global ld11_hook
 ld11_hook:
-	mov r5, r0						@ The code we patched
+	mov r5, r0					@ The code we patched
 	stmfd sp!, {r0-r12,lr}
 	cpsid i
 	ldr r0, [sp, #0x04]
@@ -57,4 +57,13 @@ ld11_hook:
 	bl ldHookHandler
 	cpsie i
 	ldmfd sp!, {r0-r12,pc}
+.pool
+
+.global ssr_hook
+ssr_hook:
+	stmfd sp!, {r0-r3,lr}
+	bl ssrHookHandler
+	ldmfd sp!, {r0-r3,lr}
+	sub sp, sp, #0x14			@ The code we patched
+	bx lr
 .pool

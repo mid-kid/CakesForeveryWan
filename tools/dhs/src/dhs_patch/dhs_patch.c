@@ -1,6 +1,6 @@
 #include <string.h>
 #include "dhs_patch/dhs_patch_compat.h"
-#include "dhs_patch.h"
+#include "dhs_patch/dhs_patch.h"
 #include "svc.h"
 #include "file.h"
 
@@ -14,6 +14,7 @@ extern dhs_a11_compat_s a11compat;
 void doExploit();
 void dataabort_hook();
 void ld11_hook();
+void ssr_hook();
 void svcDevHandler(void(*fun)());
 
 extern uint32_t dump_only;
@@ -99,6 +100,7 @@ void patchARM11Kernel()
 	a11compat.buffer = a9compat.buffer_va;
 	a11compat.translate_va = a9compat.translate_va;
 	a11compat.mmu_table_offset = a9compat.mmu_table_offset;
+	a11compat.codeset_offset = a9compat.codeset_offset;
 	a11compat.exit_process = a9compat.exit_process;
 
 	memset((void*)a9compat.buffer_pa, 0, 0xC00);
@@ -112,6 +114,9 @@ void patchARM11Kernel()
 
 	offset = a9compat.ld11_offset;
 	*(uint32_t*)(a11_base_pa + offset) = getBranchInst(a11_base_va + offset, a9compat.hooks_va + ((uint8_t*)ld11_hook - &_a11_hook_start), 1);
+
+	offset = a9compat.ssr_offset;
+	*(uint32_t*)(a11_base_pa + offset) = getBranchInst(a11_base_va + offset, a9compat.hooks_va + ((uint8_t*)ssr_hook - &_a11_hook_start), 1);
 }
 
 void dumpAXIWRAM()
@@ -127,6 +132,9 @@ void readARM11CodeBin(uint32_t* text, uint32_t size)
 	*a9compat.svc_dev_patch_pa = a9compat.hooks_va + ((uint8_t*)svcDevHandler - &_a11_hook_start);;
 
 	dump_to_mem("sdmc:/dhs.bin", text, 0);
+
+	// Set buffer loc
+	text[1] = a9compat.buffer_va;
 }
 
 void processA11Hooks()

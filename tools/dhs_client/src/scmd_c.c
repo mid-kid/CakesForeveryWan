@@ -405,10 +405,8 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 		memset(namebuf, 0, 9);
 		sprintf(namebuf, "%s", process);
 
-		cmd.namehi = *(uint32_t*)(namebuf);
-		cmd.namelo = *(uint32_t*)(namebuf + 4);
-
-		printf("%08X%08X\n", cmd.namehi, cmd.namelo);
+		cmd.namelo = *(uint32_t*)(namebuf);
+		cmd.namehi = *(uint32_t*)(namebuf + 4);
 
 		fprintf(stdout, " process : %s\n", process);
 	}
@@ -514,6 +512,43 @@ int cService(int sockfd, void* buffer, size_t bufSize, uint32_t handle, uint32_t
 	else
 	{
 		printResponse(((scmdres_service_s*)buffer)->res);
+	}
+
+	return 0;
+}
+
+int cServiceMon(int sockfd, void* buffer, size_t bufSize, const char* name)
+{
+	if(strlen(name) > 8)
+		return -1;
+
+	fprintf(stdout, "Service monitor\n");
+
+	scmdreq_servicemon_s cmd;
+	cmd.req.magic = SCMD_MAGIC;
+	cmd.req.cmd = SCMD_SERVICEMON;
+	memset(cmd.name, 0, sizeof(cmd.name));
+	strncpy(cmd.name, name, 8);
+
+	send(sockfd, &cmd, sizeof(cmd), 0);
+
+	while(1)
+	{
+		if(readAtLeast(sockfd, buffer, sizeof(scmdres_servicemon_s), sizeof(scmdres_servicemon_s)) == sizeof(scmdres_servicemon_s))
+		{
+			fprintf(stdout, "Handle : 0x%08X\n", ((scmdres_servicemon_s*)buffer)->handle);
+			for(int i = 0; i < 0x40; ++i)
+			{
+				fprintf(stdout, "0x%02X : 0x%08X\n", i * 4, ((scmdres_servicemon_s*)buffer)->cmd_buffer[i]);
+			}
+
+			fprintf(stdout, "\n");
+		}
+		else
+		{
+			fprintf(stderr, "No response from server\n");
+			exit(-1);
+		}
 	}
 
 	return 0;

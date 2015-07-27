@@ -17,12 +17,17 @@
 
 #include <string.h>
 
+#include "dhs_patch/dhs_patch.h"
+extern void* kbuffer;
+
 extern uint32_t __heapBase;
 extern uint32_t __linear_heap;
 
 extern uint32_t pid;
 extern uint32_t firmVersion;
 uint32_t bdArgs[8];
+
+static void* _kfind_kprocess(uint32_t namelo, uint32_t namehi);
 
 static void _kget_kprocess()
 {
@@ -50,7 +55,67 @@ static void kmemcpy(void* buffer, void* addr, uint32_t size)
 	svcDev(_kmemcpy);
 }
 
-static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
+static void _kstart_ssr()
+{
+	volatile ssr_data_s* data = (volatile ssr_data_s*) kbuffer;
+	data->name_lo = bdArgs[0];
+	data->name_hi = bdArgs[1];
+	data->magic = HAXX;
+
+	data->processed = 1;
+}
+
+static void kstart_ssr(const char* name)
+{
+	bdArgs[0] = *((uint32_t*)(name));
+	bdArgs[1] = *((uint32_t*)(name + 4));
+	svcDev(_kstart_ssr);
+}
+
+static void _kstop_ssr()
+{
+	volatile ssr_data_s* data = (volatile ssr_data_s*) kbuffer;
+	data->name_lo = 0;
+	data->name_hi = 0;
+	data->magic = 0;
+
+	data->processed = 1;
+}
+
+static void kstop_ssr()
+{
+	svcDev(_kstop_ssr);
+}
+
+static void _kprocess_ssr()
+{
+	volatile ssr_data_s* data = (volatile ssr_data_s*) kbuffer;
+
+	uint32_t timeout = 0xFFFFFFFF;
+	while(data->processed && --timeout);
+
+	if(timeout != 0)
+	{
+		*(uint32_t*)bdArgs[0] = data->handle;
+		memcpy((void*)bdArgs[1], (void*)data->cmd_buffer, 0x100);
+		data->processed = 1;
+
+		bdArgs[0] = 0;
+	}
+	else
+		bdArgs[0] = 1;
+}
+
+static int kprocess_ssr(uint32_t* handle, void* buffer)
+{
+	bdArgs[0] = (uint32_t)handle;
+	bdArgs[1] = (uint32_t)buffer;
+	svcDev(_kprocess_ssr);
+
+	return bdArgs[0];
+}
+
+static void* _kfind_kprocess(uint32_t namelo, uint32_t namehi)
 {
 	size_t size = 0;
 	void* currKProcess = (void*)*((uint32_t*)0xFFFF9004);
@@ -64,7 +129,7 @@ static void* _kfind_kprocess(uint32_t namehi, uint32_t namelo)
 	{
 		void* toffset = offset + i * size;
 		KCodeSet* codeset = (firmVersion < 0x022C0600) ? ((KProcess_4*)toffset)->kcodeset : ((KProcess_8*)toffset)->kcodeset;
-		if(codeset->namehi == namehi && codeset->namelo == namelo)
+		if(codeset->namelo == namelo && codeset->namehi == namehi)
 			return toffset;
 	}
 
@@ -187,15 +252,15 @@ static void _ktranslate()
 	uint32_t addr = bdArgs[0];
 	uint32_t from = bdArgs[1];
 	uint32_t to = bdArgs[2];
-	uint32_t namehi = bdArgs[3];
-	uint32_t namelo = bdArgs[4];
+	uint32_t namelo = bdArgs[3];
+	uint32_t namehi = bdArgs[4];
 
 	uint32_t taddr = 0;
 	uint32_t mmu_table_size = 0;
 	uint32_t* mmu_table = 0;
 	if(from == MEMTYPE_PROCESS || to == MEMTYPE_PROCESS)
 	{
-		void* kprocess = _kfind_kprocess(namehi, namelo);
+		void* kprocess = _kfind_kprocess(namelo, namehi);
 		if(kprocess)
 		{
 			if(firmVersion < 0x022C0600) // Less than ver 8.0.0
@@ -227,13 +292,13 @@ static void _ktranslate()
 	bdArgs[0] = taddr;
 }
 
-static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t to, uint32_t namehi, uint32_t namelo)
+static uint32_t ktranslate(uint32_t addr, uint32_t from, uint32_t to, uint32_t namelo, uint32_t namehi)
 {
 	bdArgs[0] = addr;
 	bdArgs[1] = from;
 	bdArgs[2] = to;
-	bdArgs[3] = namehi;
-	bdArgs[4] = namelo;
+	bdArgs[3] = namelo;
+	bdArgs[4] = namehi;
 	svcDev(_ktranslate);
 
 	return bdArgs[0];
@@ -382,7 +447,7 @@ int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t 
 	int32_t ret = 0;
 
 	scmdres_translate_s res;
-	res.address = ktranslate(cmd->address, cmd->from, cmd->to, cmd->namehi, cmd->namelo);
+	res.address = ktranslate(cmd->address, cmd->from, cmd->to, cmd->namelo, cmd->namehi);
 	res.res = ret;
 	send(sockfd, &res, sizeof(res), 0);
 
@@ -434,4 +499,31 @@ int32_t sService(scmdreq_service_s* cmd, int sockfd, void* buffer, uint32_t bufS
 	} while(left != 0);
 
 	return ret;
+}
+
+int32_t sServiceMon(scmdreq_servicemon_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
+{
+	if(kbuffer == 0)
+		return -1;
+
+	scmdres_servicemon_s* res = (scmdres_servicemon_s*) buffer;
+	res->res = 0;
+
+	kstart_ssr(cmd->name);
+	do
+	{
+		if(kprocess_ssr(&res->handle, res->cmd_buffer) == 0)
+		{
+			if(send(sockfd, buffer, sizeof(scmdres_servicemon_s), 0) == -1)
+				break;
+		}
+		else
+		{
+			svcSleepThread(200000);
+		}
+	} while(1);
+
+	kstop_ssr();
+
+	return 0;
 }

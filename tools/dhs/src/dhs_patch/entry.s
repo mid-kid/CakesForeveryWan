@@ -14,7 +14,7 @@ a9compat:
 	.global hook_return
 	hook_return:
 		.word 0
-	.space (21 - 2) * 4
+	.space (22 - 2) * 4
 
 .global dump_only
 dump_only:

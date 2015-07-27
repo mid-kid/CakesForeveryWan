@@ -16,6 +16,7 @@ enum SCMD
 	SCMD_TRANSLATE,
 	SCMD_GETHANDLE,
 	SCMD_SERVICE,
+	SCMD_SERVICEMON,
 };
 
 enum SCMD_MEMTYPE
@@ -44,8 +45,8 @@ typedef struct KCodeSet
 	uint32_t text_pages;
 	uint32_t ro_pages;
 	uint32_t rw_pages;
-	uint32_t namehi;
 	uint32_t namelo;
+	uint32_t namehi;
 	uint32_t unk;
 	uint64_t titleid;
 } KCodeSet;
@@ -163,8 +164,8 @@ typedef struct scmdreq_translate_s
 	scmdreq_s req;
 	uint32_t from;
 	uint32_t to;
-	uint32_t namehi;
 	uint32_t namelo;
+	uint32_t namehi;
 	uint32_t address;
 } scmdreq_translate_s;
 
@@ -201,5 +202,18 @@ typedef struct scmdres_service_s
 	uint32_t res;
 	uint32_t size;
 } scmdres_service_s;
+
+typedef struct scmdreq_servicemon_s
+{
+	scmdreq_s req;
+	char name[8];
+} scmdreq_servicemon_s;
+
+typedef struct scmdres_servicemon_s
+{
+	uint32_t res;
+	uint32_t handle;
+	uint32_t cmd_buffer[0x100 / sizeof(uint32_t)]; // 0x40
+} scmdres_servicemon_s;
 
 #endif /*__SCMD_H_*/

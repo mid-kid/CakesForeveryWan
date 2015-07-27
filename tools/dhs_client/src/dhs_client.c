@@ -20,6 +20,7 @@ enum DHSC_CMD
 	DHSC_TRANSLATE,
 	DHSC_GETHANDLE,
 	DHSC_SERVICE,
+	DHSC_SERVICEMON,
 
 	// Pseudo commands
 	DHSC_SCREENSHOT = 1000,
@@ -192,6 +193,8 @@ void printHelp(char* name)
 	fprintf(stderr, "    -to\t\t\t 0 : Kernel, 1 : Process, 2: Physical\n");
 	fprintf(stderr, "    -process\t\t If \"from\" or \"to\" is 1, the name of the\n");
 	fprintf(stderr, "            \t\t process table to use\n");
+	fprintf(stderr, "  servicemon - Monitor service calls made by a process\n");
+	fprintf(stderr, "    -process\t\t Name of target process\n");
 }
 
 typedef struct input_s
@@ -237,6 +240,8 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		input->cmd = DHSC_GETHANDLE;
 	else if(strcmp(argv[0], "service") == 0)
 		input->cmd = DHSC_SERVICE;
+	else if(strcmp(argv[0], "servicemon") == 0)
+		input->cmd = DHSC_SERVICEMON;
 	else if(strcmp(argv[0], "screenshot") == 0)
 		input->cmd = DHSC_SCREENSHOT;
 	else
@@ -345,6 +350,9 @@ int main(int argc, char *argv[])
 			break;
 		case DHSC_SERVICE:
 			res = cService(sockfd, buffer, bufSize, input.handle, input.header_code, input.argc, input.argv, input.size);
+			break;
+		case DHSC_SERVICEMON:
+			res = cServiceMon(sockfd, buffer, bufSize, input.process);
 			break;
 		case DHSC_SCREENSHOT:
 			res = cScreenshot(sockfd, buffer, bufSize, input.fname);
