@@ -14,6 +14,8 @@ enum SCMD
 	SCMD_DELETE,
 	SCMD_INSTALLFIRM,
 	SCMD_TRANSLATE,
+	SCMD_GETPROCESS_LIST,
+	SCMD_GETKPROCESS,
 	SCMD_GETHANDLE,
 	SCMD_SERVICE,
 	SCMD_SERVICEMON,
@@ -174,6 +176,26 @@ typedef struct scmdres_translate_s
 	uint32_t res;
 	uint32_t address;
 } scmdres_translate_s;
+
+typedef struct scmdres_getprocess_list_s
+{
+	uint32_t res;
+	uint32_t count;
+	char names[0x100][8];
+} scmdres_getprocess_list_s;
+
+typedef struct scmdreq_getkprocess_s
+{
+	scmdreq_s req;
+	uint32_t namelo;
+	uint32_t namehi;
+} scmdreq_getkprocess_s;
+
+typedef struct scmdres_getkprocess_s
+{
+	uint32_t res;
+	uint32_t kprocess;
+} scmdres_getkprocess_s;
 
 typedef struct scmdreq_gethandle_s
 {

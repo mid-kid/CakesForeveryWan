@@ -18,6 +18,8 @@ enum DHSC_CMD
 	DHSC_DELETE,
 	DHSC_INSTALLFIRM,
 	DHSC_TRANSLATE,
+	DHSC_GETPROCESSLIST,
+	DHSC_GETKPROCESS,
 	DHSC_GETHANDLE,
 	DHSC_SERVICE,
 	DHSC_SERVICEMON,
@@ -193,6 +195,9 @@ void printHelp(char* name)
 	fprintf(stderr, "    -to\t\t\t 0 : Kernel, 1 : Process, 2: Physical\n");
 	fprintf(stderr, "    -process\t\t If \"from\" or \"to\" is 1, the name of the\n");
 	fprintf(stderr, "            \t\t process table to use\n");
+	fprintf(stderr, "  list - List all running processes\n");
+	fprintf(stderr, "  getkprocess - Get the KProcess of the target process\n");
+	fprintf(stderr, "    -process\t\t Name of target process\n");
 	fprintf(stderr, "  servicemon - Monitor service calls made by a process\n");
 	fprintf(stderr, "    -process\t\t Name of target process\n");
 }
@@ -236,6 +241,10 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		input->cmd = DHSC_INSTALLFIRM;
 	else if(strcmp(argv[0], "translate") == 0)
 		input->cmd = DHSC_TRANSLATE;
+	else if(strcmp(argv[0], "list") == 0)
+		input->cmd = DHSC_GETPROCESSLIST;
+	else if(strcmp(argv[0], "getkprocess") == 0)
+		input->cmd = DHSC_GETKPROCESS;
 	else if(strcmp(argv[0], "gethandle") == 0)
 		input->cmd = DHSC_GETHANDLE;
 	else if(strcmp(argv[0], "service") == 0)
@@ -344,6 +353,12 @@ int main(int argc, char *argv[])
 			break;
 		case DHSC_TRANSLATE:
 			res = cTranslate(sockfd, buffer, bufSize, input.addr, input.from, input.to, input.process);
+			break;
+		case DHSC_GETPROCESSLIST:
+			res = cGetProcessList(sockfd, buffer, bufSize);
+			break;
+		case DHSC_GETKPROCESS:
+			res = cGetKProcess(sockfd, buffer, bufSize, input.process);
 			break;
 		case DHSC_GETHANDLE:
 			res = cGetHandle(sockfd, buffer, bufSize, input.service);

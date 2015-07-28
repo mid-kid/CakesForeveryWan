@@ -10,7 +10,10 @@ int32_t sInstallCia(scmdreq_install_s* cmd, int sockfd, void* buffer, uint32_t b
 int32_t sDeleteCia(scmdreq_delete_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 int32_t sInstallFirm(scmdreq_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
+int32_t sGetProcessList(scmdreq_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
+int32_t sGetKProcess(scmdreq_getkprocess_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 int32_t sGetHandle(scmdreq_gethandle_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 int32_t sService(scmdreq_service_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
+int32_t sServiceMon(scmdreq_servicemon_s* cmd, int sockfd, void* buffer, uint32_t bufSize);
 
 #endif /*__SCMD_S_H_*/

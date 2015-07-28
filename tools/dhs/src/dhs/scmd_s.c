@@ -91,10 +91,7 @@ static void _kprocess_ssr()
 {
 	volatile ssr_data_s* data = (volatile ssr_data_s*) kbuffer;
 
-	uint32_t timeout = 0xFFFFFFFF;
-	while(data->processed && --timeout);
-
-	if(timeout != 0)
+	if(!data->processed)
 	{
 		*(uint32_t*)bdArgs[0] = data->handle;
 		memcpy((void*)bdArgs[1], (void*)data->cmd_buffer, 0x100);
@@ -134,6 +131,55 @@ static void* _kfind_kprocess(uint32_t namelo, uint32_t namehi)
 	}
 
 	return NULL;
+}
+
+static void _kget_kprocessa()
+{
+	uint32_t namelo = bdArgs[0];
+	uint32_t namehi = bdArgs[1];
+
+	bdArgs[0] = (uint32_t) _kfind_kprocess(namelo, namehi);
+}
+
+static void* kget_kprocess_other(uint32_t namelo, uint32_t namehi)
+{
+	bdArgs[0] = namelo;
+	bdArgs[1] = namehi;
+
+	svcDev(_kget_kprocessa);
+
+	return (void*) bdArgs[0];
+}
+
+static void _kget_process_list()
+{
+	uint32_t* count = (uint32_t*) bdArgs[0];
+	char(*names)[8] = (char(*)[8]) bdArgs[1];
+
+	*count = 0;
+
+	size_t size = 0;
+	void* currKProcess = (void*)*((uint32_t*)0xFFFF9004);
+	if(firmVersion < 0x022C0600) // Less than ver 8.0.0
+		size = 0x260;
+	else
+		size = 0x268;
+
+	void* offset = currKProcess - pid * size;
+	for(int i = 0; *(uint32_t*)(offset + i * size + 4); i++, (*count)++)
+	{
+		void* toffset = offset + i * size;
+		KCodeSet* codeset = (firmVersion < 0x022C0600) ? ((KProcess_4*)toffset)->kcodeset : ((KProcess_8*)toffset)->kcodeset;
+		memcpy(names[*count], &codeset->namelo, 8);
+	}
+}
+
+static void kget_process_list(uint32_t* count, char names[][8])
+{
+	bdArgs[0] = (uint32_t) count;
+	bdArgs[1] = (uint32_t) names;
+
+	svcDev(_kget_process_list);
 }
 
 static uint32_t _ktranslate_va_pa(uint32_t* mmu_table, uint32_t addr)
@@ -454,6 +500,26 @@ int32_t sTranslate(scmdreq_translate_s* cmd, int sockfd, void* buffer, uint32_t 
 	return ret;
 }
 
+int32_t sGetProcessList(scmdreq_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
+{
+	scmdres_getprocess_list_s* res = (scmdres_getprocess_list_s*) buffer;
+	res->res = 0;
+	kget_process_list(&res->count, res->names);
+	send(sockfd, res, sizeof(scmdres_getprocess_list_s), 0);
+
+	return 0;
+}
+
+int32_t sGetKProcess(scmdreq_getkprocess_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
+{
+	scmdres_translate_s res;
+	res.address = (uint32_t) kget_kprocess_other(cmd->namelo, cmd->namehi);
+	res.res = 0;
+	send(sockfd, &res, sizeof(res), 0);
+
+	return 0;
+}
+
 int32_t sGetHandle(scmdreq_gethandle_s* cmd, int sockfd, void* buffer, uint32_t bufSize)
 {
 	Handle handle;
@@ -517,10 +583,8 @@ int32_t sServiceMon(scmdreq_servicemon_s* cmd, int sockfd, void* buffer, uint32_
 			if(send(sockfd, buffer, sizeof(scmdres_servicemon_s), 0) == -1)
 				break;
 		}
-		else
-		{
-			svcSleepThread(200000);
-		}
+
+		svcSleepThread(200000);
 	} while(1);
 
 	kstop_ssr();

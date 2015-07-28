@@ -8,8 +8,11 @@ int cInstallCia(int sockfd, void* buffer, size_t bufSize, const char* fname, uin
 int cDeleteCia(int sockfd, void* buffer, size_t bufSize, uint64_t titleid, uint32_t mediatype);
 int cInstallFirm(int sockfd, void* buffer, size_t bufSize);
 int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t from, uint32_t to, const char* process);
+int cGetProcessList(int sockfd, void* buffer, size_t bufSize);
+int cGetKProcess(int sockfd, void* buffer, size_t bufSize, const char* name);
 int cGetHandle(int sockfd, void* buffer, size_t bufSize, const char* name);
 int cService(int sockfd, void* buffer, size_t bufSize, uint32_t handle, uint32_t headerCode, uint32_t argc, uint32_t* argv, uint32_t outputSize);
+int cServiceMon(int sockfd, void* buffer, size_t bufSize, const char* name);
 
 int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname);
 

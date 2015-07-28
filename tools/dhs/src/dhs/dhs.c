@@ -180,6 +180,17 @@ void acceptAndServe()
 						res = sTranslate(&scmdTranslate, sockfd, buffer, bufSize);
 					}
 					break;
+				case SCMD_GETPROCESS_LIST:
+					res = sGetProcessList(scmd, sockfd, buffer, bufSize);
+					break;
+				case SCMD_GETKPROCESS:
+					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_getkprocess_s)) == 0)
+					{
+						scmdreq_getkprocess_s scmdGetKProcess;
+						memcpy(&scmdGetKProcess, scmd, sizeof(scmdreq_getkprocess_s));
+						res = sGetKProcess(&scmdGetKProcess, sockfd, buffer, bufSize);
+					}
+					break;
 				case SCMD_GETHANDLE:
 					if(readFullCmd(sockfd, buffer, bufSize, bytesRead, sizeof(scmdreq_gethandle_s)) == 0)
 					{

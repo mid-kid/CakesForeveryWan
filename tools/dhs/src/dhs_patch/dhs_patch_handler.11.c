@@ -64,11 +64,11 @@ void abortHookHandler(uint32_t* regs)
 	{
 		mmu_table = (void*)(kprocess + compat->mmu_table_offset);
 
-		KCodeSet* codeset = (KCodeSet*)(kprocess + compat->codeset_offset);
+		KCodeSet* codeset = (KCodeSet*)*(uint32_t*)(kprocess + compat->codeset_offset);
 		if(codeset != NULL)
 		{
-			name_lo = data->name_lo;
-			name_hi = data->name_hi;
+			name_lo = codeset->namelo;
+			name_hi = codeset->namehi;
 		}
 	}
 

@@ -426,9 +426,69 @@ int cTranslate(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t fr
 	return 0;
 }
 
+int cGetProcessList(int sockfd, void* buffer, size_t bufSize)
+{
+	fprintf(stdout, "Get process list\n");
+
+	scmdreq_s cmd;
+	cmd.magic = SCMD_MAGIC;
+	cmd.cmd = SCMD_GETPROCESS_LIST;
+
+	send(sockfd, &cmd, sizeof(cmd), 0);
+	if(readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_getprocess_list_s)) == sizeof(scmdres_getprocess_list_s))
+	{
+		scmdres_getprocess_list_s* res = (scmdres_getprocess_list_s*) buffer;
+		for(int i = 0; i < res->count; i++)
+		{
+			fprintf(stdout, " %02d : %s\n", i, res->names[i]);
+		}
+	}
+	else
+	{
+		fprintf(stderr, "No response from server\n");
+		exit(-1);
+	}
+
+	return 0;
+}
+
+int cGetKProcess(int sockfd, void* buffer, size_t bufSize, const char* process)
+{
+	if(!process || strlen(process) > 8)
+		return -1;
+
+	fprintf(stdout, "Get KProcess\n");
+
+	scmdreq_getkprocess_s cmd;
+	cmd.req.magic = SCMD_MAGIC;
+	cmd.req.cmd = SCMD_GETKPROCESS;
+
+	char namebuf[9];
+	memset(namebuf, 0, 9);
+	sprintf(namebuf, "%s", process);
+
+	cmd.namelo = *(uint32_t*)(namebuf);
+	cmd.namehi = *(uint32_t*)(namebuf + 4);
+
+	fprintf(stdout, " process : %s\n", process);
+	send(sockfd, &cmd, sizeof(cmd), 0);
+
+	if(readAtLeast(sockfd, buffer, bufSize, sizeof(scmdres_getkprocess_s)) == sizeof(scmdres_getkprocess_s))
+	{
+		fprintf(stdout, "KProcess : 0x%08X\n", ((scmdres_getkprocess_s*)buffer)->kprocess);
+	}
+	else
+	{
+		fprintf(stderr, "No response from server\n");
+		exit(-1);
+	}
+
+	return 0;
+}
+
 int cGetHandle(int sockfd, void* buffer, size_t bufSize, const char* name)
 {
-	if(strlen(name) > 8)
+	if(!name || strlen(name) > 8)
 		return -1;
 
 	fprintf(stdout, "Get handle\n");
