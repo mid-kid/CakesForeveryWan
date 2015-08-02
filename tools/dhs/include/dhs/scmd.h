@@ -28,51 +28,6 @@ enum SCMD_MEMTYPE
 	MEMTYPE_PHYSICAL
 };
 
-typedef struct KMemInfo
-{
-	void* addr;
-	uint32_t total_pages;
-	uint32_t binfo_count;		// KBlockInfo count for section
-	void* binfo_first;			// Pointer to KLinkedListNode that holds a pointer to the first KBlockInfo object for that section
-	void* binfo_last;			// Pointer to KLinkedListNode that holds a pointer to the last KBlockInfo object for that section
-} KMemInfo;
-
-typedef struct KCodeSet
-{
-	void* vtable;
-	uint32_t ref_count;
-	KMemInfo text;
-	KMemInfo rodata;
-	KMemInfo data;
-	uint32_t text_pages;
-	uint32_t ro_pages;
-	uint32_t rw_pages;
-	uint32_t namelo;
-	uint32_t namehi;
-	uint32_t unk;
-	uint64_t titleid;
-} KCodeSet;
-
-typedef struct KProcess_4
-{
-	uint8_t pad0[0x50];
-	uint32_t mmu_table_size;// 0x50
-	uint32_t mmu_table;		// 0x54
-	uint8_t pad1[0x50];
-	KCodeSet* kcodeset;		// 0xA8
-	uint32_t pid;			// 0xAC
-} KProcess_4;
-
-typedef struct KProcess_8
-{
-	uint8_t pad0[0x58];
-	uint32_t mmu_table_size;// 0x58
-	uint32_t mmu_table;		// 0x5C
-	uint8_t pad1[0x50];
-	KCodeSet* kcodeset;		// 0xB0
-	uint32_t pid;			// 0xB4
-} KProcess_8;
-
 typedef struct scmdreq_s
 {
 	uint32_t magic;
@@ -235,6 +190,8 @@ typedef struct scmdres_servicemon_s
 {
 	uint32_t res;
 	uint32_t handle;
+	uint32_t outhandle;
+	char name[8];
 	uint32_t cmd_buffer[0x100 / sizeof(uint32_t)]; // 0x40
 } scmdres_servicemon_s;
 

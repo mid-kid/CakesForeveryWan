@@ -1,6 +1,6 @@
 #include "dhs_patch/dhs_patch_compat.h"
 #include "dhs_patch/dhs_patch.h"
-#include "dhs/scmd.h"
+#include "dhs/kobj.h"
 
 #include <stdint.h>
 

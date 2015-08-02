@@ -1,4 +1,8 @@
+#include "scmd_c.h"
+
 #include "dhs/scmd.h"
+#include "dhs/kobj.h"
+
 #include "errstr.h"
 
 #include <stdio.h>
@@ -592,17 +596,47 @@ int cServiceMon(int sockfd, void* buffer, size_t bufSize, const char* name)
 
 	send(sockfd, &cmd, sizeof(cmd), 0);
 
+	struct {
+		uint32_t handle;
+		char name[8];
+	} handles[0x200];
+	memset(handles, 0 , sizeof(handles));
+
+	// The handle we are ignoring
+	uint32_t gspHandle = 0;
 	while(1)
 	{
 		if(readAtLeast(sockfd, buffer, sizeof(scmdres_servicemon_s), sizeof(scmdres_servicemon_s)) == sizeof(scmdres_servicemon_s))
 		{
-			fprintf(stdout, "Handle : 0x%08X\n", ((scmdres_servicemon_s*)buffer)->handle);
-			for(int i = 0; i < 0x40; ++i)
-			{
-				fprintf(stdout, "0x%02X : 0x%08X\n", i * 4, ((scmdres_servicemon_s*)buffer)->cmd_buffer[i]);
-			}
+			scmdres_servicemon_s* res = (scmdres_servicemon_s*) buffer;
 
-			fprintf(stdout, "\n");
+			if(res->handle != gspHandle)
+			{
+				if(res->outhandle)
+				{
+					fprintf(stdout, "Name : %s\n", res->name);
+
+					handles[res->outhandle & 0x1FF].handle = res->outhandle;
+					strcpy(handles[res->outhandle & 0x1FF].name, res->name);
+
+					if(strcmp(res->name, "gsp::Gpu") == 0)
+					{
+						gspHandle = res->outhandle;
+						continue;
+					}
+				}
+
+				if(handles[res->handle & 0x1FF].handle)
+					fprintf(stdout, "Service : %s\n", handles[res->handle & 0x1FF].name);
+
+				fprintf(stdout, "Handle : 0x%08X\n", res->handle);
+				for(int i = 0; i < 0x40; ++i)
+				{
+					fprintf(stdout, "0x%02X : 0x%08X\n", i * 4, res->cmd_buffer[i]);
+				}
+
+				fprintf(stdout, "\n");
+			}
 		}
 		else
 		{
@@ -742,5 +776,265 @@ int cScreenshot(int sockfd, void* buffer, size_t bufSize, const char* fname)
 		fclose(bm_file);
 	}
 
+	return 0;
+}
+
+int cPrint(int sockfd, void* buffer, size_t bufSize, void* addr, uint32_t type)
+{
+	if(type == 0)
+		return -1;
+
+	int res = -1;
+
+	uint32_t size = 0;
+	switch(type)
+	{
+	case PT_KPROCESS4:
+		size = sizeof(KProcess_4);
+		break;
+	case PT_KPROCESS8:
+		size = sizeof(KProcess_8);
+		break;
+	case PT_KCODESET:
+		size = sizeof(KCodeSet);
+		break;
+	case PT_KPORT:
+		size = sizeof(KPort);
+		break;
+	case PT_KSERVERPORT:
+		size = sizeof(KServerPort);
+		break;
+	case PT_KCLIENTPORT:
+		size = sizeof(KClientPort);
+		break;
+	case PT_KSESSION:
+		size = sizeof(KSession);
+		break;
+	case PT_KSERVERSESSION:
+		size = sizeof(KServerSession);
+		break;
+	case PT_KCLIENTSESSION:
+		size = sizeof(KClientSession);
+		break;
+	}
+
+	void* data = malloc(size);
+	if((res = cDump(sockfd, buffer, bufSize, addr, size, NULL, data)) != 0)
+		goto cleanup;
+
+	switch(type)
+	{
+	case PT_KPROCESS4:
+	{
+		KProcess_4* tdata = (KProcess_4*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "node_count\t\t: 0x%08X\n", tdata->node_count);
+		fprintf(stdout, "first_thread\t\t: 0x%08X\n", tdata->first_thread);
+		fprintf(stdout, "last_thread\t\t: 0x%08X\n", tdata->last_thread);
+		fprintf(stdout, "first_KMB\t\t: 0x%08X\n", tdata->first_KMB);
+		fprintf(stdout, "last_KMB\t\t: 0x%08X\n", tdata->last_KMB);
+		fprintf(stdout, "trans_table_base\t: 0x%08X\n", tdata->trans_table_base);
+		fprintf(stdout, "context_id\t\t: 0x%08X\n", tdata->context_id);
+		fprintf(stdout, "mmu_table_size\t\t: 0x%08X\n", tdata->mmu_table_size);
+		fprintf(stdout, "mmu_table\t\t: 0x%08X\n", tdata->mmu_table);
+		fprintf(stdout, "total_context_size\t: 0x%08X\n", tdata->total_context_size);
+		fprintf(stdout, "thread_local_page_count\t: 0x%08X\n", tdata->thread_local_page_count);
+		fprintf(stdout, "first_KTLP\t\t: 0x%08X\n", tdata->first_KTLP);
+		fprintf(stdout, "last_KTLP\t\t: 0x%08X\n", tdata->last_KTLP);
+		fprintf(stdout, "ideal_processor\t\t: %d\n", tdata->ideal_processor);
+		fprintf(stdout, "limits\t\t\t: 0x%08X\n", tdata->limits);
+		fprintf(stdout, "proc_affinity_mask\t: 0x%02X\n", tdata->proc_affinity_mask);
+		fprintf(stdout, "thread_count\t\t: 0x%08X\n", tdata->thread_count);
+		fprintf(stdout, "svc_access_mask\t\t: %08X%08X%08X%08X\n", tdata->svc_access_mask[0], tdata->svc_access_mask[1], tdata->svc_access_mask[2], tdata->svc_access_mask[3]);
+		fprintf(stdout, "kernel_flags0\t\t: 0x%08X\n", tdata->kernel_flags0);
+		fprintf(stdout, "handle_table_size\t: 0x%04X\n", tdata->handle_table_size);
+		fprintf(stdout, "kern_release_version\t: 0x%04X\n", tdata->kern_release_version);
+		fprintf(stdout, "kcodeset\t\t: 0x%08X\n", tdata->kcodeset);
+		fprintf(stdout, "pid\t\t\t: 0x%08X\n", tdata->pid);
+		fprintf(stdout, "kernel_flags1\t\t: 0x%08X\n", tdata->kernel_flags1);
+		fprintf(stdout, "main_thread\t\t: 0x%08X\n", tdata->main_thread);
+
+		fprintf(stdout, "KProcessHandleTable : \n");
+		fprintf(stdout, " data\t\t: 0x%08X\n", tdata->table.data);
+		fprintf(stdout, " max_handles\t: 0x%04X\n", tdata->table.max_handles);
+		fprintf(stdout, " highest_usage\t: 0x%04X\n", tdata->table.highest_usage);
+		fprintf(stdout, " next_open\t: 0x%08X\n", tdata->table.next_open);
+		fprintf(stdout, " total_handles\t: 0x%04X\n", tdata->table.total_handles);
+		fprintf(stdout, " total_in_use\t: 0x%04X\n", tdata->table.total_in_use);
+
+		if(tdata->table.max_handles <= 0x28)
+		{
+			for(int i = 0; i < 0x28; ++i)
+			{
+				fprintf(stdout, "  0x%08X: 0x%08X\n", tdata->table.table[i].handle_info, tdata->table.table[i].ptr);
+			}
+		}
+		break;
+	}
+	case PT_KPROCESS8:
+	{
+		KProcess_8* tdata = (KProcess_8*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "node_count\t\t: 0x%08X\n", tdata->node_count);
+		fprintf(stdout, "first_thread\t\t: 0x%08X\n", tdata->first_thread);
+		fprintf(stdout, "last_thread\t\t: 0x%08X\n", tdata->last_thread);
+		fprintf(stdout, "first_KMB\t\t: 0x%08X\n", tdata->first_KMB);
+		fprintf(stdout, "last_KMB\t\t: 0x%08X\n", tdata->last_KMB);
+		fprintf(stdout, "trans_table_base\t: 0x%08X\n", tdata->trans_table_base);
+		fprintf(stdout, "context_id\t\t: 0x%08X\n", tdata->context_id);
+		fprintf(stdout, "mmu_table_size\t\t: 0x%08X\n", tdata->mmu_table_size);
+		fprintf(stdout, "mmu_table\t\t: 0x%08X\n", tdata->mmu_table);
+		fprintf(stdout, "total_context_size\t: 0x%08X\n", tdata->total_context_size);
+		fprintf(stdout, "thread_local_page_count\t: 0x%08X\n", tdata->thread_local_page_count);
+		fprintf(stdout, "first_KTLP\t\t: 0x%08X\n", tdata->first_KTLP);
+		fprintf(stdout, "last_KTLP\t\t: 0x%08X\n", tdata->last_KTLP);
+		fprintf(stdout, "ideal_processor\t\t: %d\n", tdata->ideal_processor);
+		fprintf(stdout, "limits\t\t\t: 0x%08X\n", tdata->limits);
+		fprintf(stdout, "thread_count\t\t: 0x%08X\n", tdata->thread_count);
+		fprintf(stdout, "svc_access_mask\t\t: %08X%08X%08X%08X\n", tdata->svc_access_mask[0], tdata->svc_access_mask[1], tdata->svc_access_mask[2], tdata->svc_access_mask[3]);
+		fprintf(stdout, "handle_table_size\t: 0x%04X\n", tdata->handle_table_size);
+		fprintf(stdout, "kern_release_version\t: 0x%04X\n", tdata->kern_release_version);
+		fprintf(stdout, "kcodeset\t\t: 0x%08X\n", tdata->kcodeset);
+		fprintf(stdout, "pid\t\t\t: 0x%08X\n", tdata->pid);
+		fprintf(stdout, "kernel_flags\t\t: 0x%08X\n", tdata->kernel_flags);
+		fprintf(stdout, "main_thread\t\t: 0x%08X\n", tdata->main_thread);
+
+		fprintf(stdout, "KProcessHandleTable : \n");
+		fprintf(stdout, " data\t\t: 0x%08X\n", tdata->table.data);
+		fprintf(stdout, " max_handles\t: 0x%04X\n", tdata->table.max_handles);
+		fprintf(stdout, " highest_usage\t: 0x%04X\n", tdata->table.highest_usage);
+		fprintf(stdout, " next_open\t: 0x%08X\n", tdata->table.next_open);
+		fprintf(stdout, " total_handles\t: 0x%04X\n", tdata->table.total_handles);
+		fprintf(stdout, " total_in_use\t: 0x%04X\n", tdata->table.total_in_use);
+
+		if(tdata->table.max_handles <= 0x28)
+		{
+			for(int i = 0; i < 0x28; ++i)
+			{
+				fprintf(stdout, "  0x%08X: 0x%08X\n", tdata->table.table[i].handle_info, tdata->table.table[i].ptr);
+			}
+		}
+		break;
+	}
+	case PT_KCODESET:
+	{
+		KCodeSet* tdata = (KCodeSet*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+
+		fprintf(stdout, "text :\n");
+		fprintf(stdout, " addr\t\t\t: 0x%08X\n", tdata->text.addr);
+		fprintf(stdout, " total_pages\t\t: 0x%08X\n", tdata->text.total_pages);
+		fprintf(stdout, " binfo_count\t\t: 0x%08X\n", tdata->text.binfo_count);
+		fprintf(stdout, " binfo_first\t\t: 0x%08X\n", tdata->text.binfo_first);
+		fprintf(stdout, " binfo_last\t\t: 0x%08X\n", tdata->text.binfo_last);
+
+		fprintf(stdout, "rodata :\n");
+		fprintf(stdout, " addr\t\t\t: 0x%08X\n", tdata->rodata.addr);
+		fprintf(stdout, " total_pages\t\t: 0x%08X\n", tdata->rodata.total_pages);
+		fprintf(stdout, " binfo_count\t\t: 0x%08X\n", tdata->rodata.binfo_count);
+		fprintf(stdout, " binfo_first\t\t: 0x%08X\n", tdata->rodata.binfo_first);
+		fprintf(stdout, " binfo_last\t\t: 0x%08X\n", tdata->rodata.binfo_last);
+
+		fprintf(stdout, "data :\n");
+		fprintf(stdout, " addr\t\t\t: 0x%08X\n", tdata->data.addr);
+		fprintf(stdout, " total_pages\t\t: 0x%08X\n", tdata->data.total_pages);
+		fprintf(stdout, " binfo_count\t\t: 0x%08X\n", tdata->data.binfo_count);
+		fprintf(stdout, " binfo_first\t\t: 0x%08X\n", tdata->data.binfo_first);
+		fprintf(stdout, " binfo_last\t\t: 0x%08X\n", tdata->data.binfo_last);
+
+		fprintf(stdout, "text_pages\t\t: 0x%08X\n", tdata->text_pages);
+		fprintf(stdout, "ro_pages\t\t: 0x%08X\n", tdata->ro_pages);
+		fprintf(stdout, "rw_pages\t\t: 0x%08X\n", tdata->rw_pages);
+		fprintf(stdout, "name\t\t\t: %s\n", (char*)&tdata->namelo);
+		fprintf(stdout, "unk\t\t\t: 0x%08X\n", tdata->unk);
+		fprintf(stdout, "titleid\t\t\t: %08X%08X\n", tdata->titleid[1], tdata->titleid[0]);
+		break;
+	}
+	case PT_KPORT:
+	{
+		KPort* tdata = (KPort*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "server\t\t\t: 0x%08X\n", tdata->server);
+		fprintf(stdout, "client\t\t\t: 0x%08X\n", tdata->client);
+		break;
+	}
+	case PT_KSERVERPORT:
+	{
+		KServerPort* tdata = (KServerPort*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "node_count\t\t: 0x%08X\n", tdata->node_count);
+		fprintf(stdout, "first_thread\t\t: 0x%08X\n", tdata->first_thread);
+		fprintf(stdout, "last_thread\t\t: 0x%08X\n", tdata->last_thread);
+
+		fprintf(stdout, "session_count\t\t: 0x%08X\n", tdata->session_count);
+		fprintf(stdout, "first_session\t\t: 0x%08X\n", tdata->first_session);
+		fprintf(stdout, "last_session\t\t: 0x%08X\n", tdata->last_session);
+		fprintf(stdout, "parent\t\t\t: 0x%08X\n", tdata->parent);
+
+		break;
+	}
+	case PT_KCLIENTPORT:
+	{
+		KClientPort* tdata = (KClientPort*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "node_count\t\t: 0x%08X\n", tdata->node_count);
+		fprintf(stdout, "first_thread\t\t: 0x%08X\n", tdata->first_thread);
+		fprintf(stdout, "last_thread\t\t: 0x%08X\n", tdata->last_thread);
+
+		fprintf(stdout, "conn_count\t\t: 0x%08X\n", tdata->conn_count);
+		fprintf(stdout, "max_conn\t\t: 0x%08X\n", tdata->max_conn);
+		fprintf(stdout, "parent\t\t\t: 0x%08X\n", tdata->parent);
+
+		break;
+	}
+	case PT_KSESSION:
+	{
+		KSession* tdata = (KSession*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "server\t\t\t: 0x%08X\n", tdata->server);
+		fprintf(stdout, "client\t\t\t: 0x%08X\n", tdata->client);
+		break;
+	}
+	case PT_KSERVERSESSION:
+	{
+		KServerSession* tdata = (KServerSession*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "node_count\t\t: 0x%08X\n", tdata->node_count);
+		fprintf(stdout, "first_thread\t\t: 0x%08X\n", tdata->first_thread);
+		fprintf(stdout, "last_thread\t\t: 0x%08X\n", tdata->last_thread);
+
+		fprintf(stdout, "parent\t\t\t: 0x%08X\n", tdata->parent);
+		fprintf(stdout, "unk0\t\t\t: 0x%08X\n", tdata->unk0);
+		fprintf(stdout, "unk1\t\t\t: 0x%08X\n", tdata->unk1);
+		fprintf(stdout, "origin\t\t\t: 0x%08X\n", tdata->origin);
+
+		break;
+	}
+	case PT_KCLIENTSESSION:
+	{
+		KClientSession* tdata = (KClientSession*) data;
+		fprintf(stdout, "vtable\t\t\t: 0x%08X\n", tdata->vtable);
+		fprintf(stdout, "ref_count\t\t: 0x%08X\n", tdata->ref_count);
+		fprintf(stdout, "node_count\t\t: 0x%08X\n", tdata->node_count);
+		fprintf(stdout, "first_thread\t\t: 0x%08X\n", tdata->first_thread);
+		fprintf(stdout, "last_thread\t\t: 0x%08X\n", tdata->last_thread);
+
+		fprintf(stdout, "parent\t\t\t: 0x%08X\n", tdata->parent);
+		fprintf(stdout, "status\t\t\t: 0x%08X\n", tdata->status);
+		fprintf(stdout, "port\t\t\t: 0x%08X\n", tdata->port);
+
+		break;
+	}
+	}
+cleanup:
+	free(data);
 	return 0;
 }

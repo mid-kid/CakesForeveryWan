@@ -1,4 +1,6 @@
 #include "scmd_s.h"
+#include "dhs/kobj.h"
+
 #include "3ds/types.h"
 #include "3ds/services/soc.h"
 #include "3ds/services/fs.h"
@@ -55,6 +57,9 @@ static void kmemcpy(void* buffer, void* addr, uint32_t size)
 	svcDev(_kmemcpy);
 }
 
+uint32_t ssrSrvHandle;
+void* ssrKProcess;
+
 static void _kstart_ssr()
 {
 	volatile ssr_data_s* data = (volatile ssr_data_s*) kbuffer;
@@ -67,8 +72,12 @@ static void _kstart_ssr()
 
 static void kstart_ssr(const char* name)
 {
+	ssrSrvHandle = 0;
+	ssrKProcess = 0;
+
 	bdArgs[0] = *((uint32_t*)(name));
 	bdArgs[1] = *((uint32_t*)(name + 4));
+
 	svcDev(_kstart_ssr);
 }
 
@@ -93,6 +102,43 @@ static void _kprocess_ssr()
 
 	if(!data->processed)
 	{
+		if(!ssrSrvHandle && data->cmd_buffer[0] == 0x00010002 && data->cmd_buffer[1] == 0x20)
+		{
+			// srvRegisterClient
+			// The command overlaps with ssl:C:Initialize!
+			ssrSrvHandle = data->handle;
+		}
+		if(data->handle == ssrSrvHandle && data->cmd_buffer[0] == 0x00050100)
+		{
+			// srvGetServiceHandle
+			if(!ssrKProcess)
+			{
+				ssrKProcess = _kfind_kprocess(data->name_lo, data->name_hi);
+			}
+
+			if(ssrKProcess)
+			{
+				uint32_t total = 0;
+				uint32_t index = 0;
+				if(firmVersion < 0x022C0600)
+				{
+					KProcess_4* kprocess = (KProcess_4*)ssrKProcess;
+					total = kprocess->table.total_handles;
+					index = (kprocess->table.next_open - kprocess->table.data);
+				}
+				else
+				{
+					KProcess_8* kprocess = (KProcess_8*)ssrKProcess;
+					total = kprocess->table.total_handles;
+					index = (kprocess->table.next_open - kprocess->table.data);
+				}
+
+				*(uint32_t*)bdArgs[2] = index | total << 15;
+			}
+		}
+		else
+			*(uint32_t*)bdArgs[2] = 0;
+
 		*(uint32_t*)bdArgs[0] = data->handle;
 		memcpy((void*)bdArgs[1], (void*)data->cmd_buffer, 0x100);
 		data->processed = 1;
@@ -103,10 +149,11 @@ static void _kprocess_ssr()
 		bdArgs[0] = 1;
 }
 
-static int kprocess_ssr(uint32_t* handle, void* buffer)
+static int kprocess_ssr(uint32_t* handle, void* buffer, uint32_t* outhandle)
 {
 	bdArgs[0] = (uint32_t)handle;
 	bdArgs[1] = (uint32_t)buffer;
+	bdArgs[2] = (uint32_t)outhandle;
 	svcDev(_kprocess_ssr);
 
 	return bdArgs[0];
@@ -578,8 +625,13 @@ int32_t sServiceMon(scmdreq_servicemon_s* cmd, int sockfd, void* buffer, uint32_
 	kstart_ssr(cmd->name);
 	do
 	{
-		if(kprocess_ssr(&res->handle, res->cmd_buffer) == 0)
+		if(kprocess_ssr(&res->handle, res->cmd_buffer, &res->outhandle) == 0)
 		{
+			if(res->outhandle)
+			{
+				// New handle
+				memcpy(res->name, &res->cmd_buffer[1], 8);
+			}
 			if(send(sockfd, buffer, sizeof(scmdres_servicemon_s), 0) == -1)
 				break;
 		}

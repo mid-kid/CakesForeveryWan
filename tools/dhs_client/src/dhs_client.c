@@ -26,6 +26,7 @@ enum DHSC_CMD
 
 	// Pseudo commands
 	DHSC_SCREENSHOT = 1000,
+	DHSC_PRINT,
 };
 
 int connectToServer(const char* host, const char* port)
@@ -200,6 +201,9 @@ void printHelp(char* name)
 	fprintf(stderr, "    -process\t\t Name of target process\n");
 	fprintf(stderr, "  servicemon - Monitor service calls made by a process\n");
 	fprintf(stderr, "    -process\t\t Name of target process\n");
+	fprintf(stderr, "  print - Print an address in a specific format\n");
+	fprintf(stderr, "    -addr\t\t Kernel virtual address\n");
+	fprintf(stderr, "    -type\t\t Type\n");
 }
 
 typedef struct input_s
@@ -219,6 +223,7 @@ typedef struct input_s
 	const char* service;
 	uint32_t handle;
 	uint32_t header_code;
+	uint32_t type;
 	uint32_t argc;
 	uint32_t* argv;
 } input_s;
@@ -253,6 +258,8 @@ int parseArgs(input_s* input, int argc, char *argv[])
 		input->cmd = DHSC_SERVICEMON;
 	else if(strcmp(argv[0], "screenshot") == 0)
 		input->cmd = DHSC_SCREENSHOT;
+	else if(strcmp(argv[0], "print") == 0)
+		input->cmd = DHSC_PRINT;
 	else
 		return -1;
 
@@ -300,6 +307,8 @@ int parseArgs(input_s* input, int argc, char *argv[])
 			input->value = strtoul(argv[i + 1], NULL, 0);
 			input->value_set = 1;
 		}
+		else if(strcmp(argv[i], "-type") == 0 && (i + 1) < argc)
+			input->type = strtoul(argv[i + 1], NULL, 0);
 	}
 
 	return 0;
@@ -371,6 +380,9 @@ int main(int argc, char *argv[])
 			break;
 		case DHSC_SCREENSHOT:
 			res = cScreenshot(sockfd, buffer, bufSize, input.fname);
+			break;
+		case DHSC_PRINT:
+			res = cPrint(sockfd, buffer, bufSize, input.addr, input.type);
 			break;
 		default:
 			break;

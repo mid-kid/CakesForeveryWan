@@ -15,6 +15,7 @@
 #include <fcntl.h>
 
 #include "dhs/scmd.h"
+#include "dhs/kobj.h"
 #include "scmd_s.h"
 
 #define DATA_BUFFER_SIZE (512 * 1024)
