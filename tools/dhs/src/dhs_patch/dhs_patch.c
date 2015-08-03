@@ -116,7 +116,8 @@ void patchARM11Kernel()
 	*(uint32_t*)(a11_base_pa + offset) = getBranchInst(a11_base_va + offset, a9compat.hooks_va + ((uint8_t*)ld11_hook - &_a11_hook_start), 1);
 
 	offset = a9compat.ssr_offset;
-	*(uint32_t*)(a11_base_pa + offset) = getBranchInst(a11_base_va + offset, a9compat.hooks_va + ((uint8_t*)ssr_hook - &_a11_hook_start), 1);
+	if(offset) // Disable service monitor for firms with different prologue in svcSendSyncRequest handler
+		*(uint32_t*)(a11_base_pa + offset) = getBranchInst(a11_base_va + offset, a9compat.hooks_va + ((uint8_t*)ssr_hook - &_a11_hook_start), 1);
 }
 
 void dumpAXIWRAM()

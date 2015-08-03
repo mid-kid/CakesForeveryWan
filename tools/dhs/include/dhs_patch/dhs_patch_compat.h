@@ -64,7 +64,7 @@ dhs_a9_compat_s dhs_a9_compat_1F = {
 
 	.data_abort_offset = 0x348,
 	.ld11_offset = 0x8344,
-	.ssr_offset = 0,
+	.ssr_offset = 0, // 0x4CDC, handle is in r1
 
 	.translate_va = (void*)0xFFF7A8C4,
 	.mmu_table_offset = 0x54,
@@ -94,6 +94,7 @@ dhs_a9_compat_s dhs_a9_compat_2A = {
 
     .data_abort_offset = 0x638,
     .ld11_offset = 0x7FBC,
+    .ssr_offset = 0, // 0x481C, handle is in r1
 
     .translate_va = (void*)0xFFF6B7D0,
     .mmu_table_offset = 0x54,
@@ -122,6 +123,7 @@ dhs_a9_compat_s dhs_a9_compat_38 = {
 
 	.data_abort_offset = 0x634,
 	.ld11_offset = 0x82E8,
+	.ssr_offset = 0x4AC4,
 
 	.translate_va = (void*)0xFFF1BE04,
 	.mmu_table_offset = 0x5C,
