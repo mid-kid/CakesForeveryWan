@@ -10,9 +10,9 @@ struct cake_info {
     char description[0x100];
 };
 
-struct cake_info *cake_list;
+extern struct cake_info *cake_list;
+extern unsigned int cake_count;
 int cake_selected[MAX_CAKES];
-int cake_count;
 
 int patch_firm();
 int patch_firm_all();

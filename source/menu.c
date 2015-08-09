@@ -14,6 +14,7 @@
 int selected_options[MAX_SELECTED_OPTIONS];
 
 // TODO: Clean up the first two functions. They have too much in common.
+// TODO: The draw functions now automatically start a newline in some cases. Be sure to respect that.
 // No boundary checks, use this responsibly.
 int draw_menu(char *title, int back, int count, char *options[])
 {

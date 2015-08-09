@@ -10,7 +10,7 @@
 static unsigned int config_ver = 1;
 
 struct config_file *config = (struct config_file *)0x24400000;
-int config_modified = 0;
+int patches_modified = 0;
 
 void load_config()
 {
@@ -20,7 +20,7 @@ void load_config()
     if (read_file(config, "/cakes/config.dat", 0x100000) != 0) {
         print("Failed to load the config.\n  Starting from scratch.");
 
-        config_modified = 1;
+        patches_modified = 1;
         return;
     }
 
@@ -29,16 +29,16 @@ void load_config()
         print("Invalid config or firm version.\n  Starting from scratch.");
 
         memset(config, 0, sizeof(struct config_file));
-        config_modified = 1;
+        patches_modified = 1;
         return;
     }
 
     // Someone may try to be funny and make the count too big.
-    const int max_autoboot = (0x100000 - sizeof(struct config_file)) /
+    const unsigned int max_autoboot = (0x100000 - sizeof(struct config_file)) /
                               sizeof(config->autoboot_list[0]);
 
-    for (int x = 0; x < cake_count; x++) {
-        for (int y = 0; y < config->autoboot_count && y < max_autoboot; y++) {
+    for (unsigned int x = 0; x < cake_count; x++) {
+        for (unsigned int y = 0; y < config->autoboot_count && y < max_autoboot; y++) {
             if (strncmp(cake_list[x].path, config->autoboot_list[y],
                         sizeof(config->autoboot_list[0])) == 0) {
                 cake_selected[x] = 1;
@@ -69,11 +69,11 @@ void save_config()
     memset32(config->autoboot_list, 0, autoboot_size);
 
     // More boundary checking. Make absolutely sure we don't write on 0x24500000.
-    const int max_autoboot = (0x100000 - sizeof(struct config_file)) /
+    const unsigned int max_autoboot = (0x100000 - sizeof(struct config_file)) /
                               sizeof(config->autoboot_list[0]);
 
     config->autoboot_count = 0;
-    for (int i = 0; i < cake_count && i < max_autoboot; i++) {
+    for (unsigned int i = 0; i < cake_count && i < max_autoboot; i++) {
         if (cake_selected[i]) {
             // This saves the full path...
             strncpy(config->autoboot_list[config->autoboot_count],

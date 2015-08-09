@@ -33,7 +33,7 @@ enum patch_options {
 };
 
 struct cake_info *cake_list = (struct cake_info *)0x24300000;
-int cake_count = 0;
+unsigned int cake_count = 0;
 
 static struct cake_header *firm_patch_temp = (struct cake_header *)0x24200000;
 static void *temp = (void *)0x24300000;
@@ -214,7 +214,7 @@ int patch_firm(char *filename)
 
 int patch_firm_all()
 {
-    for (int i = 0; i < cake_count; i++) {
+    for (unsigned int i = 0; i < cake_count; i++) {
         if (cake_selected[i]) {
             if (patch_firm(cake_list[i].path)) return 1;
         }

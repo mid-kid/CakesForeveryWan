@@ -12,7 +12,7 @@ enum screen {
     screen_bottom
 };
 
-enum screen print_screen;
+extern enum screen print_screen;
 
 void clear_screen(enum screen screen);
 void clear_screens();

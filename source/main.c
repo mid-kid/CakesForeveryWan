@@ -14,13 +14,13 @@ void menu_select_patches()
     #endif
 
     char *options[cake_count];
-    for (int i = 0; i < cake_count; i++) {
+    for (unsigned int i = 0; i < cake_count; i++) {
         options[i] = cake_list[i].description;
     }
 
     int *result = draw_selection_menu("Select your cakes", cake_count, options, cake_selected);
 
-    config_modified |= memcmp(cake_selected, result, sizeof(cake_selected));
+    patches_modified |= memcmp(cake_selected, result, sizeof(cake_selected));
 
     // The result location will be reused for other selection menus, so we memcpy it.
     memcpy(cake_selected, result, cake_count * sizeof(int));
