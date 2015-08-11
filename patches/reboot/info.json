@@ -1,6 +1,7 @@
 {
     "name": "reboot",
     "description": "Survive reboots when launching some titles",
+    "type": "NATIVE_FIRM",
     "patches": [
         {
             "name": "patch1.bin",
@@ -11,6 +12,7 @@
     ],
     "version_specific": [
         {
+            "console": "o3ds",
             "version": "0x49",
             "variables": {
                 "firm_size": "0x000EB000",
@@ -28,6 +30,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x38",
             "variables": {
                 "firm_size": "0x000E9000",
@@ -45,6 +48,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x37",
             "variables": {
                 "firm_size": "0x000E9000",
@@ -62,6 +66,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x30",
             "variables": {
                 "firm_size": "0x000E8000",
@@ -79,6 +84,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x2A",
             "variables": {
                 "firm_size": "0x000E9000",
@@ -96,6 +102,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x1F",
             "variables": {
                 "firm_size": "0x000EF000",

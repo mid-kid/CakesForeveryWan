@@ -1,6 +1,7 @@
 {
     "name": "emunand",
     "description": "Enable emuNAND",
+    "type": "NATIVE_FIRM",
     "patches": [
         {
             "name": "patch1.bin",
@@ -20,6 +21,7 @@
     ],
     "version_specific": [
         {
+            "console": "o3ds",
             "version": "0x49",
             "variables": {
                 "sdmmc": "0x080D8670",
@@ -44,6 +46,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x38",
             "variables": {
                 "sdmmc": "0x080D8670",
@@ -68,6 +71,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x37",
             "variables": {
                 "sdmmc": "0x080D84F0",
@@ -92,6 +96,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x30",
             "variables": {
                 "sdmmc": "0x080D8430",
@@ -116,6 +121,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x2A",
             "variables": {
                 "sdmmc": "0x080D84B0",
@@ -140,6 +146,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x1F",
             "variables": {
                 "sdmmc": "0x080D8CD0",
@@ -160,6 +167,31 @@
                     "offset": "0x08078C30"
                 }, {
                     "offset": "0x08078C70"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x0F",
+            "variables": {
+                "sdmmc": "0x080D86F0",
+                "sdmmc_unk0": "0x08062890",
+                "sdmmc_unk1": "0x080788C0",
+                "sdmmc_unk2": "0x080786A0",
+                "aes_setkey": "0x08057458",
+                "aes_unk": "0x0805F9E4"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B3D4"
+                }, {
+                    "offset": "0x080282F8"
+                }, {
+                    "offset": "0x0807877C"
+                }, {
+                    "offset": "0x080787BE"
                 }
             ]
         }

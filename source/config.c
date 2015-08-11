@@ -25,7 +25,8 @@ void load_config()
     }
 
     // Check that we have the correct config & firmware version
-    if (config->config_ver != config_ver || config->firm_ver != firm_ver) {
+    // TODO: If we get more options, maybe we should keep them when swapping firms.
+    if (config->config_ver != config_ver || config->firm_ver != current_firm->version) {
         print("Invalid config or firm version.\n  Starting from scratch.");
 
         memset(config, 0, sizeof(struct config_file));
@@ -63,7 +64,7 @@ void save_config()
     config->config_ver = config_ver;
 
     // Set the firmware version
-    config->firm_ver = firm_ver;
+    config->firm_ver = current_firm->version;
 
     // Clean the memory area. We don't want to dump random bytes.
     memset32(config->autoboot_list, 0, autoboot_size);

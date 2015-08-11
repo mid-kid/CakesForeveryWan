@@ -18,6 +18,17 @@ dir_build = argv[3]
 dir_out = argv[4]
 dir_top = getcwd()
 
+console_dict = {
+    "o3ds": 0,
+    "n3ds": 1
+}
+
+type_dict = {
+    "NATIVE_FIRM": 0,
+    "TWL_FIRM": 1,
+    "AGB_FIRM": 2
+}
+
 options_dict = {
     "keyx": 0b00000001,
     "emunand": 0b00000010,
@@ -27,7 +38,8 @@ options_dict = {
 for version in info["version_specific"]:
     patches = []
     patch_count = len(info["patches"])
-    ver = version["version"]
+    verdir_build = dir_build + "/" + version["console"] + "-" + version["version"]
+    verdir_out = dir_out + "/" + version["console"] + "-" + version["version"]
     verfile = patches_file
 
     # Create the patches array based on the global and the version-specific array.
@@ -58,14 +70,14 @@ for version in info["version_specific"]:
 
     # Build dir for this version
     try:
-        mkdir(dir_build + "/" + ver)
+        mkdir(verdir_build)
     except OSError as ex:
         if ex.errno == EEXIST:
             pass
         else:
             raise
 
-    chdir(dir_build + "/" + ver)
+    chdir(verdir_build)
 
     # Compile it
     open("patches.s", "w").write(verfile)
@@ -74,8 +86,11 @@ for version in info["version_specific"]:
         exit(1)
 
     # Bake the cake
+    # What kind of cake is it?
+    cake_type = console_dict[version["console"]] << 4 | (type_dict[info["type"]] & 0xF)
+
     # Create the header
-    cake_header = pack("BBxB", patch_count, int(ver, 0), len(info["description"]) + 5)
+    cake_header = pack("BBBB", patch_count, int(version["version"], 0), cake_type, len(info["description"]) + 5)
     cake_header += (info["description"] + '\0').encode()
 
     # Create the patch headers
@@ -102,12 +117,11 @@ for version in info["version_specific"]:
 
     chdir(dir_top)
 
-    verdir = dir_out + "/" + ver
     try:
-        makedirs(verdir)
+        makedirs(verdir_out)
     except OSError as ex:
         if ex.errno == EEXIST:
             pass
         else:
             raise
-    open(verdir + "/" + info["name"] + ".cake", "wb").write(cake)
+    open(verdir_out + "/" + info["name"] + ".cake", "wb").write(cake)
