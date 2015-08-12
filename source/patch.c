@@ -37,14 +37,11 @@ enum patch_options {
     patch_option_save = 0b00000100
 };
 
-struct cake_info *cake_list = (struct cake_info *)0x24300000;
+struct cake_info *cake_list = (struct cake_info *)0x24500000;
 unsigned int cake_count = 0;
 
 static struct cake_header *firm_patch_temp = (struct cake_header *)0x24200000;
 static void *temp = (void *)0x24300000;
-
-static const int nand_size_toshiba = 0x1D7800;
-static const int nand_size_samsung = 0x1DD000;
 
 void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
 {
@@ -89,19 +86,13 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
             }
         }
 
-        if (sdmmc_sdcard_readsectors(nand_size_toshiba, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: Toshiba GW");
-                offset = 0;
-                header = nand_size_toshiba;
-            }
-        }
+        uint32_t nand_size = getMMCDevice(0)->total_size + 0x200;
 
-        if (sdmmc_sdcard_readsectors(nand_size_samsung, 1, temp) == 0) {
+        if (sdmmc_sdcard_readsectors(nand_size, 1, temp) == 0) {
             if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: Samsung GW");
+                print("emuNAND detected: Gateway");
                 offset = 0;
-                header = nand_size_samsung;
+                header = nand_size;
             }
         }
 
