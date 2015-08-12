@@ -86,7 +86,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
             }
         }
 
-        uint32_t nand_size = getMMCDevice(0)->total_size + 0x200;
+        uint32_t nand_size = getMMCDevice(0)->total_size;
 
         if (sdmmc_sdcard_readsectors(nand_size, 1, temp) == 0) {
             if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {

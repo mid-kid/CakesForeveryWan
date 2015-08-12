@@ -232,33 +232,32 @@ int __attribute__((noinline)) sdmmc_nand_writesectors(u32 sector_no, u32 numsect
     return geterror(&handleNAND);
 }
 
-u32 calcSDSize(u8* csd, int type)
+static u32 calcSDSize(u8* csd, int type)
 {
-    u32 result = 0;
-    u8 temp = csd[0xE];
-    //int temp3 = type;
-
-    switch (type) {
-        case -1:
-            type = temp >> 6;
-            break;
-        case 0:
-        {
-            u32 temp = (csd[0x7] << 0x2 | csd[0x8] << 0xA | csd[0x6] >> 0x6 | (csd[0x9] & 0xF) << 0x10) & 0xFFF;
-            u32 temp2 = temp * (1 << (csd[0x9] & 0xF));
-            u32 retval = temp2 * (1 << (((csd[0x4] >> 7 | csd[0x5] << 1) & 7) + 2));
-            result = retval >> 9;
-            break;
-        }
-        case 1:
-            result = (((csd[0x7] & 0x3F) << 0x10 | csd[0x6] << 8 | csd[0x5]) + 1) << 0xA;
-            break;
-        default:
-            result = 0;
-            break;
-    }
-
-    return result;
+  u32 result=0;
+  if(type == -1) type = csd[14] >> 6;
+  switch(type)
+  {
+    case 0:
+      {
+        u32 block_len=csd[9]&0xf;
+        block_len=1<<block_len;
+        u32 mult=(csd[4]>>7)|((csd[5]&3)<<1);
+        mult=1<<(mult+2);
+        result=csd[8]&3;
+        result=(result<<8)|csd[7];
+        result=(result<<2)|(csd[6]>>6);
+        result=(result+1)*mult*block_len/512;
+      }
+      break;
+    case 1:
+      result=csd[7]&0x3f;
+      result=(result<<8)|csd[6];
+      result=(result<<8)|csd[5];
+      result=(result+1)*1024;
+      break;
+  }
+  return result;
 }
 
 void InitSD()
