@@ -87,8 +87,8 @@ int decrypt_firm()
     uint32_t ncch_size = firm_size_encrypted;
 
     print("Decrypting the NCCH");
-    aes_setkey(0x11, firm_key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
-    aes_use_keyslot(0x11);
+    aes_setkey(0x16, firm_key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_use_keyslot(0x16);
     aes(ncch, ncch, ncch_size / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     if (ncch->magic != NCCH_MAGIC) {
@@ -120,6 +120,51 @@ int decrypt_firm()
     if (firm_loc->magic != FIRM_MAGIC) {
         print("Failed to decrypt the exefs");
         draw_loading("Failed to decrypt the exefs", "I just don't know what went wrong");
+        return 1;
+    }
+
+    return 0;
+}
+
+int atoi(const char *str) {
+    int res = 0;
+    while (*str && *str >= '0' && *str <= '9') {
+        res =  *str - '0' + res * 10;
+        str++;
+    }
+
+    return res;
+}
+
+int decrypt_arm9bin() {
+    firm_h *firm = (firm_h *)firm_loc;
+    struct arm9bin_h *header = (struct arm9bin_h *)((uint8_t *)firm + firm->section[2].offset);
+
+    uint8_t decrypted_keyx[16];
+
+    print("Decrypting ARM9 FIRM binary");
+
+    aes_use_keyslot(0x11);
+    if (current_firm->version < 0x0F) {
+        aes(decrypted_keyx, header->keyx, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+    }
+    else {
+        aes(decrypted_keyx, header->slot0x16keyX, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+    }
+
+    aes_setkey(0x16, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_setkey(0x16, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_setiv(header->ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+    void* arm9bin = (uint8_t *)header + 0x800;
+    int size = atoi(header->size);
+
+    aes_use_keyslot(0x16);
+    aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+    if (*(uint32_t *)arm9bin != 0x47704770) { // pGpG
+        print("Failed to decrypt ARM9 FIRM binary");
+        draw_loading("Failed to decrypt ARM9 FIRM binary", "Please double check your firmware.bin and firmkey.bin are right.");
         return 1;
     }
 
@@ -191,7 +236,14 @@ void boot_firm()
     print("Prepared arm11 entry");
 
     print("Booting...");
-    ((void (*)())firm_loc->a9Entry)();
+
+    if (current_firm->console == console_o3ds) {
+        ((void (*)())firm_loc->a9Entry)();
+    }
+    else {
+        // Jump to the actual entry instead of the loader
+        ((void (*)())0x0801B01C)();
+    }
 }
 
 int load_firm()
@@ -201,10 +253,15 @@ int load_firm()
     draw_loading(title, "Loading...");
     if (prepare_files() != 0) return 1;
 
-    draw_loading(title, "Decrypting...");
+    draw_loading(title, "Decrypting FIRM...");
     if (decrypt_firm() != 0) return 1;
 
     if (detect_version() != 0) return 1;
+
+    if (current_firm->console == console_n3ds) {
+        draw_loading(title, "Decrypting ARM9 FIRM binary...");
+        if (decrypt_arm9bin() != 0) return 1;
+    }
 
     return 0;
 }
