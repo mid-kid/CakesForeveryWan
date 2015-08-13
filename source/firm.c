@@ -172,7 +172,8 @@ int decrypt_firm()
         if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)firm_loc + firm_loc->section[2].offset),
                     current_firm->version) != 0) {
             print("Couldn't decrypt ARM9 FIRM binary");
-            draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\n  If the issue persists, please file a bug report.");
+            draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\n  We remind you that you can't decrypt it on an old 3ds.\n  If the issue persists, please file a bug report.");
+            return 1;
         }
     }
 
