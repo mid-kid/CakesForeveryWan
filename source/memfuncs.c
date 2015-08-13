@@ -91,3 +91,13 @@ int strncmp(const void *buf1, const void *buf2, uint32_t size)
 
     return 0;
 }
+
+int atoi(const char *str) {
+    int res = 0;
+    while (*str && *str >= '0' && *str <= '9') {
+        res =  *str - '0' + res * 10;
+        str++;
+    }
+
+    return res;
+}

@@ -16,17 +16,6 @@ struct firm_signature {
     enum consoles console;
 };
 
-struct arm9bin_h {
-    uint8_t keyx[0x10];
-    uint8_t keyy[0x10];
-    uint8_t ctr[0x10];
-    char size[8];
-    uint8_t pad[8];
-    uint8_t ctl_block[0x10];
-    uint8_t unk[0x10];
-    uint8_t slot0x16keyX[0x10];
-};
-
 extern firm_h *firm_loc;
 extern struct firm_signature *current_firm;
 extern int save_firm;

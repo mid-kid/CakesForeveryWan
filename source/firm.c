@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "headers.h"
 #include "draw.h"
 #include "memfuncs.h"
 #include "fs.h"
@@ -13,8 +14,8 @@
 
 firm_h *firm_loc = (firm_h *)0x24000000;
 static int firm_size = 0;
-static firm_h *firm_loc_encrypted = (firm_h *)0x24100000;
-static const int firm_size_encrypted = 0xF0000;
+static void *firm_loc_encrypted = (void *)0x24100000;
+static const int firm_size_encrypted = 0x100000;
 static uint8_t firm_key[16] = {0};
 struct firm_signature *current_firm = NULL;
 
@@ -58,7 +59,7 @@ int prepare_files()
 {
     int rc;
 
-    rc = read_file(firm_loc_encrypted, "/firmware.bin", 0x100000);
+    rc = read_file(firm_loc_encrypted, "/firmware.bin", firm_size_encrypted);
     if (rc != 0) {
         print("Failed to load FIRM");
         draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at /firmware.bin");
@@ -77,25 +78,18 @@ int prepare_files()
     return 0;
 }
 
-int decrypt_firm()
+int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t size)
 {
     uint8_t firm_iv[16] = {0};
     uint8_t exefs_key[16] = {0};
     uint8_t exefs_iv[16] = {0};
 
-    ncch_h *ncch = (ncch_h *)firm_loc_encrypted;
-    uint32_t ncch_size = firm_size_encrypted;
-
     print("Decrypting the NCCH");
     aes_setkey(0x16, firm_key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_use_keyslot(0x16);
-    aes(ncch, ncch, ncch_size / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes(ncch, ncch, size / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    if (ncch->magic != NCCH_MAGIC) {
-        print("Failed to decrypt the NCCH");
-        draw_loading("Failed to decrypt the NCCH", "Please double check your firmware.bin and firmkey.bin are right.");
-        return 1;
-    }
+    if (ncch->magic != NCCH_MAGIC) return 1;
 
     memcpy(exefs_key, ncch, 16);
     ncch_getctr(ncch, exefs_iv, NCCHTYPE_EXEFS);
@@ -115,40 +109,23 @@ int decrypt_firm()
     firm_size = exefs->fileHeaders[0].size;
 
     print("Copying the FIRM");
-    memcpy32(firm_loc, firm, firm_size);
+    memcpy32(dest, firm, firm_size);
 
-    if (firm_loc->magic != FIRM_MAGIC) {
-        print("Failed to decrypt the exefs");
-        draw_loading("Failed to decrypt the exefs", "I just don't know what went wrong");
-        return 1;
-    }
+    if (dest->magic != FIRM_MAGIC) return 1;
 
     return 0;
 }
 
-int atoi(const char *str) {
-    int res = 0;
-    while (*str && *str >= '0' && *str <= '9') {
-        res =  *str - '0' + res * 10;
-        str++;
-    }
 
-    return res;
-}
-
-int decrypt_arm9bin() {
-    firm_h *firm = (firm_h *)firm_loc;
-    struct arm9bin_h *header = (struct arm9bin_h *)((uint8_t *)firm + firm->section[2].offset);
-
+int decrypt_arm9bin(arm9bin_h *header, unsigned int version) {
     uint8_t decrypted_keyx[16];
 
     print("Decrypting ARM9 FIRM binary");
 
     aes_use_keyslot(0x11);
-    if (current_firm->version < 0x0F) {
+    if (version < 0x0F) {
         aes(decrypted_keyx, header->keyx, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
-    }
-    else {
+    } else {
         aes(decrypted_keyx, header->slot0x16keyX, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
     }
 
@@ -156,33 +133,50 @@ int decrypt_arm9bin() {
     aes_setkey(0x16, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_setiv(header->ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    void* arm9bin = (uint8_t *)header + 0x800;
+    void *arm9bin = (uint8_t *)header + 0x800;
     int size = atoi(header->size);
 
     aes_use_keyslot(0x16);
     aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    if (*(uint32_t *)arm9bin != 0x47704770) { // pGpG
-        print("Failed to decrypt ARM9 FIRM binary");
-        draw_loading("Failed to decrypt ARM9 FIRM binary", "Please double check your firmware.bin and firmkey.bin are right.");
-        return 1;
-    }
+    if (*(uint32_t *)arm9bin != ARM9BIN_MAGIC) return 1;
 
     return 0;
 }
 
-int detect_version() {
+int decrypt_firm()
+{
+    if (decrypt_firm_title(firm_loc, firm_loc_encrypted, firm_size_encrypted) != 0) {
+        print("Failed to decrypt the firmware.bin");
+        draw_loading("Failed to decrypt the firmware.bin", "Please double check your firmware.bin and\n  firmkey.bin are right.");
+        return 1;
+    }
+
     // Determine firmware version
     for (int i = 0; firm_signatures[i].version != 0xFF; i++) {
         if (memcmp(firm_signatures[i].sig, firm_loc->section[0].hash, 0x10) == 0) {
             current_firm = &firm_signatures[i];
-            return 0;
+            break;
         }
     }
 
-    print("Couldn't determine firmware version");
-    draw_loading("Couldn't determine firmware version", "The firmware.bin you're trying to use is\n  most probably not supported by Cakes.");
-    return 1;
+    if (!current_firm) {
+        print("Couldn't determine firmware version");
+        draw_loading("Couldn't determine firmware version", "The firmware.bin you're trying to use is\n  most probably not supported by Cakes.");
+        return 1;
+    }
+
+    // The N3DS firm has an additional encryption layer for ARM9
+    if (current_firm->console == console_n3ds) {
+        // All the firmwares we've encountered have ARM9 as their sectond section
+        if (decrypt_arm9bin((arm9bin_h *)(firm_loc + firm_loc->section[2].offset),
+                    current_firm->version) != 0) {
+            print("Couldn't decrypt ARM9 FIRM binary");
+            draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\n  If the issue persists, please file a bug report.");
+        }
+    }
+
+    return 0;
 }
 
 void boot_firm()
@@ -237,12 +231,11 @@ void boot_firm()
 
     print("Booting...");
 
-    if (current_firm->console == console_o3ds) {
-        ((void (*)())firm_loc->a9Entry)();
-    }
-    else {
+    if (current_firm->console == console_n3ds) {
         // Jump to the actual entry instead of the loader
         ((void (*)())0x0801B01C)();
+    } else {
+        ((void (*)())firm_loc->a9Entry)();
     }
 }
 
@@ -255,13 +248,6 @@ int load_firm()
 
     draw_loading(title, "Decrypting FIRM...");
     if (decrypt_firm() != 0) return 1;
-
-    if (detect_version() != 0) return 1;
-
-    if (current_firm->console == console_n3ds) {
-        draw_loading(title, "Decrypting ARM9 FIRM binary...");
-        if (decrypt_arm9bin() != 0) return 1;
-    }
 
     return 0;
 }
