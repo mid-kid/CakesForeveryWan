@@ -14,12 +14,12 @@
 struct cake_header {
     uint8_t count: 8;
     uint8_t firm_ver: 8;
-    enum consoles console: 4;
     enum {
         NATIVE_FIRM,
         TWL_FIRM,
         AGB_FIRM
     } firm_type: 4;
+    enum consoles console: 4;
     uint8_t patches_offset: 8;
     char name[];
 } __attribute__((packed));
