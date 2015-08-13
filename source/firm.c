@@ -169,7 +169,7 @@ int decrypt_firm()
     // The N3DS firm has an additional encryption layer for ARM9
     if (current_firm->console == console_n3ds) {
         // All the firmwares we've encountered have ARM9 as their sectond section
-        if (decrypt_arm9bin((arm9bin_h *)(firm_loc + firm_loc->section[2].offset),
+        if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)firm_loc + firm_loc->section[2].offset),
                     current_firm->version) != 0) {
             print("Couldn't decrypt ARM9 FIRM binary");
             draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\n  If the issue persists, please file a bug report.");
