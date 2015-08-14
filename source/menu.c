@@ -28,7 +28,7 @@ int draw_menu(char *title, int back, int count, char *options[])
     current_pos_y = draw_string(screen_top_left, options[0], 10, current_pos_y, COLOR_SELECTED);
     for (int i = 1; i < count; i++) {
         current_pos_y += SPACING_VERT;
-        pos_y_text[i] = current_pos_y
+        pos_y_text[i] = current_pos_y;
         current_pos_y = draw_string(screen_top_left, options[i], 10, current_pos_y, COLOR_NEUTRAL);
     }
 
