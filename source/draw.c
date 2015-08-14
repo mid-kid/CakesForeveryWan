@@ -12,7 +12,7 @@ static struct framebuffers {
 
 #define screen_top_width 400
 #define screen_top_height 240
-#define screen_bottom_width 340
+#define screen_bottom_width 320
 #define screen_bottom_height 240
 #define screen_top_size (screen_top_width * screen_top_height * 3)
 #define screen_bottom_size (screen_bottom_width * screen_bottom_height * 3)
@@ -100,7 +100,7 @@ int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, ui
             pos_y += SPACING_VERT;
             line_i = 0;
             i++;
-        } else if (line_i >= (screen_width - pos_x - 20) / SPACING_HORIZ) {
+        } else if (line_i >= (screen_width - pos_x) / SPACING_HORIZ) {
             // Make sure we never get out of the screen.
             pos_y += SPACING_VERT;
             line_i = 2;  // Little offset so we know the same string continues.
