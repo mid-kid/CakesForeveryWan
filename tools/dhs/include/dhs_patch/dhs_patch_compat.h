@@ -18,6 +18,8 @@ typedef struct dhs_a9_compat_s
 	uint32_t kernel_base_pa;
 	uint32_t kernel_base_va;
 
+	uint32_t pm_pxi_readexheader;
+
 	uint32_t data_abort_offset;
 	uint32_t ld11_offset;
 	uint32_t ssr_offset;
@@ -62,6 +64,8 @@ dhs_a9_compat_s dhs_a9_compat_1F = {
 	.svc_patch_pa = (uint32_t*)0x1FF827CC,
 	.svc_dev_patch_pa = (uint32_t*)0x1FF82968,
 
+	.pm_pxi_readexheader = 0x0803EA5C,
+
 	.data_abort_offset = 0x348,
 	.ld11_offset = 0x8344,
 	.ssr_offset = 0, // 0x4CDC, handle is in r1
@@ -92,6 +96,8 @@ dhs_a9_compat_s dhs_a9_compat_2A = {
     .svc_patch_pa = (uint32_t*)0x1FF822A4, // 0xFFF522A4
     .svc_dev_patch_pa = (uint32_t*)0x1FF82440,
 
+    .pm_pxi_readexheader = 0x0803E8EC,
+
     .data_abort_offset = 0x638,
     .ld11_offset = 0x7FBC,
     .ssr_offset = 0, // 0x481C, handle is in r1
@@ -120,6 +126,8 @@ dhs_a9_compat_s dhs_a9_compat_38 = {
 	.kernel_base_va = 0xFFF00000,
 	.svc_patch_pa = (uint32_t*)0x1FF82290, // 0xFFF02290
 	.svc_dev_patch_pa = (uint32_t*)0x1FF8242C, // 0xFFF0242C
+
+	.pm_pxi_readexheader = 0x0803E8A0,
 
 	.data_abort_offset = 0x634,
 	.ld11_offset = 0x82E8,
@@ -150,6 +158,8 @@ dhs_a9_compat_s dhs_a9_compat_49 = {
 	.kernel_base_va = 0xFFF00000,
 	.svc_patch_pa = (uint32_t*)0x1FF82284, // 0xFFF02284
 	.svc_dev_patch_pa = (uint32_t*)0x1FF82420,
+
+	.pm_pxi_readexheader = 0x0803E890,
 
 	.data_abort_offset = 0x620,
 	.ld11_offset = 0x82F4,

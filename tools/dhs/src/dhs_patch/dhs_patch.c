@@ -1,6 +1,7 @@
 #include <string.h>
 #include "dhs_patch/dhs_patch_compat.h"
 #include "dhs_patch/dhs_patch.h"
+#include "dhs_patch/headers.h"
 #include "svc.h"
 #include "file.h"
 
@@ -69,6 +70,55 @@ void mpuSetupWrap()
 		"mov sp, r0\n\t"
 		"bx lr\n\t"
 	);
+}
+
+void patchExHeader(ncch_ex_h* exheader)
+{
+	if(*(uint32_t*)&exheader->sci.appTitle[0] == PROC_NAME_LO && *(uint32_t*)&exheader->sci.appTitle[4] == PROC_NAME_HI)
+	{
+		// File System Access Info, sdmc:/
+		exheader->aci.alsc.storage_info.fsai[0] |= 1 << 7;
+		// Mount sdmc:/ (Write Access)
+		exheader->aci.aac.descriptors[1] |= 2;
+	}
+}
+
+__attribute__((naked))
+void readExHeaderHookHandler(int res)
+{
+	if(res >= 0)
+	{
+		ncch_ex_h* exheader;
+		asm volatile
+		(
+			"stmfd sp!, {r0-r5, lr}\n\t"
+			"ldr %0, [sp, #0x20]"
+			:"=r"(exheader)
+		);
+
+		patchExHeader(exheader);
+
+		asm volatile
+		(
+			"ldmfd sp!, {r0-r5, lr}\n\t"
+			"add lr, lr, #0xA\n\t"
+			"bx lr"
+		);
+	}
+	else
+	{
+		void(*closeAndReturn)() = (void*) (a9compat.pm_pxi_readexheader + 0x35);
+		asm volatile("mov r4, r0\n\t":::"r0","r4");
+		closeAndReturn();
+	}
+}
+
+void patchARM9()
+{
+	// pm_pxi_readexheader
+	uint32_t offset = a9compat.pm_pxi_readexheader;
+	*(uint32_t*)(offset + 0) = 0x47884900; // ldr r1, [pc, #0] -> blx r1
+	*(uint32_t*)(offset + 4) = (uint32_t) readExHeaderHookHandler;
 }
 
 uint32_t getBranchInst(int32_t from, int32_t to, int link)
@@ -187,7 +237,10 @@ void doExploit()
 {
 	svcBackdoor(mpuSetupWrap);
 	if(!dump_only)
+	{
+		patchARM9();
 		patchARM11Kernel();
+	}
 
 	Handle thread;
 	void* entry = (void*)bgThreadEntry;
