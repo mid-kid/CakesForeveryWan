@@ -1,6 +1,7 @@
 {
     "name": "dhs",
     "description": "DHS",
+    "type": "NATIVE_FIRM",
     "patches": [
         {
             "name": "patch1.bin",
@@ -13,6 +14,7 @@
     ],
     "version_specific": [
         {
+            "console": "o3ds",
             "version": "0x49",
             "patches": [
                 {
@@ -23,6 +25,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x38",
             "patches": [
                 {
@@ -33,6 +36,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x37",
             "patches": [
                 {
@@ -43,6 +47,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x2A",
             "patches": [
                 {
@@ -53,6 +58,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x1F",
             "patches": [
                 {

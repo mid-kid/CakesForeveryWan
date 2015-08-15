@@ -144,7 +144,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
             print("dhs_patch loaded to itcm");
 
             dhs_a9_compat_s *compat = NULL;
-            switch(firm_ver) {
+            switch(current_firm->version) {
             case 0x49:
                 compat = &dhs_a9_compat_49;
                 break;
