@@ -86,6 +86,17 @@
                     "offset": "0x0805D498"
                 }
             ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x04",
+            "patches": [
+                {
+                    "offset": "0x08063C28"
+                }, {
+                    "offset": "0x0805E2D4"
+                }
+            ]
         }
     ]
 }
