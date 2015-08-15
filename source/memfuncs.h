@@ -11,5 +11,6 @@ int memcmp(const void *buf1, const void *buf2, uint32_t size);
 void memcpy(void *dest, const void *src, uint32_t size);
 void strncpy(void *dest, const void *src, uint32_t size);
 int strncmp(const void *buf1, const void *buf2, uint32_t size);
+int atoi(const char *str);
 
 #endif

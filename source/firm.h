@@ -5,8 +5,19 @@
 
 #include "headers.h"
 
+enum consoles {
+    console_o3ds,
+    console_n3ds
+};
+
+struct firm_signature {
+    uint8_t sig[0x10];
+    unsigned int version;
+    enum consoles console;
+};
+
 extern firm_h *firm_loc;
-extern unsigned int firm_ver;
+extern struct firm_signature *current_firm;
 extern int save_firm;
 extern const char *save_path;
 

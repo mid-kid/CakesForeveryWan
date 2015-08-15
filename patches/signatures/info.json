@@ -1,6 +1,7 @@
 {
     "name": "signatures",
     "description": "Disable signature checks",
+    "type": "NATIVE_FIRM",
     "patches": [
         {
             "name": "patch1.bin"
@@ -10,6 +11,7 @@
     ],
     "version_specific": [
         {
+            "console": "o3ds",
             "version": "0x49",
             "patches": [
                 {
@@ -20,6 +22,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x38",
             "patches": [
                 {
@@ -30,6 +33,7 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x37",
             "patches": [
                 {
@@ -40,6 +44,18 @@
             ]
         },
         {
+            "console": "o3ds",
+            "version": "0x30",
+            "patches": [
+                {
+                    "offset": "0x080630C0"
+                }, {
+                    "offset": "0x0805D2C4"
+                }
+            ]
+        },
+        {
+            "console": "o3ds",
             "version": "0x2A",
             "patches": [
                 {
@@ -50,12 +66,35 @@
             ]
         },
         {
+            "console": "o3ds",
             "version": "0x1F",
             "patches": [
                 {
                     "offset": "0x0804D5C0"
                 }, {
                     "offset": "0x0805FAC0"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x0F",
+            "patches": [
+                {
+                    "offset": "0x08063374"
+                }, {
+                    "offset": "0x0805D498"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x04",
+            "patches": [
+                {
+                    "offset": "0x08063C28"
+                }, {
+                    "offset": "0x0805E2D4"
                 }
             ]
         }

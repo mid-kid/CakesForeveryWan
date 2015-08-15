@@ -16,8 +16,13 @@
 
 struct cake_header {
     uint8_t count: 8;
-    uint8_t firm_ver;
-    uint8_t reserved;
+    uint8_t firm_ver: 8;
+    enum {
+        NATIVE_FIRM,
+        TWL_FIRM,
+        AGB_FIRM
+    } firm_type: 4;
+    enum consoles console: 4;
     uint8_t patches_offset: 8;
     char name[];
 } __attribute__((packed));
@@ -36,14 +41,11 @@ enum patch_options {
     patch_option_dhs = 0b00001000
 };
 
-struct cake_info *cake_list = (struct cake_info *)0x24300000;
-int cake_count = 0;
+struct cake_info *cake_list = (struct cake_info *)0x24500000;
+unsigned int cake_count = 0;
 
 static struct cake_header *firm_patch_temp = (struct cake_header *)0x24200000;
 static void *temp = (void *)0x24300000;
-
-static const int nand_size_toshiba = 0x1D7800;
-static const int nand_size_samsung = 0x1DD000;
 
 void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
 {
@@ -88,19 +90,13 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
             }
         }
 
-        if (sdmmc_sdcard_readsectors(nand_size_toshiba, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: Toshiba GW");
-                offset = 0;
-                header = nand_size_toshiba;
-            }
-        }
+        uint32_t nand_size = getMMCDevice(0)->total_size;
 
-        if (sdmmc_sdcard_readsectors(nand_size_samsung, 1, temp) == 0) {
+        if (sdmmc_sdcard_readsectors(nand_size, 1, temp) == 0) {
             if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: Samsung GW");
+                print("emuNAND detected: Gateway");
                 offset = 0;
-                header = nand_size_samsung;
+                header = nand_size;
             }
         }
 
@@ -250,7 +246,7 @@ int patch_firm(char *filename)
 
 int patch_firm_all()
 {
-    for (int i = 0; i < cake_count; i++) {
+    for (unsigned int i = 0; i < cake_count; i++) {
         if (cake_selected[i]) {
             if (patch_firm(cake_list[i].path)) return 1;
         }
@@ -318,7 +314,10 @@ int load_cakes_info(const char *dirpath)
         if (fr != FR_OK) goto error;
 
         // Only add patches applicable to the loaded firm
-        if(header.firm_ver != firm_ver) {
+        if(header.firm_ver != current_firm->version ||
+                header.console != current_firm->console ||
+                header.firm_type != NATIVE_FIRM
+                    /* TODO: More types coming later. Maybe. */) {
             continue;
         }
 

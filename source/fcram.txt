@@ -10,6 +10,6 @@ firm_loc_encrypted = 0x24100000
 -- patch.c
 temp = 0x24300000  // If I ever need this globally, use 0x23000000
 firm_patch_temp = 0x24200000
-cake_list = 0x24300000
+cake_list = 0x24500000
 
 config_file = 0x24400000

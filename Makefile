@@ -6,11 +6,7 @@ LD := arm-none-eabi-ld
 OC := arm-none-eabi-objcopy
 OPENSSL := openssl
 
-PYTHON3 := python
-PYTHON_VER_MAJOR := $(word 2, $(subst ., , $(shell python --version 2>&1)))
-ifneq ($(PYTHON_VER_MAJOR), 3)
-	PYTHON3 := python3
-endif
+PYTHON := python
 
 dir_source := source
 dir_build := build
@@ -21,7 +17,7 @@ dir_cakebrah := CakeBrah
 
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
 CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main
-CAKEFLAGS := dir_out=$(abspath $(dir_out)) 
+CAKEFLAGS := dir_out=$(abspath $(dir_out))
 BRAHFLAGS := dir_out=$(abspath $(dir_out)/3ds/Cakes) \
 			 APP_DESCRIPTION="CFW for 3DS" \
 			 APP_AUTHOR="mid-kid" \
@@ -76,7 +72,7 @@ $(dir_out)/Cakes.dat: $(dir_build)/main.bin
 $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
 	@mkdir -p $(dir_out)/cakes/patches
 	@mkdir -p $(dir_build)/patches/$*
-	$(PYTHON3) $(dir_patches)/bundle.py $^ $(dir_build)/patches/$* $(dir_out)/cakes/patches
+	$(PYTHON) $(dir_patches)/bundle.py $^ $(dir_build)/patches/$* $(dir_out)/cakes/patches
 	@touch $@
 
 .PHONY: $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh
@@ -88,8 +84,8 @@ $(dir_build)/main.bin: $(dir_build)/main.elf
 	$(OC) -S -O binary $< $@
 
 $(dir_build)/main.elf: $(objects_cfw)
-	# FatFs requires libgcc for __aeabi_uidiv
-	$(CC) -nostartfiles $(LDFLAGS) -T linker.ld $(OUTPUT_OPTION) $^
+	# FatFs requires libgcc for some optimizations
+	$(LD) -T linker.ld  $(OUTPUT_OPTION) $^ $(shell $(CC) -print-libgcc-file-name)
 
 $(dir_build)/%.o: $(dir_source)/%.c
 	@mkdir -p "$(@D)"

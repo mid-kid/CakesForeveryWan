@@ -6,7 +6,9 @@ Cakes_*.zip
 # My own files
 env
 firmware.bin
+firmwaren3ds.bin
 firmkey.bin
+firmkeyn3ds.bin
 
 # Programming tools leftovers
 *.swp

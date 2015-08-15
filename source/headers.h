@@ -11,6 +11,7 @@
 #define NCCH_MAGIC              (0x4843434E)
 #define NCSD_MAGIC              (0x4453434E)
 #define FIRM_MAGIC              (0x4D524946)
+#define ARM9BIN_MAGIC           (0x47704770)
 
 typedef struct firm_section_h {
     uint32_t offset;
@@ -139,6 +140,17 @@ typedef struct ncsd_h {
     ncsd_partition_table ptable[8];// Offset & Length partition table, in media units
     uint8_t spec[0xA0];
 } ncsd_h;
+
+typedef struct arm9bin_h {
+    uint8_t keyx[0x10];
+    uint8_t keyy[0x10];
+    uint8_t ctr[0x10];
+    char size[8];
+    uint8_t pad[8];
+    uint8_t ctl_block[0x10];
+    uint8_t unk[0x10];
+    uint8_t slot0x16keyX[0x10];
+} arm9bin_h;
 
 #define NCSD_PARTITION_EXE          0
 #define NCSD_PARTITION_MANUAL       1

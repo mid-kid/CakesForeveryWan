@@ -20,7 +20,7 @@ enum keys {
     key_pressed = 0b1000000000000000
 };
 
-volatile uint16_t *hid_regs;
+extern volatile uint16_t *hid_regs;
 
 uint16_t wait_key();
 
