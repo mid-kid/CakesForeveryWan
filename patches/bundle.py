@@ -82,7 +82,7 @@ for version in info["version_specific"]:
     # Compile it
     open("patches.s", "w").write(verfile)
     if system("armips patches.s"):
-        print("Couldn't compile version %s for some reason." % ver, file=stderr)
+        print("Couldn't compile version %s for some reason." % version["version"], file=stderr)
         exit(1)
 
     # Bake the cake
