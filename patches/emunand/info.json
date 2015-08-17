@@ -29,7 +29,7 @@
                 "sdmmc_unk2": "0x08078750",
                 "aes_setkey": "0x080575B4",
                 "aes_unk": "0x0805FB48",
-				"sdmmc": "0x080D8670"
+		"sdmmc": "0x080D8670"
             },
             "patches": [
                 {
@@ -54,7 +54,7 @@
                 "sdmmc_unk2": "0x08078648",
                 "aes_setkey": "0x080573EC",
                 "aes_unk": "0x0805F994",
-				"sdmmc": "0x080D8670"
+		"sdmmc": "0x080D8670"
             },
             "patches": [
                 {
@@ -79,7 +79,7 @@
                 "sdmmc_unk2": "0x080785B0",
                 "aes_setkey": "0x08057434",
                 "aes_unk": "0x0805FA00",
-				"sdmmc": "0x080D84F0"
+		"sdmmc": "0x080D84F0"
             },
             "patches": [
                 {
@@ -104,7 +104,7 @@
                 "sdmmc_unk2": "0x08078330",
                 "aes_setkey": "0x0805728C",
                 "aes_unk": "0x0805F800",
-				"sdmmc": "0x080D8430"
+		"sdmmc": "0x080D8430"
             },
             "patches": [
                 {
@@ -129,7 +129,7 @@
                 "sdmmc_unk2": "0x080783E8",
                 "aes_setkey": "0x080575B4",
                 "aes_unk": "0x0805FB48",
-				"sdmmc": "0x080D84B0"
+		"sdmmc": "0x080D84B0"
             },
             "patches": [
                 {
@@ -179,7 +179,7 @@
                 "sdmmc_unk2": "0x080786A0",
                 "aes_setkey": "0x08057458",
                 "aes_unk": "0x0805F9E4",
-				"sdmmc": "0x080D86F0"
+		"sdmmc": "0x080D86F0"
             },
             "patches": [
                 {
