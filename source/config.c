@@ -9,7 +9,7 @@
 #include "fcram.h"
 #include "paths.h"
 
-static unsigned int config_ver = 1;
+static unsigned int config_ver = 2;
 
 struct config_file *config = (struct config_file *)FCRAM_CONFIG;
 int patches_modified = 0;
@@ -26,11 +26,23 @@ void load_config()
         return;
     }
 
-    // Check that we have the correct config & firmware version
+    if (config->config_ver != config_ver) {
+        print("Invalid config version\n  Starting from scratch");
+        memset(config, 0, sizeof(struct config_file));
+        patches_modified = 1;
+        return;
+    }
+
+    print("Loaded config file");
+}
+
+void load_config_cakes()
+{
+    if (patches_modified) return;
+
     // TODO: If we get more options, maybe we should keep them when swapping firms.
-    // TODO: Check firm console.
-    if (config->config_ver != config_ver || config->firm_ver != current_firm->version) {
-        print("Invalid config or firm version.\n  Starting from scratch.");
+    if (config->firm_ver != current_firm->version || config->firm_console != current_firm->console) {
+        print("Config was for another firm version.\n  Starting from scratch.");
 
         memset(config, 0, sizeof(struct config_file));
         patches_modified = 1;
@@ -38,56 +50,56 @@ void load_config()
     }
 
     // Someone may try to be funny and make the count too big.
-    const unsigned int max_autoboot = (0x100000 - sizeof(struct config_file)) /
-                              sizeof(config->autoboot_list[0]);
+    const unsigned int max_cakes = (FCRAM_SPACING - sizeof(struct config_file)) /
+                                   sizeof(config->cake_list[0]);
 
     for (unsigned int x = 0; x < cake_count; x++) {
-        for (unsigned int y = 0; y < config->autoboot_count && y < max_autoboot; y++) {
-            if (strncmp(cake_list[x].path, config->autoboot_list[y],
-                        sizeof(config->autoboot_list[0])) == 0) {
+        for (unsigned int y = 0; y < config->cake_count && y < max_cakes; y++) {
+            if (strncmp(cake_list[x].path, config->cake_list[y],
+                        sizeof(config->cake_list[0])) == 0) {
                 cake_selected[x] = 1;
             }
         }
     }
 
-    print("Loaded config file");
+    print("Loaded selected cakes");
 }
 
 void save_config()
 {
-    // This is the maximum size the autoboot_list could be
-    unsigned int autoboot_size = sizeof(config->autoboot_list[0]) * cake_count;
+    // This is the maximum size the cake_list could be
+    unsigned int cake_list_size = sizeof(config->cake_list[0]) * cake_count;
 
-    // Boundary checking. We expect 0x24500000 to be used.
-    if (autoboot_size > 0x100000 - sizeof(struct config_file)) {
-        autoboot_size = 0x100000 - sizeof(struct config_file);
+    // Boundary checking.
+    if (cake_list_size > FCRAM_SPACING - sizeof(struct config_file)) {
+        cake_list_size = FCRAM_SPACING - sizeof(struct config_file);
     }
 
     // Set config file version
     config->config_ver = config_ver;
 
-    // Set the firmware version
+    // Set the firmware version and console
     config->firm_ver = current_firm->version;
+    config->firm_console = current_firm->console;
 
     // Clean the memory area. We don't want to dump random bytes.
-    memset32(config->autoboot_list, 0, autoboot_size);
+    memset32(config->cake_list, 0, cake_list_size);
 
-    // More boundary checking. Make absolutely sure we don't write on 0x24500000.
-    const unsigned int max_autoboot = (0x100000 - sizeof(struct config_file)) /
-                              sizeof(config->autoboot_list[0]);
+    // More boundary checking.
+    const unsigned int max_cakes = (FCRAM_SPACING - sizeof(struct config_file)) /
+                                   sizeof(config->cake_list[0]);
 
-    config->autoboot_count = 0;
-    for (unsigned int i = 0; i < cake_count && i < max_autoboot; i++) {
+    config->cake_count = 0;
+    for (unsigned int i = 0; i < cake_count && i < max_cakes; i++) {
         if (cake_selected[i]) {
             // This saves the full path...
-            strncpy(config->autoboot_list[config->autoboot_count],
-                    cake_list[i].path, sizeof(config->autoboot_list[0]));
-            config->autoboot_count++;
+            strncpy(config->cake_list[config->cake_count++],
+                    cake_list[i].path, sizeof(config->cake_list[0]));
         }
     }
 
     int config_size = sizeof(struct config_file) +
-                      sizeof(config->autoboot_list[0]) * config->autoboot_count;
+                      sizeof(config->cake_list[0]) * config->cake_count;
     if (write_file(config, PATH_CONFIG, config_size) != 0) {
         print("Failed to write the config file");
         draw_message("Failed to write the config file",

@@ -18,11 +18,12 @@ firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
 static int firm_size = 0;
 static void *firm_loc_encrypted = (void *)FCRAM_FIRM_LOC_ENCRYPTED;
 static const int firm_size_encrypted = FCRAM_SPACING;
+
 static int firm_key_loaded = 0;
 static void *firm_key_cetk = (void *)FCRAM_FIRM_KEY_CETK;
 static uint8_t firm_key[AES_BLOCK_SIZE];
-struct firm_signature *current_firm = NULL;
 
+struct firm_signature *current_firm = NULL;
 int save_firm = 0;
 
 // We use the firm's section 0's hash to identify the version
@@ -93,14 +94,14 @@ int prepare_files()
     return 0;
 }
 
-int decrypt_cetk_key(void *key, void *cetk)
+int decrypt_cetk_key(void *key, const void *cetk)
 {
     // This function only decrypts the NATIVE_FIRM CETK.
     // I don't need it for anything else atm.
     // Either way, this is the reason for the two checks here at the top.
 
     uint8_t common_key_y[AES_BLOCK_SIZE];
-    uint8_t iv[AES_BLOCK_SIZE] = {0};  // TODO: ?
+    uint8_t iv[AES_BLOCK_SIZE] = {0};
 
     uint32_t sigtype = __builtin_bswap32(*(uint32_t *)cetk);
     if (sigtype != SIG_TYPE_RSA2048_SHA256) return 1;
@@ -135,7 +136,7 @@ int decrypt_cetk_key(void *key, void *cetk)
     return 0;
 }
 
-int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t size)
+int decrypt_firm_title(firm_h *dest, ncch_h *ncch, const uint32_t size)
 {
     uint8_t firm_iv[16] = {0};
     uint8_t exefs_key[16] = {0};
@@ -165,16 +166,16 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t size)
     firm_h *firm = (firm_h *)&exefs[1];  // The offset right behind the exefs header; the first file.
     firm_size = exefs->fileHeaders[0].size;
 
+    if (firm->magic != FIRM_MAGIC) return 1;
+
     print("Copying the FIRM");
     memcpy32(dest, firm, firm_size);
-
-    if (dest->magic != FIRM_MAGIC) return 1;
 
     return 0;
 }
 
 
-int decrypt_arm9bin(arm9bin_h *header, unsigned int version) {
+int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
     uint8_t decrypted_keyx[16];
 
     print("Decrypting ARM9 FIRM binary");
@@ -329,9 +330,10 @@ void boot_cfw()
     draw_loading(title, "Patching...");
     if (patch_firm_all() != 0) return;
 
-    // Only save the firm if that option is required,
+    // Only save the firm if that option is required (or it's needed for autoboot),
     //   and either the patches have been modified, or the file doesn't exist.
-    if (save_firm && (patches_modified || f_stat(PATH_PATCHED_FIRMWARE, NULL) != 0)) {
+    if ((save_firm || config->autoboot_enabled) &&
+            (patches_modified || f_stat(PATH_PATCHED_FIRMWARE, NULL) != 0)) {
         draw_loading(title, "Saving FIRM...");
         print("Saving patched FIRM");
         if (write_file(firm_loc, PATH_PATCHED_FIRMWARE, firm_size) != 0) {
