@@ -31,9 +31,9 @@ objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 
 baked_files := $(patsubst $(dir_patches)/%/, $(dir_build)/patches/%.baked, $(wildcard $(dir_patches)/*/))
 
-provide_files := $(dir_out)/firmware_bin.here \
-				 $(dir_out)/slot0x25keyX_bin.here \
-				 $(dir_out)/cakes/firmkey_bin.here
+provide_files := $(dir_out)/slot0x25keyX_bin.here \
+				 $(dir_out)/cakes/firmware_bin.here \
+				 $(dir_out)/cakes/cetk.here
 
 .PHONY: all
 all: launcher patches ninjhax
