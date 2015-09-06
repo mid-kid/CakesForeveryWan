@@ -17,15 +17,15 @@ typedef struct firm_section_h {
     uint32_t offset;
     void* address;
     uint32_t size;
-    uint32_t type;		        // Firmware Type ('0'=ARM9/'1'=ARM11)
+    uint32_t type;                // Firmware Type ('0'=ARM9/'1'=ARM11)
     uint8_t hash[0x20];         // SHA-256 Hash of Firmware Section
 } firm_section_h;               // 0x30
 
 typedef struct firm_h {
-    uint32_t magic; 		    // FIRM
+    uint32_t magic;             // FIRM
     uint32_t reserved1;
     void* a11Entry;             // ARM11 entry
-    void* a9Entry;	            // ARM9 entry
+    void* a9Entry;                // ARM9 entry
     uint8_t reserved2[0x30];
     firm_section_h section[4];
     uint8_t sig[0x100];
@@ -141,6 +141,12 @@ typedef struct ncsd_h {
     uint8_t spec[0xA0];
 } ncsd_h;
 
+#define NCSD_PARTITION_EXE          0
+#define NCSD_PARTITION_MANUAL       1
+#define NCSD_PARTITION_DLP          2
+#define NCSD_PARTITION_N3DSUPDATE   6
+#define NCSD_PARTITION_O3DSUPDATE   7
+
 typedef struct arm9bin_h {
     uint8_t keyx[0x10];
     uint8_t keyy[0x10];
@@ -152,10 +158,38 @@ typedef struct arm9bin_h {
     uint8_t slot0x16keyX[0x10];
 } arm9bin_h;
 
-#define NCSD_PARTITION_EXE          0
-#define NCSD_PARTITION_MANUAL       1
-#define NCSD_PARTITION_DLP          2
-#define NCSD_PARTITION_N3DSUPDATE   6
-#define NCSD_PARTITION_O3DSUPDATE   7
+// http://3dbrew.org/wiki/Ticket
+typedef struct ticket_h
+{
+    uint8_t sigIssuer[0x40];
+    uint8_t eccPubKey[0x3C];
+    uint8_t version;
+    uint8_t caCrlVersion;
+    uint8_t signerCrlVersion;
+    uint8_t titleKey[0x10];
+    uint8_t reserved;
+    uint8_t ticketID[8];
+    uint8_t consoleID[4];
+    uint8_t titleID[8];
+    uint8_t reserved2[2];
+    uint16_t ticketTitleVersion;
+    uint8_t reserved3[8];
+    uint8_t licenseType;
+    uint8_t ticketCommonKeyYIndex;    //Ticket common keyY index, usually 0x1 for retail system titles.
+    uint8_t reserved4[0x2A];
+    uint8_t unk[4];                    // eShop Account ID?
+    uint8_t reserved5;
+    uint8_t audit;
+    uint8_t reserved6[0x42];
+    uint8_t limits[0x40];
+    uint8_t contentIndex[0xAC];
+} __attribute__((__packed__)) ticket_h; // 0x210
+
+#define SIG_TYPE_RSA4096_SHA1        0x010000
+#define SIG_TYPE_RSA2048_SHA1        0x010001
+#define SIG_TYPE_ECDSA_SHA1          0x010002
+#define SIG_TYPE_RSA4096_SHA256      0x010003
+#define SIG_TYPE_RSA2048_SHA256      0x010004
+#define SIG_TYPE_ECDSA_SHA256        0x010005
 
 #endif /*__headers_h__*/

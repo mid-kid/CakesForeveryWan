@@ -8,6 +8,8 @@
 #include "fs.h"
 #include "menu.h"
 #include "firm.h"
+#include "fcram.h"
+#include "paths.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
 
@@ -37,11 +39,10 @@ enum patch_options {
     patch_option_save = 0b00000100
 };
 
-struct cake_info *cake_list = (struct cake_info *)0x24500000;
+struct cake_info *cake_list = (struct cake_info *)FCRAM_CAKE_LIST;
 unsigned int cake_count = 0;
 
-static struct cake_header *firm_patch_temp = (struct cake_header *)0x24200000;
-static void *temp = (void *)0x24300000;
+static struct cake_header *firm_patch_temp = (struct cake_header *)FCRAM_FIRM_PATCH_TEMP;
 
 void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
 {
@@ -59,7 +60,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
     if (options & patch_option_keyx) {
         print("Patch option: Adding keyX");
 
-        if (read_file(temp, "/slot0x25keyX.bin", 16) != 0) {
+        if (read_file(fcram_temp, PATH_SLOT0X25KEYX, 16) != 0) {
             print("Failed to load keyX");
             draw_message("Failed to load keyX", "Make sure the keyX is\n  located at /slot0x25keyX.bin");
             return 1;
@@ -67,7 +68,7 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
 
         void *pos = memsearch(address, "slot0x25keyXhere", size, 16);
         if (pos) {
-            memcpy32(pos, temp, 16);
+            memcpy32(pos, fcram_temp, 16);
         } else {
             print("I don't know where to add keyX.\n  Ignoring...");
         }
@@ -78,8 +79,8 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
         uint32_t offset = 0;
         uint32_t header = 0;
 
-        if (sdmmc_sdcard_readsectors(1, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
+        if (sdmmc_sdcard_readsectors(1, 1, fcram_temp) == 0) {
+            if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
                 print("emuNAND detected: redNAND");
                 offset = 1;
                 header = 1;
@@ -88,8 +89,8 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
 
         uint32_t nand_size = getMMCDevice(0)->total_size;
 
-        if (sdmmc_sdcard_readsectors(nand_size, 1, temp) == 0) {
-            if (*(uint32_t *)(temp + 0x100) == NCSD_MAGIC) {
+        if (sdmmc_sdcard_readsectors(nand_size, 1, fcram_temp) == 0) {
+            if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
                 print("emuNAND detected: Gateway");
                 offset = 0;
                 header = nand_size;
@@ -120,17 +121,10 @@ int patch_options(void *address, uint32_t size, uint8_t options) {
 
         save_firm = 1;
 
-        // This next stuff is to "convert" the path to a short wchar.
+        // This absolutely requires the -fshort-wchar option to be enabled.
         char *offset = address + size;
-        memcpy(offset, "s\0d\0m\0c\0:", 10);
-        offset += 10;
-
-        for (int x = 0; x < strlen(save_path); x++) {
-            *offset++ = save_path[x];
-            *offset++ = 0;
-        }
-
-        memset(offset, 0, 4);
+        memcpy(offset, L"sdmc:", 10);
+        memcpy(offset + 10, L"" PATH_PATCHED_FIRMWARE, sizeof(PATH_PATCHED_FIRMWARE) * 2);
     }
 
     return 0;

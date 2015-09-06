@@ -19,7 +19,6 @@ struct firm_signature {
 extern firm_h *firm_loc;
 extern struct firm_signature *current_firm;
 extern int save_firm;
-extern const char *save_path;
 
 int prepare_files();
 int decrypt_firm();

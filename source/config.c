@@ -6,10 +6,12 @@
 #include "patch.h"
 #include "menu.h"
 #include "firm.h"
+#include "fcram.h"
+#include "paths.h"
 
 static unsigned int config_ver = 1;
 
-struct config_file *config = (struct config_file *)0x24400000;
+struct config_file *config = (struct config_file *)FCRAM_CONFIG;
 int patches_modified = 0;
 
 void load_config()
@@ -17,7 +19,7 @@ void load_config()
     // Make sure we don't get random values if the config file doesn't load
     memset(config, 0, sizeof(struct config_file));
 
-    if (read_file(config, "/cakes/config.dat", 0x100000) != 0) {
+    if (read_file(config, PATH_CONFIG, 0x100000) != 0) {
         print("Failed to load the config.\n  Starting from scratch.");
 
         patches_modified = 1;
@@ -26,6 +28,7 @@ void load_config()
 
     // Check that we have the correct config & firmware version
     // TODO: If we get more options, maybe we should keep them when swapping firms.
+    // TODO: Check firm console.
     if (config->config_ver != config_ver || config->firm_ver != current_firm->version) {
         print("Invalid config or firm version.\n  Starting from scratch.");
 
@@ -85,7 +88,7 @@ void save_config()
 
     int config_size = sizeof(struct config_file) +
                       sizeof(config->autoboot_list[0]) * config->autoboot_count;
-    if (write_file(config, "/cakes/config.dat", config_size) != 0) {
+    if (write_file(config, PATH_CONFIG, config_size) != 0) {
         print("Failed to write the config file");
         draw_message("Failed to write the config file",
             "CakesFW will continue working normally.\n"
