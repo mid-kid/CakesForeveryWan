@@ -1,5 +1,4 @@
-#ifndef __fcram_h__
-#define __fcram_h__
+#pragma once
 
 // File to keep track of all the fcram offsets in use.
 // It provides an easy overview of all that is used.
@@ -23,5 +22,3 @@ extern void *fcram_temp;
 
 // config.c
 #define FCRAM_CONFIG (FCRAM_START + FCRAM_SPACING * 5)
-
-#endif

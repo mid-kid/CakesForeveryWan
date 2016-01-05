@@ -1,5 +1,4 @@
-#ifndef __fs_h__
-#define __fs_h__
+#pragma once
 
 int mount_sd();
 int unmount_sd();
@@ -7,5 +6,3 @@ int read_file_offset(void *dest, const char *path, unsigned int size, unsigned i
 int write_file(const void *buffer, const char *path, unsigned int size);
 
 #define read_file(dest, path, size) read_file_offset(dest, path, size, 0)
-
-#endif

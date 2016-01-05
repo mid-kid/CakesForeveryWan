@@ -1,5 +1,4 @@
-#ifndef __firm_h__
-#define __firm_h__
+#pragma once
 
 #include <stdint.h>
 
@@ -25,5 +24,3 @@ int decrypt_firm();
 int load_firm();
 void boot_firm();
 void boot_cfw();
-
-#endif

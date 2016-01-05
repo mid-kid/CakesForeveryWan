@@ -67,7 +67,7 @@ $(dir_out)/%.here:
 $(dir_out)/Cakes.dat: $(dir_build)/main.bin
 	@mkdir -p "$(@D)"
 	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) launcher
-	dd if=$(dir_build)/main.bin of=$@ bs=512 seek=144
+	dd if=$< of=$@ bs=512 seek=144
 
 $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
 	@mkdir -p $(dir_out)/cakes/patches

@@ -1,5 +1,4 @@
-#ifndef __patch_h__
-#define __patch_h__
+#pragma once
 
 #include "fatfs/ff.h"
 
@@ -17,5 +16,3 @@ int cake_selected[MAX_CAKES];
 int patch_firm();
 int patch_firm_all();
 int load_cakes_info(const char *dirpath);
-
-#endif

@@ -10,12 +10,12 @@ static struct framebuffers {
     uint8_t *bottom;
 } *framebuffers = (struct framebuffers *)0x23FFFE00;
 
-#define screen_top_width 400
-#define screen_top_height 240
-#define screen_bottom_width 320
-#define screen_bottom_height 240
-#define screen_top_size (screen_top_width * screen_top_height * 3)
-#define screen_bottom_size (screen_bottom_width * screen_bottom_height * 3)
+#define SCREEN_TOP_WIDTH 400
+#define SCREEN_TOP_HEIGHT 240
+#define SCREEN_BOTTOM_WIDTH 320
+#define SCREEN_BOTTOM_HEIGHT 240
+#define SCREEN_TOP_SIZE (SCREEN_TOP_WIDTH * SCREEN_TOP_HEIGHT * 3)
+#define SCREEN_BOTTOM_SIZE (SCREEN_BOTTOM_WIDTH * SCREEN_BOTTOM_HEIGHT * 3)
 
 static uint8_t print_pos;
 enum screen print_screen = screen_bottom;
@@ -31,10 +31,10 @@ void set_buffers(enum screen screen, struct buffer_select *select)
     if (screen == screen_top_left || screen == screen_top_right) {
         select->buffer1 = framebuffers->top_left;
         select->buffer2 = framebuffers->top_right;
-        select->size = screen_top_size;
+        select->size = SCREEN_TOP_SIZE;
     } else {
         select->buffer1 = framebuffers->bottom;
-        select->size = screen_bottom_size;
+        select->size = SCREEN_BOTTOM_SIZE;
     }
 }
 
@@ -67,7 +67,7 @@ void draw_character(enum screen screen, char character, int pos_x, int pos_y, ui
 
         for (int x = 7; x >= 0; x--) {
             // I'll just assume both screens have the same height.
-            int screen_pos = (pos_x * screen_top_height * 3 + (screen_top_height - y - pos_y - 1) * 3) + (7 - x) * 3 * screen_top_height;
+            int screen_pos = (pos_x * SCREEN_TOP_HEIGHT * 3 + (SCREEN_TOP_HEIGHT - y - pos_y - 1) * 3) + (7 - x) * 3 * SCREEN_TOP_HEIGHT;
 
             if ((char_pos >> x) & 1) {
                 select.buffer1[screen_pos] = color >> 16;
@@ -90,9 +90,9 @@ int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, ui
 
     int screen_width;
     if (screen == screen_top_left || screen == screen_top_right) {
-        screen_width = screen_top_width;
+        screen_width = SCREEN_TOP_WIDTH;
     } else {
-        screen_width = screen_bottom_width;
+        screen_width = SCREEN_BOTTOM_WIDTH;
     }
 
     for (int i = 0, line_i = 0; i < length; i++, line_i++) {
@@ -116,7 +116,7 @@ int draw_string(enum screen screen, const char *string, int pos_x, int pos_y, ui
 void print(const char *string)
 {
     // I'll just assume both screens have the same height.
-    if (print_pos > (screen_top_height - 30) / SPACING_VERT) {
+    if (print_pos > (SCREEN_TOP_HEIGHT - 30) / SPACING_VERT) {
         clear_screen(print_screen);
         print_pos = 0;
     }

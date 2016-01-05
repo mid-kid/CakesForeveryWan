@@ -1,5 +1,4 @@
-#ifndef __hid_h__
-#define __hid_h__
+#pragma once
 
 #include <stdint.h>
 
@@ -23,5 +22,3 @@ enum keys {
 extern volatile uint16_t *hid_regs;
 
 uint16_t wait_key();
-
-#endif

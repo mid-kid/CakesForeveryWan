@@ -1,5 +1,4 @@
-#ifndef __config_h__
-#define __config_h__
+#pragma once
 
 #include <stdint.h>
 #include "fatfs/ff.h"
@@ -19,5 +18,3 @@ extern int patches_modified;
 void load_config();
 void load_config_cakes();
 void save_config();
-
-#endif

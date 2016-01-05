@@ -1,5 +1,4 @@
-#ifndef __paths_h__
-#define __paths_h__
+#pragma once
 
 // A file to keep track of all the file paths used throughout cakes.
 
@@ -13,5 +12,3 @@
 #define PATH_SLOT0X25KEYX "/slot0x25keyX.bin"
 #define PATH_PATCHES PATH_CAKES "/patches"
 #define PATH_CONFIG PATH_CAKES "/config.dat"
-
-#endif

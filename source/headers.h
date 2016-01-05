@@ -1,5 +1,4 @@
-#ifndef __headers_h__
-#define __headers_h__
+#pragma once
 
 #include <stdint.h>
 
@@ -191,5 +190,3 @@ typedef struct ticket_h
 #define SIG_TYPE_RSA4096_SHA256      0x010003
 #define SIG_TYPE_RSA2048_SHA256      0x010004
 #define SIG_TYPE_ECDSA_SHA256        0x010005
-
-#endif /*__headers_h__*/
