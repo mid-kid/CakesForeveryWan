@@ -14,6 +14,11 @@ void menu_select_patches()
     #error "This function needs MAX_CAKES to be <= MAX_SELECTED_OPTIONS"
     #endif
 
+    if (cake_count <= 0) {
+        draw_message("No cakes loaded", "No cakes have been loaded.\nPlease copy them to: " PATH_PATCHES);
+        return;
+    }
+
     char *options[cake_count];
     for (unsigned int i = 0; i < cake_count; i++) {
         options[i] = cake_list[i].description;
@@ -29,14 +34,18 @@ void menu_select_patches()
 
 void menu_config()
 {
-    char *options[] = {"Enable autoboot (Press \"L\" to enter the menu)"};
-    int preselected[] = {config->autoboot_enabled};
+    char *options[] = {"Enable autoboot (Press L to enter the menu)",
+                       "Force saving patched firmware"};
+    int preselected[] = {config->autoboot_enabled,
+                         patches_modified};
 
     int *result = draw_selection_menu("Configuration", sizeof(options) / sizeof(char *),
                                       options, preselected);
 
     // Apply the options
     config->autoboot_enabled = result[0];
+    save_firm = result[1];
+    patches_modified = result[1];
 }
 
 void menu_main()
@@ -83,7 +92,7 @@ void main()
             draw_message("Failed to load patched FIRM", "The option to autoboot was selected,\n  but no valid FIRM could be found at\n  " PATH_PATCHED_FIRMWARE);
         } else {
             // boot_firm() requires current_firm->console.
-            struct firm_signature config_firm = {.console = config->firm_console}; 
+            struct firm_signature config_firm = {.console = config->firm_console};
             current_firm = &config_firm;
 
             boot_firm();

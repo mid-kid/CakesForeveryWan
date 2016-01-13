@@ -53,12 +53,16 @@ struct firm_signature firm_signatures[] = {
         .version = 0x49,
         .console = console_o3ds
     }, {
+        .sig = {0x31, 0xCC, 0x46, 0xCD, 0x61, 0x7A, 0xE7, 0x13, 0x7F, 0xE5, 0xFC, 0x20, 0x46, 0x91, 0x6A, 0xBB},
+        .version = 0x04,
+        .console = console_n3ds
+    }, {
         .sig = {0x40, 0x35, 0x6C, 0x9A, 0x24, 0x36, 0x93, 0x7B, 0x76, 0xFE, 0x5D, 0xB1, 0x4D, 0x05, 0x06, 0x52},
         .version = 0x0F,
         .console = console_n3ds
     }, {
-        .sig = {0x31, 0xCC, 0x46, 0xCD, 0x61, 0x7A, 0xE7, 0x13, 0x7F, 0xE5, 0xFC, 0x20, 0x46, 0x91, 0x6A, 0xBB},
-        .version = 0x04,
+        .sig = {0x07, 0xFE, 0x9A, 0x62, 0x3F, 0xDE, 0x54, 0xC1, 0x9B, 0x06, 0x91, 0xD8, 0x4F, 0x44, 0x9C, 0x21},
+        .version = 0x1B,
         .console = console_n3ds
     }, {.version = 0xFF}
 };
@@ -174,11 +178,19 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, const uint32_t size)
     return 0;
 }
 
-
 int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
     uint8_t decrypted_keyx[16];
+    uint8_t decrypted_keyx96[16];
 
     print("Decrypting ARM9 FIRM binary");
+
+    if (version > 0x0F) {
+        // 9.6 crypto may need us to get the key from somewhere else.
+        // Unless the console already has the key initialized, that is.
+        if (read_file(decrypted_keyx96, PATH_SLOT0X11KEY96, 16) == 0) {
+            aes_setkey(0x11, decrypted_keyx96, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+        }
+    }
 
     aes_use_keyslot(0x11);
     if (version < 0x0F) {
@@ -198,6 +210,17 @@ int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
     aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     if (*(uint32_t *)arm9bin != ARM9BIN_MAGIC) return 1;
+
+    // TODO: Don't use the hardcoded offset.
+    if (version == 0x1B) {
+        aes_use_keyslot(0x11);
+        for (int slot = 0x19; slot < 0x20; slot++) {
+            aes_setkey(0x11, decrypted_keyx96, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+            aes(decrypted_keyx, (void *)((uintptr_t)header + 0x89814), 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+            aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
+            *(uint8_t *)((void *)((uintptr_t)header + 0x89814 + 0xF)) += 1;
+        }
+    }
 
     return 0;
 }
@@ -232,7 +255,9 @@ int decrypt_firm()
 
     if (!current_firm) {
         print("Couldn't determine firmware version");
-        draw_loading("Couldn't determine firmware version", "The firmware.bin you're trying to use is\n  most probably not supported by Cakes.");
+        draw_loading("Couldn't determine firmware version", "The firmware.bin you're trying to use is\n  most probably not supported by Cakes.\nDumping it to your SD card:\n  " PATH_UNSUPPORTED_FIRMWARE);
+        write_file(firm_loc, PATH_UNSUPPORTED_FIRMWARE, firm_size);
+        print("Dumped unsupported firmware");
         return 1;
     }
 
@@ -242,7 +267,7 @@ int decrypt_firm()
         if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)firm_loc + firm_loc->section[2].offset),
                     current_firm->version) != 0) {
             print("Couldn't decrypt ARM9 FIRM binary");
-            draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\n  We remind you that you can't decrypt it on an old 3ds.\n  If the issue persists, please file a bug report.");
+            draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\nIf you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n  " PATH_SLOT0X11KEY96 "\nWe remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
             return 1;
         }
     }

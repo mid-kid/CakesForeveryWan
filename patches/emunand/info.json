@@ -154,6 +154,28 @@
         },
         {
             "console": "n3ds",
+            "version": "0x1B",
+            "variables": {
+                "sdmmc": "0x080F0AB0",
+                "aes_setkey": "0x08056570",
+                "aes_unk": "0x0805EA44"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A5C0"
+                }, {
+                    "offset": "0x0801B3D4"
+                }, {
+                    "offset": "0x080282F8"
+                }, {
+                    "offset": "0x08077B40"
+                }, {
+                    "offset": "0x08077B80"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
             "version": "0x0F",
             "variables": {
                 "sdmmc": "0x080D86F0",

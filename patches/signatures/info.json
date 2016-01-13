@@ -78,6 +78,17 @@
         },
         {
             "console": "n3ds",
+            "version": "0x1B",
+            "patches": [
+                {
+                    "offset": "0x08062B08"
+                }, {
+                    "offset": "0x0805C31C"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
             "version": "0x0F",
             "patches": [
                 {
