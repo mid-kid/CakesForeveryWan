@@ -53,6 +53,10 @@ struct firm_signature firm_signatures[] = {
         .version = 0x49,
         .console = console_o3ds
     }, {
+        .sig = {0x07, 0xFE, 0x9A, 0x62, 0x3F, 0xDE, 0x54, 0xC1, 0x9B, 0x06, 0x91, 0xD8, 0x4F, 0x44, 0x9C, 0x21},
+        .version = 0x1B,
+        .console = console_n3ds
+    }, {
         .sig = {0x40, 0x35, 0x6C, 0x9A, 0x24, 0x36, 0x93, 0x7B, 0x76, 0xFE, 0x5D, 0xB1, 0x4D, 0x05, 0x06, 0x52},
         .version = 0x0F,
         .console = console_n3ds
@@ -179,7 +183,14 @@ int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
     uint8_t decrypted_keyx[16];
 
     print("Decrypting ARM9 FIRM binary");
-
+    
+    if(version>0x0F)
+    {
+        uint8_t slot0x11Key96[16];
+        read_file(slot0x11Key96, PATH_SLOT0X11KEY96, 16);
+        aes_setkey(0x11, &slot0x11Key96,AES_KEYNORMAL,AES_INPUT_BE | AES_INPUT_NORMAL);
+    }
+    
     aes_use_keyslot(0x11);
     if (version < 0x0F) {
         aes(decrypted_keyx, header->keyx, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
