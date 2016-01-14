@@ -5,18 +5,13 @@
     "patches": [
         {
             "name": "patch1.bin",
-            "options": [
-                "keyx",
-                "emunand"
-            ]
+            "options": ["emunand"]
         }, {
             "name": "patch2.bin"
         }, {
             "name": "patch3.bin"
         }, {
             "name": "patch4.bin"
-        }, {
-            "name": "patch5.bin"
         }
     ],
     "version_specific": [
@@ -24,53 +19,41 @@
             "console": "o3ds",
             "version": "0x49",
             "variables": {
-                "sdmmc": "0x080D8670",
-                "aes_setkey": "0x080575B4",
-                "aes_unk": "0x0805FB48"
+                "sdmmc": "0x080D8670"
             },
             "patches": [
                 {
                     "offset": "0x0801A4C0"
                 }, {
                     "offset": "0x0801B564"
-                }, {
-                    "offset": "0x080282F8"
                 }, {
                     "offset": "0x0807882C"
                 }, {
                     "offset": "0x0807886C"
                 }
             ]
-        },
-        {
+        }, {
             "console": "o3ds",
             "version": "0x38",
             "variables": {
-                "sdmmc": "0x080D8670",
-                "aes_setkey": "0x080573EC",
-                "aes_unk": "0x0805F994"
+                "sdmmc": "0x080D8670"
             },
             "patches": [
                 {
                     "offset": "0x0801A4C0"
                 }, {
                     "offset": "0x0801B564"
-                }, {
-                    "offset": "0x080282F8"
                 }, {
                     "offset": "0x08078724"
                 }, {
                     "offset": "0x08078764"
                 }
             ]
-        },
-        {
+        }, {
             "console": "o3ds",
             "version": "0x37",
             "variables": {
-                "sdmmc": "0x080D84F0",
-                "aes_setkey": "0x08057434",
-                "aes_unk": "0x0805FA00"
+                "sdmmc": "0x080D84F0"
             },
             "patches": [
                 {
@@ -78,21 +61,16 @@
                 }, {
                     "offset": "0x0801B564"
                 }, {
-                    "offset": "0x080282F8"
-                }, {
                     "offset": "0x0807868C"
                 }, {
                     "offset": "0x080786CC"
                 }
             ]
-        },
-        {
+        }, {
             "console": "o3ds",
             "version": "0x30",
             "variables": {
-                "sdmmc": "0x080D8430",
-                "aes_setkey": "0x0805728C",
-                "aes_unk": "0x0805F800"
+                "sdmmc": "0x080D8430"
             },
             "patches": [
                 {
@@ -100,43 +78,33 @@
                 }, {
                     "offset": "0x0801B568"
                 }, {
-                    "offset": "0x080282F8"
-                }, {
                     "offset": "0x0807840C"
                 }, {
                     "offset": "0x0807844C"
                 }
             ]
-        },
-        {
+        }, {
             "console": "o3ds",
             "version": "0x2A",
             "variables": {
-                "sdmmc": "0x080D84B0",
-                "aes_setkey": "0x080575B4",
-                "aes_unk": "0x0805FB48"
+                "sdmmc": "0x080D84B0"
             },
             "patches": [
                 {
                     "offset": "0x0801A4C0"
                 }, {
                     "offset": "0x0801B568"
-                }, {
-                    "offset": "0x0801A6E0"
                 }, {
                     "offset": "0x080784C4"
                 }, {
                     "offset": "0x08078504"
                 }
             ]
-        },
-        {
+        }, {
             "console": "o3ds",
             "version": "0x1F",
             "variables": {
-                "sdmmc": "0x080D8CD0",
-                "aes_setkey": "0x080573EC",
-                "aes_unk": "0x0805F994"
+                "sdmmc": "0x080D8CD0"
             },
             "patches": [
                 {
@@ -144,21 +112,16 @@
                 }, {
                     "offset": "0x0801B568"
                 }, {
-                    "offset": "0x0801A6E0"
-                }, {
                     "offset": "0x08078C30"
                 }, {
                     "offset": "0x08078C70"
                 }
             ]
-        },
-        {
+        }, {
             "console": "n3ds",
             "version": "0x1B",
             "variables": {
-                "sdmmc": "0x080F0AB0",
-                "aes_setkey": "0x08056570",
-                "aes_unk": "0x0805EA44"
+                "sdmmc": "0x080F0AB0"
             },
             "patches": [
                 {
@@ -166,29 +129,22 @@
                 }, {
                     "offset": "0x0801B3D4"
                 }, {
-                    "offset": "0x080282F8"
-                }, {
                     "offset": "0x08077B40"
                 }, {
                     "offset": "0x08077B80"
                 }
             ]
-        },
-        {
+        }, {
             "console": "n3ds",
             "version": "0x0F",
             "variables": {
-                "sdmmc": "0x080D86F0",
-                "aes_setkey": "0x08057458",
-                "aes_unk": "0x0805F9E4"
+                "sdmmc": "0x080D86F0"
             },
             "patches": [
                 {
                     "offset": "0x0801A4C0"
                 }, {
                     "offset": "0x0801B3D4"
-                }, {
-                    "offset": "0x080282F8"
                 }, {
                     "offset": "0x0807877C"
                 }, {

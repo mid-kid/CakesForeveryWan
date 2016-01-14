@@ -100,7 +100,8 @@ int prepare_files()
     return 0;
 }
 
-void slot0x11key96_init() {
+void slot0x11key96_init()
+{
     // 9.6 crypto may need us to get the key from somewhere else.
     // Unless the console already has the key initialized, that is.
     uint8_t key[AES_BLOCK_SIZE];
@@ -193,7 +194,8 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, const uint32_t size)
     return 0;
 }
 
-int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
+int decrypt_arm9bin(arm9bin_h *header, const unsigned int version)
+{
     uint8_t decrypted_keyx[AES_BLOCK_SIZE];
 
     print("Decrypting ARM9 FIRM binary");

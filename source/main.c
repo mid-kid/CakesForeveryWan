@@ -7,7 +7,6 @@
 #include "fs.h"
 #include "hid.h"
 #include "paths.h"
-#include "crypto.h"
 
 void menu_select_patches()
 {

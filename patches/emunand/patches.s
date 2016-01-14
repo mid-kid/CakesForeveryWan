@@ -46,8 +46,6 @@ nand_sd:
 .pool
 nand_offset:		.ascii "NAND"       ; for rednand this should be 1
 ncsd_header_offset:	.ascii "NCSD"       ; depends on nand manufacturer + emunand type (GW/RED)
-slot0x25keyX:
-.ascii "slot0x25keyXhere"
 .close
 
 .create "patch2.bin"
@@ -67,23 +65,12 @@ slot0x25keyX:
 
 .create "patch3.bin"
 .thumb
-	ldr r2, =slot0x25keyX
-	mov r1, #5
-	mov r0, #0x25
-	bl aes_setkey
-	bl aes_unk
-	.halfword 0xBD70		;pop {r4-r6, pc}
-.pool
-.close
-
-.create "patch4.bin"
-.thumb
 	ldr r4, =nand_sd
 	blx r4
 .pool
 .close
 
-.create "patch5.bin"
+.create "patch4.bin"
 .thumb
 	ldr r4, =nand_sd
 	blx r4
