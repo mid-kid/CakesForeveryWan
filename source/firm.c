@@ -23,6 +23,8 @@ static int firm_key_loaded = 0;
 static void *firm_key_cetk = (void *)FCRAM_FIRM_KEY_CETK;
 static uint8_t firm_key[AES_BLOCK_SIZE];
 
+static int update_96_keys = 0;
+
 struct firm_signature *current_firm = NULL;
 int save_firm = 0;
 
@@ -98,6 +100,20 @@ int prepare_files()
     return 0;
 }
 
+void slot0x11key96_init() {
+    // 9.6 crypto may need us to get the key from somewhere else.
+    // Unless the console already has the key initialized, that is.
+    uint8_t key[AES_BLOCK_SIZE];
+    if (read_file(key, PATH_SLOT0X11KEY96, AES_BLOCK_SIZE) == 0) {
+        // If we can't read the key, we assume it's not needed, and the firmware is the right version.
+        // Otherwise, we make sure the error message for decrypting arm9bin mentions this.
+        aes_setkey(0x11, key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+        // Tell boot_firm it needs to regenerate the keys.
+        update_96_keys = 1;
+    }
+}
+
 int decrypt_cetk_key(void *key, const void *cetk)
 {
     // This function only decrypts the NATIVE_FIRM CETK.
@@ -117,7 +133,6 @@ int decrypt_cetk_key(void *key, const void *cetk)
     uint8_t *i;
     for (i = p9_base + 0x6C000; i < p9_base + 0x6C000 + 0x4000; i++) {
         if (i[0] == 0xD0 && i[4] == 0x9C && i[8] == 0x32 && i[12] == 0x23) {
-
             // At i, there's 7 keys with 4 bytes padding between them.
             // We only need the 2nd.
             memcpy(common_key_y, i + AES_BLOCK_SIZE + 4, sizeof(common_key_y));
@@ -179,17 +194,12 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, const uint32_t size)
 }
 
 int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
-    uint8_t decrypted_keyx[16];
-    uint8_t decrypted_keyx96[16];
+    uint8_t decrypted_keyx[AES_BLOCK_SIZE];
 
     print("Decrypting ARM9 FIRM binary");
 
     if (version > 0x0F) {
-        // 9.6 crypto may need us to get the key from somewhere else.
-        // Unless the console already has the key initialized, that is.
-        if (read_file(decrypted_keyx96, PATH_SLOT0X11KEY96, 16) == 0) {
-            aes_setkey(0x11, decrypted_keyx96, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
-        }
+        slot0x11key96_init();
     }
 
     aes_use_keyslot(0x11);
@@ -210,17 +220,6 @@ int decrypt_arm9bin(arm9bin_h *header, const unsigned int version) {
     aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     if (*(uint32_t *)arm9bin != ARM9BIN_MAGIC) return 1;
-
-    // TODO: Don't use the hardcoded offset.
-    if (version == 0x1B) {
-        aes_use_keyslot(0x11);
-        for (int slot = 0x19; slot < 0x20; slot++) {
-            aes_setkey(0x11, decrypted_keyx96, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
-            aes(decrypted_keyx, (void *)((uintptr_t)header + 0x89814), 1, NULL, AES_ECB_DECRYPT_MODE, 0);
-            aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
-            *(uint8_t *)((void *)((uintptr_t)header + 0x89814 + 0xF)) += 1;
-        }
-    }
 
     return 0;
 }
@@ -278,6 +277,22 @@ int decrypt_firm()
 void boot_firm()
 {
     print("Booting FIRM...");
+
+    // Set up the keys needed to boot a few firmwares, due to them being unset, depending on which firmware you're booting from.
+    // TODO: Don't use the hardcoded offset.
+    if (update_96_keys && current_firm->console == console_n3ds && current_firm->version == 0x1B) {
+        void *keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89814);
+
+        aes_use_keyslot(0x11);
+        uint8_t keyx[AES_BLOCK_SIZE];
+        for (int slot = 0x19; slot < 0x20; slot++) {
+            aes(keyx, keydata, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+            aes_setkey(slot, keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
+            *(uint8_t *)(keydata + 0xF) += 1;
+        }
+
+        print("Updated keyX keyslots");
+    }
 
     __asm__ (
         "msr cpsr_c, #0xDF\n\t"

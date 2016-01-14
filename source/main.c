@@ -7,6 +7,7 @@
 #include "fs.h"
 #include "hid.h"
 #include "paths.h"
+#include "crypto.h"
 
 void menu_select_patches()
 {
@@ -91,8 +92,13 @@ void main()
             print("Failed to load patched FIRM");
             draw_message("Failed to load patched FIRM", "The option to autoboot was selected,\n  but no valid FIRM could be found at\n  " PATH_PATCHED_FIRMWARE);
         } else {
-            // boot_firm() requires current_firm->console.
-            struct firm_signature config_firm = {.console = config->firm_console};
+            if (config->firm_console == console_n3ds && config->firm_ver > 0x0F) {
+                slot0x11key96_init();
+            }
+
+            // boot_firm() requires current_firm->console and current_firm->version.
+            struct firm_signature config_firm = {.console = config->firm_console,
+                                                 .version = config->firm_ver};
             current_firm = &config_firm;
 
             boot_firm();

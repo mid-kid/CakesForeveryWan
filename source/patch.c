@@ -10,6 +10,7 @@
 #include "firm.h"
 #include "fcram.h"
 #include "paths.h"
+#include "crypto.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
 
@@ -58,17 +59,18 @@ void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_sear
 
 int patch_options(void *address, uint32_t size, uint8_t options) {
     if (options & patch_option_keyx) {
+        // TODO: Don't require this on higher firmwares.
         print("Patch option: Adding keyX");
 
-        if (read_file(fcram_temp, PATH_SLOT0X25KEYX, 16) != 0) {
+        if (read_file(fcram_temp, PATH_SLOT0X25KEYX, AES_BLOCK_SIZE) != 0) {
             print("Failed to load keyX");
             draw_message("Failed to load keyX", "Make sure the keyX is\n  located at /slot0x25keyX.bin");
             return 1;
         }
 
-        void *pos = memsearch(address, "slot0x25keyXhere", size, 16);
+        void *pos = memsearch(address, "slot0x25keyXhere", size, AES_BLOCK_SIZE);
         if (pos) {
-            memcpy32(pos, fcram_temp, 16);
+            memcpy32(pos, fcram_temp, AES_BLOCK_SIZE);
         } else {
             print("I don't know where to add keyX.\n  Ignoring...");
         }

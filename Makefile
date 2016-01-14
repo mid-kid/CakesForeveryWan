@@ -32,6 +32,7 @@ objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 baked_files := $(patsubst $(dir_patches)/%/, $(dir_build)/patches/%.baked, $(wildcard $(dir_patches)/*/))
 
 provide_files := $(dir_out)/slot0x25keyX_bin.here \
+				 $(dir_out)/slot0x11key96_bin.here \
 				 $(dir_out)/cakes/firmware_bin.here \
 				 $(dir_out)/cakes/cetk.here
 

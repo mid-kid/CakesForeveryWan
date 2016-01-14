@@ -20,6 +20,7 @@ extern struct firm_signature *current_firm;
 extern int save_firm;
 
 int prepare_files();
+void slot0x11key96_init();
 int decrypt_firm();
 int load_firm();
 void boot_firm();
