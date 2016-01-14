@@ -37,7 +37,7 @@ void menu_config()
     char *options[] = {"Enable autoboot (Press L to enter the menu)",
                        "Force saving patched firmware"};
     int preselected[] = {config->autoboot_enabled,
-                         patches_modified};
+                         save_firm};
 
     int *result = draw_selection_menu("Configuration", sizeof(options) / sizeof(char *),
                                       options, preselected);
@@ -45,7 +45,7 @@ void menu_config()
     // Apply the options
     config->autoboot_enabled = result[0];
     save_firm = result[1];
-    patches_modified = result[1];
+    patches_modified |= result[1];
 }
 
 void menu_main()
