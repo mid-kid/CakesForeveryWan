@@ -5,7 +5,7 @@ format: size | description | comments
 Main header:
 1 | Amount of patches
 1 | Firmware version
-1 | Higher 4 bits: Console type. Lower 4 bits: FIRM type.
+1 | Higher 4 bits: Console type. Lower 4 bits: Patch type.
 1 | Offset to the end of the description string | At this offset we'll place the patch headers
 ? | Description string + 0 byte
 

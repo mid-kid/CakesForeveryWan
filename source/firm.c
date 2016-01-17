@@ -15,17 +15,14 @@
 #include "fatfs/ff.h"
 
 firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
-static int firm_size = 0;
-static void *firm_loc_encrypted = (void *)FCRAM_FIRM_LOC_ENCRYPTED;
-static const int firm_size_encrypted = FCRAM_SPACING;
+static uint32_t firm_size = FCRAM_SPACING;
+struct firm_signature *current_firm = NULL;
 
-static int firm_key_loaded = 0;
-static void *firm_key_cetk = (void *)FCRAM_FIRM_KEY_CETK;
-static uint8_t firm_key[AES_BLOCK_SIZE];
+firm_h *agb_firm_loc = (firm_h *)FCRAM_AGB_FIRM_LOC;
+static uint32_t agb_firm_size = FCRAM_SPACING;
+struct firm_signature *current_agb_firm = NULL;
 
 static int update_96_keys = 0;
-
-struct firm_signature *current_firm = NULL;
 int save_firm = 0;
 
 // We use the firm's section 0's hash to identify the version
@@ -69,36 +66,13 @@ struct firm_signature firm_signatures[] = {
     }, {.version = 0xFF}
 };
 
-int prepare_files()
-{
-    int rc;
-
-    rc = read_file(firm_loc_encrypted, PATH_FIRMWARE, firm_size_encrypted);
-    if (rc != 0) {
-        print("Failed to load FIRM");
-        draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at " PATH_FIRMWARE);
-        return 1;
-    }
-    print("Loaded FIRM");
-
-    rc = read_file(firm_key, PATH_FIRMKEY, sizeof(firm_key));
-    if (rc != 0) {
-        print("Failed to load FIRM key,\n  will try to create it...");
-
-        rc = read_file(firm_key_cetk, PATH_CETK, FCRAM_SPACING);
-        if (rc != 0) {
-            print("Failed to load CETK");
-            draw_loading("Failed to load FIRM key or CETK", "Make sure you have a firmkey.bin or cetk\n  located at " PATH_FIRMKEY "\n  or " PATH_CETK ", respectively.");
-            return 1;
-        }
-        print("Loaded CETK");
-    } else {
-        firm_key_loaded = 1;
-        print("Loaded FIRM key");
-    }
-
-    return 0;
-}
+struct firm_signature agb_firm_signatures[] = {
+    {
+        .sig = {0x65, 0xB7, 0x55, 0x78, 0x97, 0xE6, 0x5C, 0xD6, 0x11, 0x74, 0x95, 0xDD, 0x61, 0xE8, 0x08, 0x40},
+        .version = 0x0B,
+        .console = console_o3ds
+    }, {.version = 0xFF}
+};
 
 void slot0x11key96_init()
 {
@@ -156,16 +130,16 @@ int decrypt_cetk_key(void *key, const void *cetk)
     return 0;
 }
 
-int decrypt_firm_title(firm_h *dest, ncch_h *ncch, const uint32_t size)
+int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t *size, void *key)
 {
     uint8_t firm_iv[16] = {0};
     uint8_t exefs_key[16] = {0};
     uint8_t exefs_iv[16] = {0};
 
     print("Decrypting the NCCH");
-    aes_setkey(0x16, firm_key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_setkey(0x16, key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_use_keyslot(0x16);
-    aes(ncch, ncch, size / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes(ncch, ncch, *size / AES_BLOCK_SIZE, firm_iv, AES_CBC_DECRYPT_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     if (ncch->magic != NCCH_MAGIC) return 1;
 
@@ -184,12 +158,11 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, const uint32_t size)
     // Get the decrypted FIRM
     // We assume the firm.bin is always the first file
     firm_h *firm = (firm_h *)&exefs[1];  // The offset right behind the exefs header; the first file.
-    firm_size = exefs->fileHeaders[0].size;
+    *size = exefs->fileHeaders[0].size;
 
     if (firm->magic != FIRM_MAGIC) return 1;
 
-    print("Copying the FIRM");
-    memcpy32(dest, firm, firm_size);
+    memcpy32(dest, firm, *size);
 
     return 0;
 }
@@ -226,52 +199,81 @@ int decrypt_arm9bin(arm9bin_h *header, const unsigned int version)
     return 0;
 }
 
-int decrypt_firm()
+int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uint32_t *size, struct firm_signature *signatures, struct firm_signature **current, int is_native)
 {
-    if (!firm_key_loaded) {
-        print("Obtaining FIRM key from CETK");
-        if (decrypt_cetk_key(firm_key, firm_key_cetk) != 0) {
-            draw_loading("Failed to decrypt the cetk", "Please make sure the cetk is right.");
+    uint8_t firm_key[AES_BLOCK_SIZE];
+    struct firm_signature *firm_current = NULL;
+
+    if (read_file(dest, path, *size) != 0) {
+        print("Failed to load FIRM");
+
+        // Only whine about this if it's NATIVE_FIRM, which is important.
+        if (is_native) {
+            draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at " PATH_FIRMWARE);
+        }
+        return 2;
+    }
+    print("Loaded FIRM");
+
+    if (read_file(firm_key, path_firmkey, AES_BLOCK_SIZE) != 0) {
+        print("Failed to load FIRM key,\n  will try to create it...");
+
+        if (read_file(fcram_temp, path_cetk, FCRAM_SPACING) != 0) {
+            print("Failed to load CETK");
+
+            if (is_native) {
+                draw_loading("Failed to load FIRM key or CETK", "Make sure you have a firmkey.bin or cetk\n  located at " PATH_FIRMKEY "\n  or " PATH_CETK ", respectively.");
+            }
+            return 2;
+        }
+        print("Loaded CETK");
+
+        if (decrypt_cetk_key(firm_key, fcram_temp) != 0) {
+            print("Failed to decrypt the CETK");
+            draw_loading("Failed to decrypt the CETK", "Please make sure the CETK is right.");
             return 1;
         }
-        firm_key_loaded = 1;
         print("Saving FIRM key for future use");
-        write_file(firm_key, PATH_FIRMKEY, sizeof(firm_key));
+        write_file(firm_key, path_firmkey, AES_BLOCK_SIZE);
+    } else {
+        print("Loaded FIRM key");
     }
 
     print("Decrypting FIRM");
-    if (decrypt_firm_title(firm_loc, firm_loc_encrypted, firm_size_encrypted) != 0) {
-        print("Failed to decrypt the firmware.bin");
-        draw_loading("Failed to decrypt the firmware.bin", "Please double check your firmware.bin and\n  firmkey.bin are right.");
+    if (decrypt_firm_title(dest, (void *)dest, size, firm_key) != 0) {
+        print("Failed to decrypt the firmware");
+        draw_loading("Failed to decrypt the firmware", "Please double check your firmware and\n  firmkey/cetk are right.");
         return 1;
     }
 
     // Determine firmware version
-    for (int i = 0; firm_signatures[i].version != 0xFF; i++) {
-        if (memcmp(firm_signatures[i].sig, firm_loc->section[0].hash, 0x10) == 0) {
-            current_firm = &firm_signatures[i];
+    for (int i = 0; signatures[i].version != 0xFF; i++) {
+        if (memcmp(signatures[i].sig, dest->section[0].hash, 0x10) == 0) {
+            firm_current = &signatures[i];
             break;
         }
     }
 
-    if (!current_firm) {
+    if (!firm_current) {
         print("Couldn't determine firmware version");
-        draw_loading("Couldn't determine firmware version", "The firmware.bin you're trying to use is\n  most probably not supported by Cakes.\nDumping it to your SD card:\n  " PATH_UNSUPPORTED_FIRMWARE);
-        write_file(firm_loc, PATH_UNSUPPORTED_FIRMWARE, firm_size);
+        draw_loading("Couldn't determine firmware version", "The firmware you're trying to use is\n  most probably not supported by Cakes.\nDumping it to your SD card:\n  " PATH_UNSUPPORTED_FIRMWARE);
+        write_file(dest, PATH_UNSUPPORTED_FIRMWARE, firm_size);
         print("Dumped unsupported firmware");
         return 1;
     }
 
     // The N3DS firm has an additional encryption layer for ARM9
-    if (current_firm->console == console_n3ds) {
+    if (is_native && firm_current->console == console_n3ds) {
         // All the firmwares we've encountered have ARM9 as their second section
-        if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)firm_loc + firm_loc->section[2].offset),
-                    current_firm->version) != 0) {
+        if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + dest->section[2].offset),
+                    firm_current->version) != 0) {
             print("Couldn't decrypt ARM9 FIRM binary");
             draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\nIf you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n  " PATH_SLOT0X11KEY96 "\nWe remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
             return 1;
         }
     }
+
+    *current = firm_current;
 
     return 0;
 }
@@ -352,22 +354,24 @@ void boot_firm()
     }
 }
 
-int load_firm()
+int load_firms()
 {
-    char *title = "Loading firm";
+    const char *title = "Loading firm";
 
-    draw_loading(title, "Loading...");
-    if (prepare_files() != 0) return 1;
+    print("Loading NATIVE_FIRM...");
+    draw_loading(title, "Loading NATIVE_FIRM...");
+    if (load_firm(firm_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, 1) != 0) return 1;
 
-    draw_loading(title, "Decrypting FIRM...");
-    if (decrypt_firm() != 0) return 1;
+    print("Loading AGB_FIRM...");
+    draw_loading(title, "Loading AGB_FIRM...");
+    if (load_firm(agb_firm_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, 0) == 1) return 1;
 
     return 0;
 }
 
 void boot_cfw()
 {
-    char *title = "Booting CFW";
+    const char *title = "Booting CFW";
 
     draw_loading(title, "Patching...");
     if (patch_firm_all() != 0) return;
@@ -376,10 +380,18 @@ void boot_cfw()
     //   and either the patches have been modified, or the file doesn't exist.
     if ((save_firm || config->autoboot_enabled) &&
             (patches_modified || f_stat(PATH_PATCHED_FIRMWARE, NULL) != 0)) {
-        draw_loading(title, "Saving FIRM...");
-        print("Saving patched FIRM");
+        draw_loading(title, "Saving NATIVE_FIRM...");
+        print("Saving patched NATIVE_FIRM");
         if (write_file(firm_loc, PATH_PATCHED_FIRMWARE, firm_size) != 0) {
-            draw_message("Failed to save FIRM", "One or more patches you selected requires this.\nBut, for some reason, I failed to write it.");
+            draw_message("Failed to save the patched FIRM", "One or more patches you selected requires this.\nBut, for some reason, we failed to write it.");
+            return;
+        }
+    }
+    if (current_agb_firm && (patches_modified || f_stat(PATH_PATCHED_AGB_FIRMWARE, NULL) != 0)) {
+        draw_loading(title, "Saving AGB_FIRM...");
+        print("Saving patched AGB_FIRM");
+        if (write_file(agb_firm_loc, PATH_PATCHED_AGB_FIRMWARE, agb_firm_size) != 0) {
+            draw_message("Failed to save the patched FIRM", "For some reason, we haven't been able to write to the SD card.");
             return;
         }
     }

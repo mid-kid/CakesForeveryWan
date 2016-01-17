@@ -17,11 +17,12 @@ struct firm_signature {
 
 extern firm_h *firm_loc;
 extern struct firm_signature *current_firm;
+extern firm_h *agb_firm_loc;
+extern struct firm_signature *current_agb_firm;
 extern int save_firm;
 
-int prepare_files();
 void slot0x11key96_init();
-int decrypt_firm();
 int load_firm();
+int load_firms();
 void boot_firm();
 void boot_cfw();

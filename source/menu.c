@@ -15,7 +15,7 @@ int selected_options[MAX_SELECTED_OPTIONS];
 
 // TODO: Clean up the first two functions. They have too much in common.
 // No boundary checks, use this responsibly.
-int draw_menu(char *title, int back, int count, char *options[])
+int draw_menu(const char *title, int back, int count, char *options[])
 {
     int current = 0;
     int pos_y_text[count];
@@ -63,7 +63,7 @@ int draw_menu(char *title, int back, int count, char *options[])
     }
 }
 
-int *draw_selection_menu(char *title, int count, char *options[], const int *preselected)
+int *draw_selection_menu(const char *title, int count, char *options[], const int *preselected)
 {
     // The caller has to make sure it does not exceed MAX_SELECTED_OPTIONS
     if (count > MAX_SELECTED_OPTIONS) {
@@ -136,14 +136,14 @@ int *draw_selection_menu(char *title, int count, char *options[], const int *pre
     }
 }
 
-int draw_loading(char *title, char *text)
+int draw_loading(const char *title, const char *text)
 {
     clear_screen(screen_top_left);
     draw_string(screen_top_left, title, 10, 10, COLOR_TITLE);
     return draw_string(screen_top_left, text, 10, 40, COLOR_NEUTRAL);
 }
 
-void draw_message(char *title, char *text)
+void draw_message(const char *title, const char *text)
 {
     int pos_y = draw_loading(title, text);
 

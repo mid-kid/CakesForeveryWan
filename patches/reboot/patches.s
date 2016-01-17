@@ -86,7 +86,7 @@ firm_fname:
 	mcr p15, 0, r0, c2, c0, 0	; dcacheable
 	mcr p15, 0, r1, c2, c0, 1	; icacheable
 	mcr p15, 0, r2, c3, c0, 0	; write bufferable
-	
+
 	mov r4, #firm_addr
 	add r3, r4, #0x40
 	ldr r0, [r3]				; offset
