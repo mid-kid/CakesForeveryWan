@@ -13,6 +13,7 @@
 #include "crypto.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
+#include "multiemunand.h"
 
 enum types {
     NATIVE_FIRM,
@@ -82,32 +83,35 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum types type
 
         uint32_t offset = 0;
         uint32_t header = 0;
+        
+        uint32_t nand_size = getMMCDevice(0)->total_size;
+        uint32_t emuoffset = 0;
 
-        if (sdmmc_sdcard_readsectors(1, 1, fcram_temp) == 0) {
+        emuoffset = emunand_offset(nand_size); //Multi EmuNAND offset setup
+
+        if (sdmmc_sdcard_readsectors(emuoffset + 1, 1, fcram_temp) == 0) {
             if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: redNAND");
-                offset = 1;
-                header = 1;
+                print("EmuNAND detected: RedNAND");
+                offset = emuoffset + 1;
+                header = emuoffset + 1;
             }
         }
 
-        uint32_t nand_size = getMMCDevice(0)->total_size;
-
-        if (sdmmc_sdcard_readsectors(nand_size, 1, fcram_temp) == 0) {
+        if (sdmmc_sdcard_readsectors(emuoffset + nand_size, 1, fcram_temp) == 0) {
             if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: Gateway");
-                offset = 0;
-                header = nand_size;
+                print("EmuNAND detected: Gateway");
+                offset = emuoffset;
+                header = emuoffset + nand_size;
             }
         }
 
         if (!header) {
-            print("Failed to get the emunand offsets");
-            draw_message("Failed to get the emunand offsets",
+            print("Failed to get the EmuNAND offsets");
+            draw_message("Failed to get the EmuNAND offsets",
                     "There's 3 possible causes for this error:\n"
-                    " - You don't even have an emuNAND installed\n"
+                    " - You don't even have an EmuNAND installed\n"
                     " - Your SD card can't be read\n"
-                    " - You're using an unsupported emuNAND format");
+                    " - You're using an unsupported EmuNAND format");
             return 1;
         }
 
