@@ -63,6 +63,10 @@ struct firm_signature firm_signatures[] = {
         .sig = {0x07, 0xFE, 0x9A, 0x62, 0x3F, 0xDE, 0x54, 0xC1, 0x9B, 0x06, 0x91, 0xD8, 0x4F, 0x44, 0x9C, 0x21},
         .version = 0x1B,
         .console = console_n3ds
+    }, {
+        .sig = {0x1A, 0x56, 0x5C, 0xFF, 0xC9, 0xCC, 0x62, 0xBB, 0x2B, 0xC2, 0x23, 0xB6, 0x4F, 0x48, 0xD1, 0xCC},
+        .version = 0x1F,
+        .console = console_n3ds
     }, {.version = 0xFF}
 };
 
@@ -284,7 +288,7 @@ void boot_firm()
 
     // Set up the keys needed to boot a few firmwares, due to them being unset, depending on which firmware you're booting from.
     // TODO: Don't use the hardcoded offset.
-    if (update_96_keys && current_firm->console == console_n3ds && current_firm->version == 0x1B) {
+    if (update_96_keys && current_firm->console == console_n3ds && (current_firm->version == 0x1B || current_firm->version == 0x1F)) {
         void *keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89814);
 
         aes_use_keyslot(0x11);
