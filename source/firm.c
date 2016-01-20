@@ -110,7 +110,7 @@ int decrypt_cetk_key(void *key, const void *cetk)
 
     uint8_t *p9_base = (uint8_t *)0x08028000;
     uint8_t *i;
-    for (i = p9_base + 0x6C000; i < p9_base + 0x6C000 + 0x4000; i++) {
+    for (i = p9_base + 0x60000; i < p9_base + 0x60000 + 0x10000; i++) {
         if (i[0] == 0xD0 && i[4] == 0x9C && i[8] == 0x32 && i[12] == 0x23) {
             // At i, there's 7 keys with 4 bytes padding between them.
             // We only need the 2nd.
@@ -120,7 +120,7 @@ int decrypt_cetk_key(void *key, const void *cetk)
             break;
         }
     }
-    if (i >= p9_base + 0x6C000 + 0x4000) return 1;
+    if (i >= p9_base + 0x60000 + 0x10000) return 1;
 
     aes_setkey(0x3D, common_key_y, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_use_keyslot(0x3D);
