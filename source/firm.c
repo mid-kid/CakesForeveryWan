@@ -272,7 +272,7 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
         if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + dest->section[2].offset),
                     firm_current->version) != 0) {
             print("Couldn't decrypt ARM9 FIRM binary");
-            draw_loading("Coudn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\nIf you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n  " PATH_SLOT0X11KEY96 "\nWe remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
+            draw_loading("Couldn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\nIf you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n  " PATH_SLOT0X11KEY96 "\nWe remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
             return 1;
         }
     }
