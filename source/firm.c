@@ -99,7 +99,7 @@ int decrypt_cetk_key(void *key, const void *cetk)
     // I don't need it for anything else atm.
     // Either way, this is the reason for the two checks here at the top.
 
-    uint8_t common_key_y[AES_BLOCK_SIZE];
+    static int common_key_y_init = 0;
     uint8_t iv[AES_BLOCK_SIZE] = {0};
 
     uint32_t sigtype = __builtin_bswap32(*(uint32_t *)cetk);
@@ -108,21 +108,26 @@ int decrypt_cetk_key(void *key, const void *cetk)
     ticket_h *ticket = (ticket_h *)(cetk + sizeof(sigtype) + 0x13C);
     if (ticket->ticketCommonKeyYIndex != 1) return 1;
 
-    uint8_t *p9_base = (uint8_t *)0x08028000;
-    uint8_t *i;
-    for (i = p9_base + 0x60000; i < p9_base + 0x60000 + 0x10000; i++) {
-        if (i[0] == 0xD0 && i[4] == 0x9C && i[8] == 0x32 && i[12] == 0x23) {
-            // At i, there's 7 keys with 4 bytes padding between them.
-            // We only need the 2nd.
-            memcpy(common_key_y, i + AES_BLOCK_SIZE + 4, sizeof(common_key_y));
-            print("Found the common key Y");
+    if (!common_key_y_init) {
+        uint8_t common_key_y[AES_BLOCK_SIZE] = {0};
+        uint8_t *p9_base = (uint8_t *)0x08028000;
+        uint8_t *i;
+        for (i = p9_base + 0x70000 - AES_BLOCK_SIZE; i >= p9_base; i--) {
+            if (i[0] == 0xD0 && i[4] == 0x9C && i[8] == 0x32 && i[12] == 0x23) {
+                // At i, there's 7 keys with 4 bytes padding between them.
+                // We only need the 2nd.
+                memcpy(common_key_y, i + AES_BLOCK_SIZE + 4, sizeof(common_key_y));
+                print("Found the common key Y");
 
-            break;
+                break;
+            }
         }
-    }
-    if (i >= p9_base + 0x60000 + 0x10000) return 1;
+        if (i < p9_base) return 1;
 
-    aes_setkey(0x3D, common_key_y, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
+        aes_setkey(0x3D, common_key_y, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
+        common_key_y_init = 1;
+    }
+
     aes_use_keyslot(0x3D);
 
     memcpy(iv, ticket->titleID, sizeof(ticket->titleID));
