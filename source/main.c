@@ -7,7 +7,6 @@
 #include "fs.h"
 #include "hid.h"
 #include "paths.h"
-#include "multiemunand.h"
 
 void menu_select_patches()
 {
@@ -54,8 +53,7 @@ void menu_main()
     while (1) {
         char *options[] = {"Boot CFW",
                            "Select Patches",
-                           "Configuration",
-                           "Multi EmuNAND configuration"};
+                           "Configuration"};
         int result = draw_menu("CakesFW", 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -68,9 +66,6 @@ void menu_main()
                 break;
             case 2:
                 menu_config();
-                break;
-            case 3:
-                menu_emunand_config();
                 break;
         }
     }
@@ -119,8 +114,6 @@ void main()
     }
 
     load_config_cakes();
-
-    emunand_status();
 
     menu_main();
 }

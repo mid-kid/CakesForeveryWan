@@ -8,7 +8,6 @@ struct config_file {
     unsigned int firm_ver;
     uint8_t firm_console;
     unsigned int autoboot_enabled: 1;
-    uint8_t emunand_selected; //Multi EmuNAND
     unsigned int cake_count;
     char cake_list[][_MAX_LFN + 1];
 } __attribute__((packed));
