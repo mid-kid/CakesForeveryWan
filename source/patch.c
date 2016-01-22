@@ -83,7 +83,7 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum types type
         uint32_t offset = 0;
         uint32_t header = 0;
 
-        char menu_array[10][11];         //Assuming there won't be more than 10 emuNANDs on one SD
+        char menu_array[9][11];         //Assuming there won't be more than 9 emuNANDs on one SD
         char gateway[] = "X. emuNAND";
         char rednand[] = "X. redNAND";
 
@@ -97,7 +97,7 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum types type
         } else search_offset = 0x200000;
 
         print("Scanning SD card...");
-        while (emunand_count < 10){
+        while (emunand_count < 9){
             if (sdmmc_sdcard_readsectors(emunand_count*search_offset + 1, 1, fcram_temp) == 0) {
                if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
                   for (unsigned i = 0; i < sizeof(rednand); i++) menu_array[emunand_count][i] = rednand[i];
