@@ -83,27 +83,59 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum types type
         uint32_t offset = 0;
         uint32_t header = 0;
 
-        if (sdmmc_sdcard_readsectors(1, 1, fcram_temp) == 0) {
-            if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: redNAND");
-                offset = 1;
-                header = 1;
-            }
-        }
+        char menu_array[9][11];         //Assuming there won't be more than 9 emuNANDs on one SD
+        char gateway[] = "X. emuNAND";
+        char rednand[] = "X. redNAND";
 
+        uint32_t search_offset = 0;
+        uint8_t emunand_selected = 0;
+        uint8_t emunand_count = 0;
         uint32_t nand_size = getMMCDevice(0)->total_size;
 
-        if (sdmmc_sdcard_readsectors(nand_size, 1, fcram_temp) == 0) {
-            if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
-                print("emuNAND detected: Gateway");
-                offset = 0;
-                header = nand_size;
+        if (nand_size > 0x200000) { 
+           search_offset = 0x400000;
+        } else search_offset = 0x200000;
+
+        print("Scanning SD card...");
+        while (emunand_count < 9){
+            if (sdmmc_sdcard_readsectors(emunand_count*search_offset + 1, 1, fcram_temp) == 0) {
+               if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
+                  for (unsigned i = 0; i < sizeof(rednand); i++) menu_array[emunand_count][i] = rednand[i];
+                  emunand_count++;
+                  menu_array[emunand_count - 1][0] = emunand_count + '0';
+                  continue;
+                }
             }
+            if (sdmmc_sdcard_readsectors(emunand_count*search_offset + nand_size, 1, fcram_temp) == 0) {
+               if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
+                  for (unsigned i = 0; i < sizeof(gateway); i++) menu_array[emunand_count][i] = gateway[i];
+                  emunand_count++;
+                  menu_array[emunand_count - 1][0] = emunand_count + '0';
+                  continue;
+                }
+            }
+            break;
+        }
+
+        if (emunand_count > 1) {
+           print("Multi emuNAND configuration detected");
+           char *options[emunand_count];
+           for (unsigned i = 0; i < emunand_count; i++) options[i] = menu_array[i];
+           emunand_selected = draw_menu("Choose an emuNAND to continue", 0, sizeof(options) / sizeof(char *), options);
+        }
+
+        offset = (emunand_selected*search_offset);
+
+        if (menu_array[emunand_selected][3] == 'e') {  //Checking for 'e' in "X. emuNAND" string
+            header = offset + nand_size;
+        } else {
+            offset++;
+            header = offset;
         }
 
         if (!header) {
-            print("Failed to get the emunand offsets");
-            draw_message("Failed to get the emunand offsets",
+            print("Failed to get the emuNAND offsets");
+            draw_message("Failed to get the emuNAND offsets",
                     "There's 3 possible causes for this error:\n"
                     " - You don't even have an emuNAND installed\n"
                     " - Your SD card can't be read\n"
