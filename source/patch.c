@@ -11,6 +11,7 @@
 #include "fcram.h"
 #include "paths.h"
 #include "crypto.h"
+#include "config.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
 
@@ -59,6 +60,35 @@ void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_sear
     return NULL;
 }
 
+int get_emunand_offsets(uint32_t location, uint32_t *offset, uint32_t *header)
+{
+    if (sdmmc_sdcard_readsectors(location + 1, 1, fcram_temp) == 0) {
+        if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
+            if (offset && header) {
+                print("emuNAND detected: redNAND");
+                *offset = location + 1;
+                *header = location + 1;
+            }
+            return 0;
+        }
+    }
+
+    uint32_t nand_size = getMMCDevice(0)->total_size;
+
+    if (sdmmc_sdcard_readsectors(location + nand_size, 1, fcram_temp) == 0) {
+        if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
+            if (offset && header) {
+                print("emuNAND detected: Gateway");
+                *offset = location;
+                *header = location + nand_size;
+            }
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 int patch_options(void *address, uint32_t size, uint8_t options, enum types type)
 {
     if (options & patch_option_keyx) {
@@ -83,57 +113,7 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum types type
         uint32_t offset = 0;
         uint32_t header = 0;
 
-        char menu_array[9][11];         //Assuming there won't be more than 9 emuNANDs on one SD
-        char gateway[] = "X. emuNAND";
-        char rednand[] = "X. redNAND";
-
-        uint32_t search_offset = 0;
-        uint8_t emunand_selected = 0;
-        uint8_t emunand_count = 0;
-        uint32_t nand_size = getMMCDevice(0)->total_size;
-
-        if (nand_size > 0x200000) { 
-           search_offset = 0x400000;
-        } else search_offset = 0x200000;
-
-        print("Scanning SD card...");
-        while (emunand_count < 9){
-            if (sdmmc_sdcard_readsectors(emunand_count*search_offset + 1, 1, fcram_temp) == 0) {
-               if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
-                  for (unsigned i = 0; i < sizeof(rednand); i++) menu_array[emunand_count][i] = rednand[i];
-                  emunand_count++;
-                  menu_array[emunand_count - 1][0] = emunand_count + '0';
-                  continue;
-                }
-            }
-            if (sdmmc_sdcard_readsectors(emunand_count*search_offset + nand_size, 1, fcram_temp) == 0) {
-               if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
-                  for (unsigned i = 0; i < sizeof(gateway); i++) menu_array[emunand_count][i] = gateway[i];
-                  emunand_count++;
-                  menu_array[emunand_count - 1][0] = emunand_count + '0';
-                  continue;
-                }
-            }
-            break;
-        }
-
-        if (emunand_count > 1) {
-           print("Multi emuNAND configuration detected");
-           char *options[emunand_count];
-           for (unsigned i = 0; i < emunand_count; i++) options[i] = menu_array[i];
-           emunand_selected = draw_menu("Choose an emuNAND to continue", 0, sizeof(options) / sizeof(char *), options);
-        }
-
-        offset = (emunand_selected*search_offset);
-
-        if (menu_array[emunand_selected][3] == 'e') {  //Checking for 'e' in "X. emuNAND" string
-            header = offset + nand_size;
-        } else {
-            offset++;
-            header = offset;
-        }
-
-        if (!header) {
+        if (get_emunand_offsets(config->emunand_location, &offset, &header)) {
             print("Failed to get the emuNAND offsets");
             draw_message("Failed to get the emuNAND offsets",
                     "There's 3 possible causes for this error:\n"
@@ -149,7 +129,8 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum types type
             *pos_offset = offset;
             *pos_header = header;
         } else {
-            print("I don't know where to set the offsets.\n  Ignoring...");
+            print("I don't know where to set the offsets.\n"
+                  "  Ignoring...");
         }
     }
     if (options & patch_option_save && type == NATIVE_FIRM) {

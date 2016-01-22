@@ -9,7 +9,7 @@
 #include "fcram.h"
 #include "paths.h"
 
-static unsigned int config_ver = 2;
+static unsigned int config_ver = 3;
 
 struct config_file *config = (struct config_file *)FCRAM_CONFIG;
 int patches_modified = 0;
@@ -42,7 +42,8 @@ void load_config_cakes()
 
     // TODO: If we get more options, maybe we should keep them when swapping firms.
     if (config->firm_ver != current_firm->version || config->firm_console != current_firm->console) {
-        print("Config was for another firm version.\n  Starting from scratch.");
+        print("Config was for another firm version.\n"
+              "  Starting from scratch.");
 
         memset(config, 0, sizeof(struct config_file));
         patches_modified = 1;

@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <stdlib.h>
 #include "patch.h"
 #include "menu.h"
 #include "memfuncs.h"
@@ -6,7 +8,12 @@
 #include "draw.h"
 #include "fs.h"
 #include "hid.h"
+#include "fcram.h"
 #include "paths.h"
+#include "fatfs/sdmmc/sdmmc.h"
+
+#define MAX_EMUNANDS 9
+#define NAME_MAGIC 0x454D414E
 
 void menu_select_patches()
 {
@@ -32,14 +39,14 @@ void menu_select_patches()
     memcpy(cake_selected, result, cake_count * sizeof(int));
 }
 
-void menu_config()
+void menu_toggle()
 {
     char *options[] = {"Enable autoboot (Press L to enter the menu)",
                        "Force saving patched firmware"};
     int preselected[] = {config->autoboot_enabled,
                          save_firm};
 
-    int *result = draw_selection_menu("Configuration", sizeof(options) / sizeof(char *),
+    int *result = draw_selection_menu("Toggleable options", sizeof(options) / sizeof(char *),
                                       options, preselected);
 
     // Apply the options
@@ -48,12 +55,84 @@ void menu_config()
     patches_modified |= result[1];
 }
 
+void menu_emunand()
+{
+    char emunands[MAX_EMUNANDS][0x20];  // We have a max size for the strings...
+    char unnamed[] = "emuNAND #";
+
+    uint32_t gap;
+    if (getMMCDevice(0)->total_size > 0x200000) {
+        gap = 0x400000;
+    } else {
+        gap = 0x200000;
+    }
+
+    // Scan for available emuNANDS. Assume they're placed right behind eachother.
+    int count;
+    for (count = 0; count <= MAX_EMUNANDS; count++) {
+        if (get_emunand_offsets(count * gap, NULL, NULL) == 0) {
+            if (sdmmc_sdcard_readsectors(count * gap, 1, fcram_temp) == 0 &&
+                    *(uint32_t *)fcram_temp == NAME_MAGIC) {
+                memcpy(emunands[count], fcram_temp + 4, 0x1F);
+                emunands[count][0x1F] = 0;
+            } else {
+                memcpy(emunands[count], unnamed, sizeof(unnamed));
+                emunands[count][sizeof(unnamed) - 1] = '1' + count;
+                emunands[count][sizeof(unnamed)] = 0;
+            }
+            continue;
+        }
+
+        break;
+    }
+
+    if (count < 0) {
+        print("Failed to find any emuNAND");
+        draw_message("Failed to find any emuNAND",
+                "There's 3 possible causes for this error:\n"
+                " - You don't even have an emuNAND installed\n"
+                " - Your SD card can't be read\n"
+                " - You're using an unsupported emuNAND format");
+        return;
+    }
+
+    // Make the pointer array
+    char *options[count];
+    for (int x = 0; x <= count; x++) options[x] = emunands[x];
+
+    int result = draw_menu("Select emuNAND", 1, count, options);
+    if (result == -1) return;
+
+    config->emunand_location = result * gap;
+    patches_modified = 1;
+}
+
+void menu_more()
+{
+    while (1) {
+        char *options[] = {"Toggleable options",
+                           "Select emuNAND"};
+        int result = draw_menu("More options", 1, sizeof(options) / sizeof(char *), options);
+
+        switch (result) {
+            case 0:
+                menu_toggle();
+                break;
+            case 1:
+                menu_emunand();
+                break;
+            case -1:
+                return;
+        }
+    }
+}
+
 void menu_main()
 {
     while (1) {
         char *options[] = {"Boot CFW",
                            "Select Patches",
-                           "Configuration"};
+                           "More options..."};
         int result = draw_menu("CakesFW", 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -65,7 +144,7 @@ void menu_main()
                 menu_select_patches();
                 break;
             case 2:
-                menu_config();
+                menu_more();
                 break;
         }
     }

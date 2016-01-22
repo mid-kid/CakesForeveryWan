@@ -231,7 +231,10 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
             print("Failed to load CETK");
 
             if (is_native) {
-                draw_loading("Failed to load FIRM key or CETK", "Make sure you have a firmkey.bin or cetk\n  located at " PATH_FIRMKEY "\n  or " PATH_CETK ", respectively.");
+                draw_loading("Failed to load FIRM key or CETK",
+                        "Make sure you have a firmkey.bin or cetk\n"
+                        "  located at " PATH_FIRMKEY "\n"
+                        "  or " PATH_CETK ", respectively.");
             }
             return 2;
         }
@@ -251,7 +254,9 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     print("Decrypting FIRM");
     if (decrypt_firm_title(dest, (void *)dest, size, firm_key) != 0) {
         print("Failed to decrypt the firmware");
-        draw_loading("Failed to decrypt the firmware", "Please double check your firmware and\n  firmkey/cetk are right.");
+        draw_loading("Failed to decrypt the firmware",
+                "Please double check your firmware and\n"
+                "  firmkey/cetk are right.");
         return 1;
     }
 
@@ -265,7 +270,11 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
 
     if (!firm_current) {
         print("Couldn't determine firmware version");
-        draw_loading("Couldn't determine firmware version", "The firmware you're trying to use is\n  most probably not supported by Cakes.\nDumping it to your SD card:\n  " PATH_UNSUPPORTED_FIRMWARE);
+        draw_loading("Couldn't determine firmware version",
+                "The firmware you're trying to use is\n"
+                "  most probably not supported by Cakes.\n"
+                "Dumping it to your SD card:\n"
+                "  " PATH_UNSUPPORTED_FIRMWARE);
         write_file(dest, PATH_UNSUPPORTED_FIRMWARE, firm_size);
         print("Dumped unsupported firmware");
         return 1;
@@ -277,7 +286,11 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
         if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + dest->section[2].offset),
                     firm_current->version) != 0) {
             print("Couldn't decrypt ARM9 FIRM binary");
-            draw_loading("Couldn't decrypt ARM9 FIRM binary", "Double-check you've got the right firmware.bin.\nIf you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n  " PATH_SLOT0X11KEY96 "\nWe remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
+            draw_loading("Couldn't decrypt ARM9 FIRM binary",
+                    "Double-check you've got the right firmware.bin.\n"
+                    "If you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n"
+                    "  " PATH_SLOT0X11KEY96 "\n"
+                    "We remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
             return 1;
         }
     }
@@ -392,10 +405,13 @@ void boot_cfw()
         draw_loading(title, "Saving NATIVE_FIRM...");
         print("Saving patched NATIVE_FIRM");
         if (write_file(firm_loc, PATH_PATCHED_FIRMWARE, firm_size) != 0) {
-            draw_message("Failed to save the patched FIRM", "One or more patches you selected requires this.\nBut, for some reason, we failed to write it.");
+            draw_message("Failed to save the patched FIRM",
+                    "One or more patches you selected requires this.\n"
+                    "But, for some reason, we failed to write it.");
             return;
         }
     }
+
     if (current_agb_firm && (patches_modified || f_stat(PATH_PATCHED_AGB_FIRMWARE, NULL) != 0)) {
         draw_loading(title, "Saving AGB_FIRM...");
         print("Saving patched AGB_FIRM");
