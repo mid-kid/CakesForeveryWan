@@ -1,7 +1,7 @@
 .nds
 
 .macro svc, num
-	.ifarm
+	.if isArm()
 		.word 0xEF000000 | num
 	.else
 		.if num > 0xFF
