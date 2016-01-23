@@ -13,6 +13,20 @@
     "version_specific": [
         {
             "console": "o3ds",
+            "version": "0x50",
+            "variables": {
+                "aes_setkey": "0x08056574",
+                "aes_unk": "0x0805EA48"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4B0"
+                }, {
+                    "offset": "0x080282F8"
+                }
+            ]
+        }, {
+            "console": "o3ds",
             "version": "0x49",
             "variables": {
                 "aes_setkey": "0x080575B4",

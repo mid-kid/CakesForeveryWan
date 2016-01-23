@@ -17,6 +17,23 @@
     "version_specific": [
         {
             "console": "o3ds",
+            "version": "0x50",
+            "variables": {
+                "sdmmc": "0x080D8A50"
+            },
+            "patches": [
+                {
+                    "offset": "0x0801A4C0"
+                }, {
+                    "offset": "0x0801B564"
+                }, {
+                    "offset": "0x08077B5C"
+                }, {
+                    "offset": "0x08077B9C"
+                }
+            ]
+        }, {
+            "console": "o3ds",
             "version": "0x49",
             "variables": {
                 "sdmmc": "0x080D8670"
