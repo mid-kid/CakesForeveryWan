@@ -13,7 +13,6 @@
 #include "fatfs/sdmmc/sdmmc.h"
 
 #define MAX_EMUNANDS 9
-#define NAME_MAGIC 0x454D414E
 
 void menu_select_patches()
 {
@@ -72,8 +71,8 @@ void menu_emunand()
     for (count = 0; count <= MAX_EMUNANDS; count++) {
         if (get_emunand_offsets(count * gap, NULL, NULL) == 0) {
             if (sdmmc_sdcard_readsectors(count * gap, 1, fcram_temp) == 0 &&
-                    *(uint32_t *)fcram_temp == NAME_MAGIC) {
-                memcpy(emunands[count], fcram_temp + 4, 0x1F);
+                    memcmp(fcram_temp + 11, "NAME", 4) == 0) {
+                memcpy(emunands[count], fcram_temp + 15, 0x1F);
                 emunands[count][0x1F] = 0;
             } else {
                 memcpy(emunands[count], unnamed, sizeof(unnamed));
