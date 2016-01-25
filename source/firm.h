@@ -12,6 +12,7 @@ enum consoles {
 struct firm_signature {
     uint8_t sig[0x10];
     unsigned int version;
+    char version_string[8];
     enum consoles console;
 };
 

@@ -1,5 +1,11 @@
 rwildcard = $(foreach d, $(wildcard $1*), $(filter $(subst *, %, $2), $d) $(call rwildcard, $d/, $2))
 
+# Either have git installed or replace this thing for the revisision to show up.
+#revision := $(shell git rev-list HEAD --count)
+ifeq ($(revision),)
+	revision := "from another dimension"
+endif
+
 CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 LD := arm-none-eabi-ld
@@ -16,14 +22,12 @@ dir_cakehax := CakeHax
 dir_cakebrah := CakeBrah
 
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
-CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main
+CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -DCAKES_VERSION=\"$(revision)\"
 CAKEFLAGS := dir_out=$(abspath $(dir_out))
 BRAHFLAGS := dir_out=$(abspath $(dir_out)/3ds/Cakes) \
 			 APP_DESCRIPTION="CFW for 3DS" \
 			 APP_AUTHOR="mid-kid" \
 			 ICON=$(abspath icon.png)
-
-revision := $(shell git rev-list HEAD --count)
 
 objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \

@@ -6,11 +6,6 @@
 #include "draw.h"
 #include "hid.h"
 
-#define COLOR_TITLE 0x0000FF
-#define COLOR_NEUTRAL 0xFFFFFF
-#define COLOR_SELECTED 0xFF0000
-#define COLOR_BACKGROUND 0x000000
-
 int selected_options[MAX_SELECTED_OPTIONS];
 
 // TODO: Clean up the first two functions. They have too much in common.

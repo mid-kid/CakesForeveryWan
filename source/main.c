@@ -126,13 +126,36 @@ void menu_more()
     }
 }
 
+void version_info()
+{
+    int pos_y = draw_loading("Version info", "CakesFW version " CAKES_VERSION) + SPACING_VERT;
+    int version_pos_x = 10 + SPACING_HORIZ * 21;
+
+    draw_string(screen_top_left, "NATIVE_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+    draw_string(screen_top_left, current_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
+    pos_y += SPACING_VERT;
+
+    draw_string(screen_top_left, "AGB_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+    draw_string(screen_top_left, current_agb_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
+
+    draw_string(screen_top_left, "Press B to return", 10, pos_y + 20, COLOR_SELECTED);
+    while (1) {
+        uint16_t key = wait_key();
+
+        if (key == (key_released | key_b)) {
+            return;
+        }
+    }
+}
+
 void menu_main()
 {
     while (1) {
         char *options[] = {"Boot CFW",
                            "Select Patches",
-                           "More options..."};
-        int result = draw_menu("CakesFW", 0, sizeof(options) / sizeof(char *), options);
+                           "More options...",
+                           "Version info"};
+        int result = draw_menu("CakesFW " CAKES_VERSION, 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
             case 0:
@@ -144,6 +167,9 @@ void menu_main()
                 break;
             case 2:
                 menu_more();
+                break;
+            case 3:
+                version_info();
                 break;
         }
     }
