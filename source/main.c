@@ -133,10 +133,13 @@ void version_info()
 
     draw_string(screen_top_left, "NATIVE_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
     draw_string(screen_top_left, current_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
-    pos_y += SPACING_VERT;
 
-    draw_string(screen_top_left, "AGB_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
-    draw_string(screen_top_left, current_agb_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
+    if (current_agb_firm) {
+        pos_y += SPACING_VERT;
+
+        draw_string(screen_top_left, "AGB_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+        draw_string(screen_top_left, current_agb_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
+    }
 
     draw_string(screen_top_left, "Press B to return", 10, pos_y + 20, COLOR_SELECTED);
     while (1) {

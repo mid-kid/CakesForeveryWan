@@ -1,7 +1,7 @@
 rwildcard = $(foreach d, $(wildcard $1*), $(filter $(subst *, %, $2), $d) $(call rwildcard, $d/, $2))
 
 # Either have git installed or replace this thing for the revisision to show up.
-#revision := $(shell git rev-list HEAD --count)
+revision := $(shell git rev-list HEAD --count)
 ifeq ($(revision),)
 	revision := "from another dimension"
 endif
