@@ -1,11 +1,11 @@
 .nds
 
-.create "patch1.bin"
+.create "patch1.bin", 0
 .thumb
 mov r0, #0
 .close
 
-.create "patch2.bin"
+.create "patch2.bin", 0
 .thumb
 mov r0, #0
 bx lr

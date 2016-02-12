@@ -1,0 +1,42 @@
+--- Format: size | description | comments
+
+Main header:
+1 | Format version
+1 | Amount of patches
+1 | Offset of patch headers
+? | Description string + 0 byte
+
+Patch headers (array):
+1 | Type | FIRM, Memory or Userland
+8 | Subtype | See below
+4 | Pointer to patch in this file
+4 | Size
+1 | Options | See options.txt
+1 | Amount of versions
+4 | Pointer to versions
+1 | Amount of variables | Optional, zero if unused
+4 | Pointer to variable offsets | Optional, zero if unused. Mandatory if the above is non-zero
+
+Subtype (FIRM):
+2 | FIRM type
+2 | Memory ID | Used to match Memory and FIRM patches. Optional, zero if unused
+4 | Memory patch offset | Offset in patch where the offset of the memory patch will be written. Optional, zero if unused. Mandatory if the above is non-zero
+
+Subtype (Memory):
+2 | FIRM type
+2 | Memory ID | Used to match memory and FIRM patches
+4 | Unused
+
+Subtype (Userland):
+8 | Name of the app
+
+Versions (array):
+4 | Version identifier | For FIRM and Memory, upper 2 bytes = console type, lower 2 bytes = firm version. For Userland, whatever identifier I can use for it.
+4 | Offset of patch in memory | This is the virtual address as the code sees it, translation will be done by the patcher. This is zero for Memory patches, as these are expected to move around.
+4 | Pointer to variable values | The values differ per version, while the offsets don't. Optional, zero if unused. Mandatory if the "Amount of variables" in the patch header is non-zero
+
+Variable offsets (array):
+4 | Offset of the variable in patch
+
+Variable values (array):
+4 | Value of the variable

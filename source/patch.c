@@ -8,6 +8,7 @@
 #include "fs.h"
 #include "menu.h"
 #include "firm.h"
+#include "headers.h"
 #include "fcram.h"
 #include "paths.h"
 #include "crypto.h"

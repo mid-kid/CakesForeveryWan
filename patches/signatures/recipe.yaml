@@ -1,0 +1,36 @@
+description: Disable signature checks
+
+patches:
+    patch1.bin:
+        type: NATIVE_FIRM
+        versions:
+            o3ds:
+                0x50: 0x08062B0C
+                0x49: 0x080632B8
+                0x38: 0x08063324
+                0x37: 0x080632BC
+                0x30: 0x080630C0
+                0x2A: 0x08063208
+                0x1F: 0x0804D5C0
+            n3ds:
+                0x1F: 0x08062B0C
+                0x1B: 0x08062B08
+                0x0F: 0x08063374
+                0x04: 0x08063C28
+
+    patch2.bin:
+        type: NATIVE_FIRM
+        versions:
+            o3ds:
+                0x50: 0x0805C320
+                0x49: 0x0805D628
+                0x38: 0x0805D458
+                0x37: 0x0805D4C0
+                0x30: 0x0805D2C4
+                0x2A: 0x0805D458
+                0x1F: 0x0805FAC0
+            n3ds:
+                0x1F: 0x0805C320
+                0x1B: 0x0805C31C
+                0x0F: 0x0805D498
+                0x04: 0x0805E2D4

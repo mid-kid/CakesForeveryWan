@@ -1,8 +1,6 @@
 .nds
 
-#!variables
-
-.create "patch1.bin"
+.create "patch1.bin", 0
 .arm
 nand_sd:
     ; Original code that still needs to be executed.
@@ -14,7 +12,7 @@ nand_sd:
 
     ; If we're already trying to access the SD, return.
     ldr r2, [r0, #4]
-    ldr r1, =sdmmc
+    ldr r1, [sdmmc]
     cmp r2, r1
     beq nand_sd_ret
 
@@ -22,12 +20,10 @@ nand_sd:
     ldr r2, [r0, #8]  ; Get sector to read
     cmp r2, #0  ; For GW compatibility, see if we're trying to read the ncsd header (sector 0)
 
-    ldr r3, =nand_offset
-    ldr r3, [r3]
+    ldr r3, [nand_offset]
     add r2, r3  ; Add the offset to the NAND in the SD.
 
-    ldreq r3, =ncsd_header_offset
-    ldreq r3, [r3]
+    ldreq r3, [ncsd_header_offset]
     addeq r2, r3  ; If we're reading the ncsd header, add the offset of that sector.
 
     str r2, [r0, #8]  ; Store sector to read
@@ -44,11 +40,12 @@ nand_sd:
         add r0, #4
         bx r0
 .pool
-nand_offset:		.ascii "NAND"       ; for rednand this should be 1
-ncsd_header_offset:	.ascii "NCSD"       ; depends on nand manufacturer + emunand type (GW/RED)
+nand_offset: .ascii "NAND"  ; The starting offset of the emuNAND on the SD.
+ncsd_header_offset:	.ascii "NCSD"  ; The offset of the first emuNAND sector relative to the start of the emuNAND (Used for when the first sector is placed at the end).
+sdmmc: .ascii "sdmmc"  ; The offset of the sdmmc object.
 .close
 
-.create "patch2.bin"
+.create "patch2.bin", 0
 .arm
 	.word 0x360003
 	.word 0x10100000
@@ -63,16 +60,18 @@ ncsd_header_offset:	.ascii "NCSD"       ; depends on nand manufacturer + emunand
 	.word 0x8020000
 .close
 
-.create "patch3.bin"
+.create "patch3.bin", 0
 .thumb
-	ldr r4, =nand_sd
+	ldr r4, [_nand_sd_write]
 	blx r4
-.pool
+.align 4
+_nand_sd_write: .ascii "mem"
 .close
 
-.create "patch4.bin"
+.create "patch4.bin", 0
 .thumb
-	ldr r4, =nand_sd
+	ldr r4, [_nand_sd_read]
 	blx r4
-.pool
+.align 4
+_nand_sd_read: .ascii "mem"
 .close

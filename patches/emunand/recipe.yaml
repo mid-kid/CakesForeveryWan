@@ -1,0 +1,87 @@
+description: Disable signature checks
+
+patches:
+    patch1.bin:
+        type: Memory
+        subtype: NATIVE_FIRM
+        options:
+            - emunand
+        variables:
+            - sdmmc
+        versions:
+            o3ds:
+                0x50:
+                    - 0x080D8A50
+                0x49:
+                    - 0x080D8670
+                0x38:
+                    - 0x080D8670
+                0x37:
+                    - 0x080D84F0
+                0x30:
+                    - 0x080D8430
+                0x2A:
+                    - 0x080D84B0
+                0x1F:
+                    - 0x080D8CD0
+            n3ds:
+                0x1F:
+                    - 0x080F0AD0
+                0x1B:
+                    - 0x080F0AB0
+                0x0F:
+                    - 0x080D86F0
+
+    patch2.bin:
+        type: NATIVE_FIRM
+        versions:
+            o3ds:
+                0x50: 0x0801B564
+                0x49: 0x0801B564
+                0x38: 0x0801B564
+                0x37: 0x0801B564
+                0x30: 0x0801B568
+                0x2A: 0x0801B568
+                0x1F: 0x0801B568
+            n3ds:
+                0x1F: 0x0801B3D4
+                0x1B: 0x0801B3D4
+                0x0F: 0x0801B3D4
+
+    patch3.bin:
+        type: NATIVE_FIRM
+        memory:
+            patch: patch1.bin
+            variable: mem
+        versions:
+            o3ds:
+                0x50: 0x08077B5C
+                0x49: 0x0807882C
+                0x38: 0x08078724
+                0x37: 0x0807868C
+                0x30: 0x0807840C
+                0x2A: 0x080784C4
+                0x1F: 0x08078C30
+            n3ds:
+                0x1F: 0x08077B5C
+                0x1B: 0x08077B40
+                0x0F: 0x0807877C
+
+    patch4.bin:
+        type: NATIVE_FIRM
+        memory:
+            patch: patch1.bin
+            variable: mem
+        versions:
+            o3ds:
+                0x50: 0x08077B9C
+                0x49: 0x0807886C
+                0x38: 0x08078764
+                0x37: 0x080786CC
+                0x30: 0x0807844C
+                0x2A: 0x08078504
+                0x1F: 0x08078C70
+            n3ds:
+                0x1F: 0x08077B9C
+                0x1B: 0x08077B80
+                0x0F: 0x080787BC

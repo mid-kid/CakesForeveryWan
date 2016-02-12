@@ -1,0 +1,83 @@
+# Template file for cake recipes.
+# Should be fully functional with patissier.py
+# Also explains all that goes into baking a cake
+
+# Okay, so you want to bake a cake. You've already tested your patches (or are making new ones) and want CakesFW (or any other patcher) to patch your firmware automatically.
+# First, you need to be sure of a few things:
+# - My patches only use pc-relative instructions, and don't try to fetch info from eachother (unless you can be completely sure the distance between the patches is invariable between different firmware versions).
+# - My patches are built as separate files, not linked into an ELF file or anything of the sort.
+# - My patches actually FIT inside the location I want to patch them to.
+# - In the case my patches don't fit in my desired location, I have moved part of my code to so-called "Memory" patches, and have a recognizeable sequence of bytes in one of my patches that will be replaced with the location of the Memory patch.
+# - In case I use any firmware version-dependent values, I've replaced them with easily-recognizeable sequences of bytes (such as strings).
+# If all of the above requirements have been met, you may continue writing the recipe.
+
+
+# First of all, we have the top level, which should just contain two things:
+description: The description string  # That will be shown in the patch menu.
+# And
+patches:  # The list of patches you want to use.
+    # This is just a list, with the filenames of your patches as the keys.
+
+    patch1.bin:
+        # An entry to this list, is a bit more interesting.
+
+        # First, we have the type. This is either FIRM, Memory or Userland, depending on what you want to apply the patch to.
+        type: Memory
+        # Subtype is a bit more variable, as it differs depending on what the above type is.
+        # If the type was either FIRM or Memory, specify the type of firmware. Either NATIVE_FIRM, TWL_FIRM or AGB_FIRM
+        subtype: AGB_FIRM
+        # If the type was Userland, write the name of the application you want to patch (max 8 chars)
+        #subtype: mset
+
+        # For any FIRM patch, this is a shorthand for the above:
+        #type: AGB_FIRM
+        # This has the same effect as type: FIRM and subtype: AGB_FIRM
+
+        # [Optional] Next is the options. These define anything the patcher has to do to your patch while patching. I'm not going to describe the options here, just check the options.txt and the builder program.
+        options:  # It's a list
+            - emunand
+
+        # [Optional] Variables, the fun part of the format. Any value that can be different depending on which firmware version you're using should be an easily-recognizeable sequence of bytes in your patch. Specify all the sequences here and the baker will point the patcher where to write the variables.
+        variables:
+            - sdmmc  # A variable name can be longer than 4 bytes. Keep in mind, however, that the values of it are restricted to 4. Also mind alignment if you decide to use a longer name.
+        # Remember the order in which you put the variables, as it will be used later on.
+
+        # [Optional] Only for FIRM patches. If the patch is a hook for a memory patch, specify which patch here. The variable works the same as the variables above, except it's replaced by the location of the Memory patch.
+        memory:
+            patch: patch1.bin
+            variable: EmuN
+
+        # The last imporant part: the versions. This list defines any version-specific information your patch has to be made aware of.
+        versions:
+            # If it's a FIRM or Memory patch, this list contains at most two elements: o3ds and n3ds (for each console).
+            # If it's a Userland patch, every entry is a single version.
+            o3ds:  # Since this is a FIRM patch, the first level is a console's name.
+                0x49:  # And the second level is the firmware version.
+                    # The version info can be written in several ways, depending on the info you need to provide.
+                    # This is the most verbose one:
+                    offset: 0xDEADBEEF  # This is the offset (In memory, not in the file) at which your patch will be patched to. Any address conversion will be done by the patcher, trust it.
+                    variables:  # This is the list of variable values, in the same order in which we specified the names of them above.
+                        - 0xDEADDEAD
+                # Keep in mind that in the case of Memory patches, the offset value will be completely ignored, and the offset value is strictly required by FIRM and Userland patches.
+
+                # If you just need to specify the offset, you can do this:
+                #0x38: 0xBEEFDEAD
+                # If you just need to specify the variables (only for Memory patches):
+                0x37:
+                    - 0xB16B00B2
+
+            # Another console
+            n3ds:
+                0x1F:
+                    - 0xDEADBEEF
+                0x1B:
+                    - 0xDEADBEEF
+
+    # A minimal example:
+    patch2.bin:
+        type: NATIVE_FIRM
+        versions:
+            o3ds:
+                0x49: 0xDEADDEAD
+            n3ds:
+                0x1B: 0xDEADDEAD

@@ -12,7 +12,7 @@ LD := arm-none-eabi-ld
 OC := arm-none-eabi-objcopy
 OPENSSL := openssl
 
-PYTHON := python
+PYTHON := python3
 
 dir_source := source
 dir_build := build
@@ -33,7 +33,7 @@ objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
 			  $(call rwildcard, $(dir_source), *.s *.c)))
 
-baked_files := $(patsubst $(dir_patches)/%/, $(dir_build)/patches/%.baked, $(wildcard $(dir_patches)/*/))
+cakes := $(patsubst $(dir_patches)/%/, $(dir_out)/cakes/patches/%.cake, $(wildcard $(dir_patches)/*/))
 
 provide_files := $(dir_out)/slot0x25keyX_bin.here \
 				 $(dir_out)/slot0x11key96_bin.here \
@@ -50,7 +50,7 @@ release: Cakes_$(revision).zip
 launcher: $(dir_out)/Cakes.dat
 
 .PHONY: patches
-patches: $(baked_files)
+patches: $(cakes)
 
 .PHONY: ninjhax
 ninjhax: $(dir_out)/3ds/Cakes/Cakes.3dsx
@@ -74,11 +74,14 @@ $(dir_out)/Cakes.dat: $(dir_build)/main.bin
 	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) launcher
 	dd if=$< of=$@ bs=512 seek=144
 
-$(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
+# Simple make rule for armips cakes.
+$(dir_out)/cakes/patches/%.cake: $(dir_patches)/%/recipe.yaml $(dir_patches)/%/patches.s
 	@mkdir -p $(dir_out)/cakes/patches
 	@mkdir -p $(dir_build)/patches/$*
-	$(PYTHON) $(dir_patches)/bundle.py $^ $(dir_build)/patches/$* $(dir_out)/cakes/patches
-	@touch $@
+	@echo "bake $@"
+	@cd $(dir_build)/patches/$* && \
+		armips $(abspath $(dir_patches)/$*/patches.s) && \
+		$(PYTHON) $(abspath $(dir_patches)/patissier.py) $(abspath $<) $(abspath $@)
 
 .PHONY: $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh
 $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh:

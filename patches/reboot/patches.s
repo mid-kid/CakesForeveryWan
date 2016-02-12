@@ -11,9 +11,7 @@
 	.endif
 .endmacro
 
-#!variables
-
-.create "patch1.bin"
+.create "patch1.bin", 0
 .arm
 patch005:
 	ldr r0, =0x2000E000
@@ -28,15 +26,18 @@ patch005:
 	ldr r0, =0x2000E000
 	ldr r1, =firm_fname
 	mov r2, #1
-	blx fopen
+    ldr r4, [fopen]
+	blx r4
 	ldr r0, =0x2000E000
 	ldr r1, =0x2000E100
-	mov r2, #firm_addr
-	mov r3, #firm_size
-	blx fread
+    ldr r2, [firm_addr]
+    ldr r3, [firm_size]
+    ldr r4, [fread]
+	blx r4
 
 	ldr r4, =0x44846
-	blx pxi_wait_recv
+    ldr r0, [pxi_wait_recv]
+	blx r0
 	cmp r0, r4
 	bne patch005
 	mov r2, #0
@@ -49,11 +50,18 @@ patch005:
 
 @@inf_loop:
 	b @@inf_loop
+
+.align 4
+firm_addr: .ascii "addr"
+firm_size: .ascii "size"
+pxi_wait_recv: .ascii "recv"
+fopen: .ascii "open"
+fread: .ascii "read"
 .pool
 firm_fname:
 .close
 
-.create "patch2.bin"
+.create "patch2.bin", 0
 .arm
 	stmfd sp!, {r4-r11,lr}
 	sub sp, sp, #0x3C
@@ -87,7 +95,7 @@ firm_fname:
 	mcr p15, 0, r1, c2, c0, 1	; icacheable
 	mcr p15, 0, r2, c3, c0, 0	; write bufferable
 
-	mov r4, #firm_addr
+	ldr r4, [firm_addr2]
 	add r3, r4, #0x40
 	ldr r0, [r3]				; offset
 	add r0, r0, r4				; src
@@ -128,7 +136,7 @@ firm_fname:
 	mcr p15, 0, r1, c7, c5, 0	; flush dcache
 	mcr p15, 0, r1, c7, c6, 0	; flush icache
 	mcr p15, 0, r1, c7, c10, 4	; drain write buffer
-	mov r0, #firm_addr
+	ldr r0, [firm_addr2]
 	mov r1, 0X1FFFFFFC
 	ldr r2, [r0,#8]				; arm11 entry
 	str r2, [r1]
@@ -136,6 +144,8 @@ firm_fname:
 	add sp, sp, #0x3C
 	ldmfd sp!, {r4-r11,lr}
 	bx r0
+.align 4
+firm_addr2: .ascii "addr"
 .pool
 memcpy32: ; memcpy32(void *src, void *dst, unsigned int size)
 	mov r12, lr

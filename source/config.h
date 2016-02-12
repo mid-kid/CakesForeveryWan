@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "fatfs/ff.h"
+#include "fatfs/ffconf.h"
 
 struct config_file {
     unsigned int config_ver;

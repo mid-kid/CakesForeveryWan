@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "fatfs/ff.h"
+#include "fatfs/ffconf.h"
 
 #define MAX_CAKES 10
 

@@ -1,0 +1,106 @@
+description: Survive reboots when launching some titles
+
+patches:
+    patch1.bin:
+        type: NATIVE_FIRM
+        options:
+            - save
+        variables:
+            - addr  # firm_addr
+            - size  # firm_size
+            - recv  # pxi_wait_recv
+            - open  # fopen
+            - read  # fread
+        versions:
+            o3ds:
+                0x50:
+                    offset: 0x080849DC
+                    variables:
+                        - &addr50 0x24000000
+                        - 0x000EA000
+                        - 0x08054134
+                        - 0x08059D10
+                        - 0x0804CC54
+                0x49:
+                    offset: 0x080859C8
+                    variables:
+                        - &addr49 0x24000000
+                        - 0x000EB000
+                        - 0x08055178
+                        - 0x0805B180
+                        - 0x0804D9B0
+                0x38:
+                    offset: 0x080858E0
+                    variables:
+                        - &addr38 0x24000000
+                        - 0x000E9000
+                        - 0x08054FB0
+                        - 0x0805AF20
+                        - 0x0804D828
+                0x37:
+                    offset: 0x08085860
+                    variables:
+                        - &addr37 0x24000000
+                        - 0x000E9000
+                        - 0x08055054
+                        - 0x0805AF88
+                        - 0x0804D828
+                0x30:
+                    offset: 0x08085590
+                    variables:
+                        - &addr30 0x24000000
+                        - 0x000E8000
+                        - 0x08054EA8
+                        - 0x0805ADA4
+                        - 0x0804D710
+                0x2A:
+                    offset: 0x08085534
+                    variables:
+                        - &addr2A 0x24000000
+                        - 0x000E9000
+                        - 0x08054F88
+                        - 0x0805AF88
+                        - 0x0804D9B0
+                0x1F:
+                    offset: 0x08086B30
+                    variables:
+                        - &addr1F 0x24000000
+                        - 0x000EF000
+                        - 0x08056A04
+                        - 0x0805CF04
+                        - 0x0804E314
+
+    patch2.bin:
+        type: NATIVE_FIRM
+        variables:
+            - addr  # firm_addr
+        versions:
+            o3ds:
+                0x50:
+                    offset: 0x080933CC
+                    variables:
+                        - *addr50
+                0x49:
+                    offset: 0x08094454
+                    variables:
+                        - *addr49
+                0x38:
+                    offset: 0x08094200
+                    variables:
+                        - *addr38
+                0x37:
+                    offset: 0x080943A4
+                    variables:
+                        - *addr37
+                0x30:
+                    offset: 0x080940AC
+                    variables:
+                        - *addr30
+                0x2A:
+                    offset: 0x08093F28
+                    variables:
+                        - *addr2A
+                0x1F:
+                    offset: 0x0809744C
+                    variables:
+                        - *addr1F

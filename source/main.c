@@ -10,6 +10,7 @@
 #include "hid.h"
 #include "fcram.h"
 #include "paths.h"
+#include "headers.h"
 #include "fatfs/sdmmc/sdmmc.h"
 
 #define MAX_EMUNANDS 9
