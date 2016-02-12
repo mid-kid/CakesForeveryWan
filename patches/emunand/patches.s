@@ -41,7 +41,7 @@ nand_sd:
         bx r0
 .pool
 nand_offset: .ascii "NAND"  ; The starting offset of the emuNAND on the SD.
-ncsd_header_offset:	.ascii "NCSD"  ; The offset of the first emuNAND sector relative to the start of the emuNAND (Used for when the first sector is placed at the end).
+ncsd_header_offset: .ascii "NCSD"  ; The offset of the first emuNAND sector relative to the start of the emuNAND (Used for when the first sector is placed at the end).
 sdmmc: .ascii "sdmmc"  ; The offset of the sdmmc object.
 .close
 
