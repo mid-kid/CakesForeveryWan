@@ -11,10 +11,10 @@ except ImportError:
 
 # Globals
 format_version = 1
-header_struct = "BBB"
-patch_struct = "B8sIIBBIBI"
-version_struct = "III"
-subtype_struct = "HHI"
+header_struct = "<BBB"
+patch_struct = "<B8sIIBBIBI"
+version_struct = "<III"
+subtype_struct = "<HHI"
 patch_types = {
     "FIRM": 0,
     "Memory": 1,
@@ -22,8 +22,8 @@ patch_types = {
 }
 firm_types = {
     "NATIVE_FIRM": 0,
-    "AGB_FIRM": 1,
-    "TWL_FIRM": 2
+    "TWL_FIRM": 1,
+    "AGB_FIRM": 2
 }
 consoles_dict = {
     "o3ds": 0,
