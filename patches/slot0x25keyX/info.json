@@ -20,7 +20,7 @@
             },
             "patches": [
                 {
-                    "offset": "0x0801A534"
+                    "offset": "0x0801AFE8"
                 }, {
                     "offset": "0x080282F8"
                 }
@@ -34,7 +34,7 @@
             },
             "patches": [
                 {
-                    "offset": "0x0801A4B0"
+                    "offset": "0x0801AFE8"
                 }, {
                     "offset": "0x080282F8"
                 }
@@ -48,7 +48,7 @@
             },
             "patches": [
                 {
-                    "offset": "0x0801A4B0"
+                    "offset": "0x0801AFE8"
                 }, {
                     "offset": "0x080282F8"
                 }
@@ -62,7 +62,7 @@
             },
             "patches": [
                 {
-                    "offset": "0x0801A4B0"
+                    "offset": "0x0801AFE8"
                 }, {
                     "offset": "0x080282F8"
                 }
