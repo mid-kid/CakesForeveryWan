@@ -1,15 +1,4 @@
-.nds
-
-.macro svc, num
-	.if isArm()
-		.word 0xEF000000 | num
-	.else
-		.if num > 0xFF
-			.error "bitch you crazu"
-		.endif
-		.halfword 0xDF00 | num
-	.endif
-.endmacro
+.arm.little
 
 #!variables
 
@@ -43,9 +32,9 @@ patch005:
 	mov r3, r2
 	mov r1, r2
 	mov r0, r2
-	svc 0x7C
+	swi 0x7C
 	ldr r0, =0x80FF4FC
-	svc 0x7B
+	swi 0x7B
 
 @@inf_loop:
 	b @@inf_loop
