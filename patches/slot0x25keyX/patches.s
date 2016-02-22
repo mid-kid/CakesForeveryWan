@@ -1,4 +1,4 @@
-.nds
+.arm.little
 
 #!variables
 
