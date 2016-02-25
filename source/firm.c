@@ -336,42 +336,6 @@ void boot_firm()
         print("Updated keyX keyslots");
     }
 
-    __asm__ (
-        "msr cpsr_c, #0xDF\n\t"
-        "ldr r0, =0x10000035\n\t"
-        "mcr p15, 0, r0, c6, c3, 0\n\t"
-        "mrc p15, 0, r0, c2, c0, 0\n\t"
-        "mrc p15, 0, r12, c2, c0, 1\n\t"
-        "mrc p15, 0, r1, c3, c0, 0\n\t"
-        "mrc p15, 0, r2, c5, c0, 2\n\t"
-        "mrc p15, 0, r3, c5, c0, 3\n\t"
-        "ldr r4, =0x18000035\n\t"
-        "bic r2, r2, #0xF0000\n\t"
-        "bic r3, r3, #0xF0000\n\t"
-        "orr r0, r0, #0x10\n\t"
-        "orr r2, r2, #0x30000\n\t"
-        "orr r3, r3, #0x30000\n\t"
-        "orr r12, r12, #0x10\n\t"
-        "orr r1, r1, #0x10\n\t"
-        "mcr p15, 0, r0, c2, c0, 0\n\t"
-        "mcr p15, 0, r12, c2, c0, 1\n\t"
-        "mcr p15, 0, r1, c3, c0, 0\n\t"
-        "mcr p15, 0, r2, c5, c0, 2\n\t"
-        "mcr p15, 0, r3, c5, c0, 3\n\t"
-        "mcr p15, 0, r4, c6, c4, 0\n\t"
-        "mrc p15, 0, r0, c2, c0, 0\n\t"
-        "mrc p15, 0, r1, c2, c0, 1\n\t"
-        "mrc p15, 0, r2, c3, c0, 0\n\t"
-        "orr r0, r0, #0x20\n\t"
-        "orr r1, r1, #0x20\n\t"
-        "orr r2, r2, #0x20\n\t"
-        "mcr p15, 0, r0, c2, c0, 0\n\t"
-        "mcr p15, 0, r1, c2, c0, 1\n\t"
-        "mcr p15, 0, r2, c3, c0, 0\n\t"
-        ::: "r0", "r1", "r2", "r3", "r4", "r12"
-    );
-    print("Set up MPU");
-
     firm_section_h *sections = firm_loc->section;
 
     memcpy32(sections[0].address, (void *)firm_loc + sections[0].offset, sections[0].size);
