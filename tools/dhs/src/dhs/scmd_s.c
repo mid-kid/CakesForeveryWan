@@ -482,7 +482,7 @@ int32_t sInstallCia(scmdreq_install_s* cmd, int sockfd, void* buffer, uint32_t b
 			bytesRead = recv(sockfd, buffer, bufSize, 0);
 			if(bytesRead > 0)
 			{
-				ret = FSFILE_Write(ciaHandle, NULL, totalSize, buffer, bytesRead, FS_WRITE_NOFLUSH);
+				ret = FSFILE_Write(ciaHandle, NULL, totalSize, buffer, bytesRead, FS_WRITE_FLUSH);
 				if(ret)
 					break;
 

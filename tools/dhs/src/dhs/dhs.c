@@ -52,7 +52,7 @@ void svcDev(void(*fun)())
 Result startServer()
 {
 	Result ret;
-	if((ret = SOC_Initialize((u32*) (__heapBase + (__heap_size - 0x48000)), 0x48000)))
+	if((ret = socInit((u32*) (__heapBase + (__heap_size - 0x48000)), 0x48000)))
 		DIE(0x14000040, ret);
 
 	struct sockaddr_in serv_addr;
@@ -237,6 +237,9 @@ void init()
 
 	if((ret = amInit()) != 0)
 		DIE(0x14000010, ret);
+
+	if((ret = acInit()) != 0)
+	    DIE(0x14000010, ret);
 }
 
 void patchPid()
@@ -302,7 +305,7 @@ int main()
 	initVfp();
 	init();
 
-	if((ret = ACU_WaitInternetConnection()) != 0)
+	if((ret = acWaitInternetConnection()) != 0)
 		DIE(0x14000018, ret);
 
 	startServer();

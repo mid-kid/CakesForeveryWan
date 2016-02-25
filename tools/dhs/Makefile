@@ -6,12 +6,12 @@ OC=arm-none-eabi-objcopy
 LD=arm-none-eabi-ld
 AM=armips
 
-CTRUDIR=../../../ctrulib/libctru
+CTRUDIR=$(DEVKITPRO)/libctru
 
 CFLAGS=-std=gnu99 -Os -g -mword-relocations -fomit-frame-pointer -ffast-math
 C9FLAGS=-mcpu=arm946e-s -march=armv5te -mlittle-endian
 C11FLAGS=-mcpu=mpcore -mlittle-endian
-LDFLAGS=
+LDFLAGS=-Wl,--gc-sections
 OCFLAGS=--set-section-flags .bss=alloc,load,contents
 
 DHSOBJS=$(patsubst src/%.c, obj/%.o, $(wildcard src/dhs/*.c))
@@ -32,7 +32,7 @@ $(PATCHER): $(PATCHERSRC)
 	gcc -g -Isrc/cfw $< -o $@
 
 bin/dhs.bin: $(DHSOBJS) | dirs
-	$(CC) -nostartfiles --specs=dhs.specs $(CFLAGS) -march=armv6k -mfloat-abi=hard $(DHSOBJS) -L$(CTRUDIR)/lib -lctru -o $@.elf
+	$(CC) -nostartfiles --specs=dhs.specs $(CFLAGS) $(LDFLAGS) -march=armv6k -mfloat-abi=hard $(DHSOBJS) -L$(CTRUDIR)/lib -lctru -o $@.elf
 	$(OC) $(OCFLAGS) -O binary $@.elf $@
 
 bin/dhs_patch.bin: $(DHS_PATCH_OBJS) | dirs
