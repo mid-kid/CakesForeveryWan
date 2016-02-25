@@ -25,6 +25,8 @@ struct firm_signature *current_agb_firm = NULL;
 static int update_96_keys = 0;
 int save_firm = 0;
 
+volatile uint32_t *a11_entry = (volatile uint32_t *)0x1FFFFFF8;
+
 // We use the firm's section 0's hash to identify the version
 struct firm_signature firm_signatures[] = {
     {
@@ -316,6 +318,19 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     return 0;
 }
 
+void __attribute__((naked)) disable_lcds()
+{
+    *a11_entry = 0;  // Don't wait for us
+
+    *(volatile uint32_t *)0x10202A44 = 0;
+    *(volatile uint32_t *)0x10202244 = 0;
+    *(volatile uint32_t *)0x1020200C = 0;
+    *(volatile uint32_t *)0x10202014 = 0;
+
+    while (!*a11_entry);
+    ((void (*)())*a11_entry)();
+}
+
 void boot_firm()
 {
     print("Booting FIRM...");
@@ -343,7 +358,9 @@ void boot_firm()
     memcpy32(sections[2].address, (void *)firm_loc + sections[2].offset, sections[2].size);
     print("Copied FIRM");
 
-    *(uint32_t *)0x1FFFFFF8 = (uint32_t)firm_loc->a11Entry;
+    *a11_entry = (uint32_t)disable_lcds;
+    while (*a11_entry);  // Make sure it jumped there correctly before changing it.
+    *a11_entry = (uint32_t)firm_loc->a11Entry;
     print("Prepared arm11 entry");
 
     print("Booting...");
