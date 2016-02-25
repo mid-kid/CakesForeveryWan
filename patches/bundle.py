@@ -66,7 +66,7 @@ for version in info["version_specific"]:
     if "variables" in version:
         vartext = ""
         for variable in version["variables"]:
-            vartext += "%s equ %s\n" % (variable, version["variables"][variable])
+            vartext += ".definelabel %s, %s\n" % (variable, version["variables"][variable])
         verfile = verfile.replace("#!variables\n", vartext)
 
     # Build dir for this version
@@ -83,7 +83,7 @@ for version in info["version_specific"]:
     # Compile it
     open("patches.s", "w").write(verfile)
     if system("armips patches.s"):
-        print("Couldn't compile version %s for some reason." % ver, file=stderr)
+        print("Couldn't compile version %s for some reason." % version["version"], file=stderr)
         exit(1)
 
     # Bake the cake

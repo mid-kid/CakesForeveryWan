@@ -12,6 +12,16 @@
     "version_specific": [
         {
             "console": "o3ds",
+            "version": "0x50",
+            "patches": [
+                {
+                    "offset": "0x08062B0C"
+                }, {
+                    "offset": "0x0805C320"
+                }
+            ]
+        }, {
+            "console": "o3ds",
             "version": "0x49",
             "patches": [
                 {
@@ -73,6 +83,28 @@
                     "offset": "0x0804D5C0"
                 }, {
                     "offset": "0x0805FAC0"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x1F",
+            "patches": [
+                {
+                    "offset": "0x08062B0C"
+                }, {
+                    "offset": "0x0805C320"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x1B",
+            "patches": [
+                {
+                    "offset": "0x08062B08"
+                }, {
+                    "offset": "0x0805C31C"
                 }
             ]
         },

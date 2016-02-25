@@ -1,5 +1,11 @@
 rwildcard = $(foreach d, $(wildcard $1*), $(filter $(subst *, %, $2), $d) $(call rwildcard, $d/, $2))
 
+# Either have git installed or replace this thing for the revisision to show up.
+revision := $(shell git rev-list HEAD --count)
+ifeq ($(revision),)
+	revision := "from another dimension"
+endif
+
 CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 LD := arm-none-eabi-ld
@@ -16,14 +22,12 @@ dir_cakehax := CakeHax
 dir_cakebrah := CakeBrah
 
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
-CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main
+CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -DCAKES_VERSION=\"$(revision)\"
 CAKEFLAGS := dir_out=$(abspath $(dir_out))
 BRAHFLAGS := dir_out=$(abspath $(dir_out)/3ds/Cakes) \
 			 APP_DESCRIPTION="CFW for 3DS" \
 			 APP_AUTHOR="mid-kid" \
 			 ICON=$(abspath icon.png)
-
-revision := $(shell git rev-list HEAD --count)
 
 objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
@@ -31,9 +35,10 @@ objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 
 baked_files := $(patsubst $(dir_patches)/%/, $(dir_build)/patches/%.baked, $(wildcard $(dir_patches)/*/))
 
-provide_files := $(dir_out)/firmware_bin.here \
-				 $(dir_out)/slot0x25keyX_bin.here \
-				 $(dir_out)/cakes/firmkey_bin.here
+provide_files := $(dir_out)/slot0x25keyX_bin.here \
+				 $(dir_out)/slot0x11key96_bin.here \
+				 $(dir_out)/cakes/firmware_bin.here \
+				 $(dir_out)/cakes/cetk.here
 
 .PHONY: all
 all: launcher patches ninjhax
@@ -67,7 +72,7 @@ $(dir_out)/%.here:
 $(dir_out)/Cakes.dat: $(dir_build)/main.bin
 	@mkdir -p "$(@D)"
 	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) launcher
-	dd if=$(dir_build)/main.bin of=$@ bs=512 seek=144
+	dd if=$< of=$@ bs=512 seek=144
 
 $(dir_build)/patches/%.baked: $(dir_patches)/%/info.json $(dir_patches)/%/patches.s
 	@mkdir -p $(dir_out)/cakes/patches

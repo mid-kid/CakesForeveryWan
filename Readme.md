@@ -15,6 +15,7 @@ Thanks
 ------
 
 * b1|1s for the POC based on a decompilation of rxTools, porting it to spider and a lot of help when creating this. He's the guy who reverse-engineered all the info I needed for this.
+* Normmatt for the emuNAND patch.
 * Roxas75 for the font and firmlaunchax on MSET (rxTools)
 * 3dbrew for info
 * Apache Thunder for being a fearless test-kanninchen.
