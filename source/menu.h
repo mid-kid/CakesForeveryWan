@@ -1,11 +1,13 @@
-#ifndef __menu_h__
-#define __menu_h__
+#pragma once
 
 #define MAX_SELECTED_OPTIONS 10
 
-int draw_menu(char *title, int back, int count, char *options[]);
-int *draw_selection_menu(char *title, int count, char *options[], const int *preselected);
-int draw_loading(char *title, char *text);
-void draw_message(char *title, char *text);
+#define COLOR_TITLE 0x0000FF
+#define COLOR_NEUTRAL 0xFFFFFF
+#define COLOR_SELECTED 0xFF0000
+#define COLOR_BACKGROUND 0x000000
 
-#endif
+int draw_menu(const char *title, int back, int count, char *options[]);
+int *draw_selection_menu(const char *title, int count, char *options[], const int *preselected);
+int draw_loading(const char *title, const char *text);
+void draw_message(const char *title, const char *text);

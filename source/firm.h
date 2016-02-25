@@ -1,5 +1,4 @@
-#ifndef __firm_h__
-#define __firm_h__
+#pragma once
 
 #include <stdint.h>
 
@@ -13,18 +12,18 @@ enum consoles {
 struct firm_signature {
     uint8_t sig[0x10];
     unsigned int version;
+    char version_string[8];
     enum consoles console;
 };
 
 extern firm_h *firm_loc;
 extern struct firm_signature *current_firm;
+extern firm_h *agb_firm_loc;
+extern struct firm_signature *current_agb_firm;
 extern int save_firm;
-extern const char *save_path;
 
-int prepare_files();
-int decrypt_firm();
+void slot0x11key96_init();
 int load_firm();
+int load_firms();
 void boot_firm();
 void boot_cfw();
-
-#endif

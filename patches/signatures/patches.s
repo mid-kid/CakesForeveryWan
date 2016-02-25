@@ -1,4 +1,4 @@
-.nds
+.arm.little
 
 .create "patch1.bin"
 .thumb

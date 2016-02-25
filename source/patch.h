@@ -1,6 +1,6 @@
-#ifndef __patch_h__
-#define __patch_h__
+#pragma once
 
+#include <stdint.h>
 #include "fatfs/ff.h"
 
 #define MAX_CAKES 10
@@ -14,8 +14,6 @@ extern struct cake_info *cake_list;
 extern unsigned int cake_count;
 int cake_selected[MAX_CAKES];
 
-int patch_firm();
+int get_emunand_offsets(uint32_t location, uint32_t *offset, uint32_t *header);
 int patch_firm_all();
 int load_cakes_info(const char *dirpath);
-
-#endif

@@ -37,7 +37,7 @@
 
 //Uncomment to enable 32bit fifo support?
 //not currently working
-//#define DATA32_SUPPORT
+#define DATA32_SUPPORT
 
 #define TRUE 1
 #define FALSE 0
@@ -117,14 +117,15 @@ void NO_INLINE sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t 
 	}
 	
 	ctx->error = 0;
-	while(sdmmc_read16(REG_SDSTATUS1) & TMIO_STAT1_CMD_BUSY); //mmc working?
+	while((sdmmc_read16(REG_SDSTATUS1) & TMIO_STAT1_CMD_BUSY)); //mmc working?
 	sdmmc_write16(REG_SDIRMASK0,0);
 	sdmmc_write16(REG_SDIRMASK1,0);
 	sdmmc_write16(REG_SDSTATUS0,0);
 	sdmmc_write16(REG_SDSTATUS1,0);
 #ifdef DATA32_SUPPORT
-	if(readdata)sdmmc_mask16(REG_DATACTL32, 0x1000, 0x800);
-	if(writedata)sdmmc_mask16(REG_DATACTL32, 0x800, 0x1000);
+//	if(readdata)sdmmc_mask16(REG_DATACTL32, 0x1000, 0x800);
+//	if(writedata)sdmmc_mask16(REG_DATACTL32, 0x800, 0x1000);
+//	sdmmc_mask16(REG_DATACTL32,0x1800,2);
 #else
 	sdmmc_mask16(REG_DATACTL32,0x1800,0);
 #endif
@@ -134,20 +135,21 @@ void NO_INLINE sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t 
 	
 	uint32_t size = ctx->size;
 	uint16_t *dataPtr = (uint16_t*)ctx->data;
-#ifdef DATA32_SUPPORT
 	uint32_t *dataPtr32 = (uint32_t*)ctx->data;
-#endif
 	
 	bool useBuf = ( NULL != dataPtr );
-#ifdef DATA32_SUPPORT
 	bool useBuf32 = (useBuf && (0 == (3 & ((uint32_t)dataPtr))));
-#endif
 	
 	uint16_t status0 = 0;
 	while(1)
 	{
-		uint16_t status1 = sdmmc_read16(REG_SDSTATUS1);
-		if(status1 & TMIO_STAT1_RXRDY)
+		volatile uint16_t status1 = sdmmc_read16(REG_SDSTATUS1);
+#ifdef DATA32_SUPPORT
+		volatile uint16_t ctl32 = sdmmc_read16(REG_DATACTL32);
+		if((ctl32 & 0x100))
+#else
+		if((status1 & TMIO_STAT1_RXRDY))
+#endif
 		{
 			if(readdata)
 			{
@@ -178,9 +180,15 @@ void NO_INLINE sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t 
 						size -= 0x200;
 					}
 				}
+				
+				sdmmc_mask16(REG_DATACTL32, 0x800, 0);
 			}
 		}
-		if(status1 & TMIO_STAT1_TXRQ)
+#ifdef DATA32_SUPPORT
+		if(!(ctl32 & 0x200))
+#else
+		if((status1 & TMIO_STAT1_TXRQ))
+#endif
 		{
 			if(writedata)
 			{
@@ -204,6 +212,8 @@ void NO_INLINE sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t 
 						size -= 0x200;
 					}
 				}
+				
+				sdmmc_mask16(REG_DATACTL32, 0x1000, 0);
 			}
 		}
 		if(status1 & TMIO_MASK_GW)
@@ -249,6 +259,7 @@ int NO_INLINE sdmmc_sdcard_writesectors(uint32_t sector_no, uint32_t numsectors,
 	sdmmc_write16(REG_SDSTOP,0x100);
 #ifdef DATA32_SUPPORT
 	sdmmc_write16(REG_SDBLKCOUNT32,numsectors);
+	sdmmc_write16(REG_SDBLKLEN32,0x200);
 #endif
 	sdmmc_write16(REG_SDBLKCOUNT,numsectors);
 	handelSD.data = in;
@@ -281,10 +292,10 @@ int NO_INLINE sdmmc_nand_readsectors(uint32_t sector_no, uint32_t numsectors, ui
 	inittarget(&handelNAND);
 	sdmmc_write16(REG_SDSTOP,0x100);
 #ifdef DATA32_SUPPORT
-	sdmmc_write32(REG_SDBLKCOUNT32,numsectors);
-#else
-	sdmmc_write16(REG_SDBLKCOUNT,numsectors);
+	sdmmc_write16(REG_SDBLKCOUNT32,numsectors);
+	sdmmc_write16(REG_SDBLKLEN32,0x200);
 #endif
+	sdmmc_write16(REG_SDBLKCOUNT,numsectors);
 	handelNAND.data = out;
 	handelNAND.size = numsectors << 9;
 	sdmmc_send_command(&handelNAND,0x33C12,sector_no);
@@ -298,10 +309,10 @@ int NO_INLINE sdmmc_nand_writesectors(uint32_t sector_no, uint32_t numsectors, u
 	inittarget(&handelNAND);
 	sdmmc_write16(REG_SDSTOP,0x100);
 #ifdef DATA32_SUPPORT
-	sdmmc_write32(REG_SDBLKCOUNT32,numsectors);
-#else
-	sdmmc_write16(REG_SDBLKCOUNT,numsectors);
+	sdmmc_write16(REG_SDBLKCOUNT32,numsectors);
+	sdmmc_write16(REG_SDBLKLEN32,0x200);
 #endif
+	sdmmc_write16(REG_SDBLKCOUNT,numsectors);
 	handelNAND.data = in;
 	handelNAND.size = numsectors << 9;
 	sdmmc_send_command(&handelNAND,0x52C19,sector_no);

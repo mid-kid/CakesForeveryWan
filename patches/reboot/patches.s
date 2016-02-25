@@ -1,15 +1,4 @@
-.nds
-
-.macro svc, num
-	.ifarm
-		.word 0xEF000000 | num
-	.else
-		.if num > 0xFF
-			.error "bitch you crazu"
-		.endif
-		.halfword 0xDF00 | num
-	.endif
-.endmacro
+.arm.little
 
 #!variables
 
@@ -43,9 +32,9 @@ patch005:
 	mov r3, r2
 	mov r1, r2
 	mov r0, r2
-	svc 0x7C
+	swi 0x7C
 	ldr r0, =0x80FF4FC
-	svc 0x7B
+	swi 0x7B
 
 @@inf_loop:
 	b @@inf_loop
@@ -86,7 +75,7 @@ firm_fname:
 	mcr p15, 0, r0, c2, c0, 0	; dcacheable
 	mcr p15, 0, r1, c2, c0, 1	; icacheable
 	mcr p15, 0, r2, c3, c0, 0	; write bufferable
-	
+
 	mov r4, #firm_addr
 	add r3, r4, #0x40
 	ldr r0, [r3]				; offset

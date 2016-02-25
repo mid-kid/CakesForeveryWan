@@ -7,6 +7,6 @@ Options per bit:
 - Unused
 - Unused
 - Unused
-- Tells the patcher that it needs a copy of the patched firm on the SD card, and the patcher appends a string with it's path on the SD card. (Yes, appends, because the length can change. Absurd lengths should not be your problem, but the problem of whoever is modifying the patcher.)
+- Tells the patcher that it needs a copy of the patched firm on the SD card, and the patcher appends a string with it's path on the SD card. (Yes, appends, because the length can change. Absurd lengths should not be your problem, but the problem of whoever made the patcher.)
 - Set the emunand and ncsd header offset. When using this you should have "NAND" and "NCSD" somewhere in the binary.
 - Add slot0x25keyX. When using this you should have "slot0x25keyXhere" somewhere in the binary.
