@@ -1,0 +1,21 @@
+{
+    "name": "firmprot",
+    "description": "Disable firm partition update",
+    "type": "NATIVE_FIRM",
+    "patches": [
+        {
+            "name": "patch1.bin"
+        }
+    ],
+    "version_specific": [
+        {
+            "console": "o3ds",
+            "version": "0x38",
+            "patches": [
+                {
+                    "offset": "0x08043F0E"
+                }
+            ]
+        }
+    ]
+}
