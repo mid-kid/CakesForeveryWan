@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #include <fcntl.h>
 
 #include "dhs/scmd.h"
@@ -28,6 +29,8 @@ extern u32 __heap_size;
 u32 pid;
 int listenfd;
 u32 firmVersion;
+
+Handle notificationSem = 0;
 
 void initVfp()
 {
@@ -60,6 +63,9 @@ Result startServer()
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(listenfd < 0)
 		DIE(0x14000044, listenfd);
+
+	int flags = fcntl(listenfd, F_GETFL, 0);
+	fcntl(listenfd, F_SETFL, flags | O_NONBLOCK);
 
 	memset(&serv_addr, '0', sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -111,7 +117,12 @@ void acceptAndServe()
 {
 	int sockfd = accept(listenfd, (struct sockaddr*) NULL, NULL);
 	if(sockfd < 0)
-		DIE(0x14000050, sockfd);
+	{
+		if(errno != EAGAIN || errno != EWOULDBLOCK)
+			DIE(0x14000050, sockfd);
+		else
+			return;
+	}
 
 	const u32 bufSize = __heap_size - 0x48000 - 0x200;
 	u8* buffer = (u8*)(__heapBase + 0x200);
@@ -239,7 +250,22 @@ void init()
 		DIE(0x14000010, ret);
 
 	if((ret = acInit()) != 0)
-	    DIE(0x14000010, ret);
+		DIE(0x14000010, ret);
+
+	srvEnableNotification(&notificationSem);
+	srvSubscribe(0x100);
+}
+
+void deInit()
+{
+	if(notificationSem)
+		svcCloseHandle(notificationSem);
+
+	srvExit();
+
+	acExit();
+	amExit();
+	fsExit();
 }
 
 void patchPid()
@@ -312,7 +338,16 @@ int main()
 	while(1)
 	{
 		acceptAndServe();
+
+		u32 nId;
+		srvReceiveNotification(&nId);
+		if(nId == 0x100)
+			break;
+
+		svcSleepThread(0x2FAF080);
 	}
+
+	svcExitProcess();
 
 	return 0;
 }
