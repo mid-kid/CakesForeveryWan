@@ -630,7 +630,13 @@ int cServiceMon(int sockfd, void* buffer, size_t bufSize, const char* name)
 					fprintf(stdout, "Service : %s\n", handles[res->handle & 0x1FF].name);
 
 				fprintf(stdout, "Handle : 0x%08X\n", res->handle);
-				for(int i = 0; i < 0x40; ++i)
+
+				uint32_t normal_par_count = (res->cmd_buffer[0] & 0xFC0) >> 6;
+				uint32_t trans_par_count = res->cmd_buffer[0] & 0x3F;
+				uint32_t par_count = normal_par_count + trans_par_count;
+				if(par_count > 0x3F) par_count = 0x3F;
+
+				for(int i = 0; i < (par_count + 1); ++i)
 				{
 					fprintf(stdout, "0x%02X : 0x%08X\n", i * 4, res->cmd_buffer[i]);
 				}

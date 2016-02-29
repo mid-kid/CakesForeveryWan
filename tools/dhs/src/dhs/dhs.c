@@ -124,6 +124,9 @@ void acceptAndServe()
 			return;
 	}
 
+	int flags = fcntl(sockfd, F_GETFL, 0);
+	fcntl(sockfd, F_SETFL, flags & ~O_NONBLOCK);
+
 	const u32 bufSize = __heap_size - 0x48000 - 0x200;
 	u8* buffer = (u8*)(__heapBase + 0x200);
 
