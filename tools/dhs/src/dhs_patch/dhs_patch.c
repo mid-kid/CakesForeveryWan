@@ -80,6 +80,18 @@ void patchExHeader(ncch_ex_h* exheader)
 		exheader->aci.alsc.storage_info.fsai[0] |= 1 << 7;
 		// Mount sdmc:/ (Write Access)
 		exheader->aci.aac.descriptors[1] |= 2;
+		// Allow direct register access
+		for(int i = 0; i < 28; ++i)
+		{
+			if(exheader->aci.akc.descriptors[i] == 0xFFFFFFFFu)
+			{
+				// hid
+				exheader->aci.akc.descriptors[i] = 0xFFE00000u | ((0x10146000 + 0xEB00000) >> 12);
+				// gpu
+				exheader->aci.akc.descriptors[i + 1] = 0xFFE00000u | ((0x10400000 + 0xEB00000) >> 12);
+				break;
+			}
+		}
 	}
 }
 

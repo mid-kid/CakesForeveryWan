@@ -65,7 +65,7 @@ typedef struct arm11_local_system_cap
 	uint8_t ex_service_access_control[0x02 * 8];
 	uint8_t pad0[0xF];
 	uint8_t resource_limit_cat; // Resource Limit Category. (0 = APPLICATION, 1 = SYS_APPLET, 2 = LIB_APPLET, 3 = OTHER(sysmodules running under the BASE memregion))
-} arm11_local_system_cap;
+} arm11_local_system_cap; // 0x170
 
 typedef struct arm11_kernel_cap
 {
