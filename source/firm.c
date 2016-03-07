@@ -25,6 +25,8 @@ struct firm_signature *current_agb_firm = NULL;
 static int update_96_keys = 0;
 int save_firm = 0;
 
+volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
+
 // We use the firm's section 0's hash to identify the version
 struct firm_signature firm_signatures[] = {
     {
@@ -316,6 +318,19 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     return 0;
 }
 
+void __attribute__((naked)) disable_lcds()
+{
+    *a11_entry = 0;  // Don't wait for us
+
+    *(volatile uint32_t *)0x10202A44 = 0;
+    *(volatile uint32_t *)0x10202244 = 0;
+    *(volatile uint32_t *)0x1020200C = 0;
+    *(volatile uint32_t *)0x10202014 = 0;
+
+    while (!*a11_entry);
+    ((void (*)())*a11_entry)();
+}
+
 void boot_firm()
 {
     print("Booting FIRM...");
@@ -336,42 +351,6 @@ void boot_firm()
         print("Updated keyX keyslots");
     }
 
-    __asm__ (
-        "msr cpsr_c, #0xDF\n\t"
-        "ldr r0, =0x10000035\n\t"
-        "mcr p15, 0, r0, c6, c3, 0\n\t"
-        "mrc p15, 0, r0, c2, c0, 0\n\t"
-        "mrc p15, 0, r12, c2, c0, 1\n\t"
-        "mrc p15, 0, r1, c3, c0, 0\n\t"
-        "mrc p15, 0, r2, c5, c0, 2\n\t"
-        "mrc p15, 0, r3, c5, c0, 3\n\t"
-        "ldr r4, =0x18000035\n\t"
-        "bic r2, r2, #0xF0000\n\t"
-        "bic r3, r3, #0xF0000\n\t"
-        "orr r0, r0, #0x10\n\t"
-        "orr r2, r2, #0x30000\n\t"
-        "orr r3, r3, #0x30000\n\t"
-        "orr r12, r12, #0x10\n\t"
-        "orr r1, r1, #0x10\n\t"
-        "mcr p15, 0, r0, c2, c0, 0\n\t"
-        "mcr p15, 0, r12, c2, c0, 1\n\t"
-        "mcr p15, 0, r1, c3, c0, 0\n\t"
-        "mcr p15, 0, r2, c5, c0, 2\n\t"
-        "mcr p15, 0, r3, c5, c0, 3\n\t"
-        "mcr p15, 0, r4, c6, c4, 0\n\t"
-        "mrc p15, 0, r0, c2, c0, 0\n\t"
-        "mrc p15, 0, r1, c2, c0, 1\n\t"
-        "mrc p15, 0, r2, c3, c0, 0\n\t"
-        "orr r0, r0, #0x20\n\t"
-        "orr r1, r1, #0x20\n\t"
-        "orr r2, r2, #0x20\n\t"
-        "mcr p15, 0, r0, c2, c0, 0\n\t"
-        "mcr p15, 0, r1, c2, c0, 1\n\t"
-        "mcr p15, 0, r2, c3, c0, 0\n\t"
-        ::: "r0", "r1", "r2", "r3", "r4", "r12"
-    );
-    print("Set up MPU");
-
     firm_section_h *sections = firm_loc->section;
 
     memcpy32(sections[0].address, (void *)firm_loc + sections[0].offset, sections[0].size);
@@ -379,7 +358,9 @@ void boot_firm()
     memcpy32(sections[2].address, (void *)firm_loc + sections[2].offset, sections[2].size);
     print("Copied FIRM");
 
-    *(uint32_t *)0x1FFFFFF8 = (uint32_t)firm_loc->a11Entry;
+    *a11_entry = (uint32_t)disable_lcds;
+    while (*a11_entry);  // Make sure it jumped there correctly before changing it.
+    *a11_entry = (uint32_t)firm_loc->a11Entry;
     print("Prepared arm11 entry");
 
     print("Booting...");
