@@ -1,0 +1,19 @@
+description: Block FIRM partition updates
+
+patches:
+    patch1.bin:
+        type: NATIVE_FIRM
+        versions:
+            o3ds:
+                0x50: 0x08043FB6
+                0x49: 0x08043F0E
+                0x38: 0x08043F0E
+                0x37: 0x08043E9E
+                0x30: 0x08043DD6
+                0x2A: 0x08043EEE
+                0x1F: 0x0804ED1C
+            n3ds:
+                0x1F: 0x08043F7A
+                0x1B: 0x08043F76
+                0x0F: 0x08043F3A
+                0x04: 0x08043F96
