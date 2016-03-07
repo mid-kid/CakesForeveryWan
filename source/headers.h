@@ -14,7 +14,7 @@
 
 typedef struct firm_section_h {
     uint32_t offset;
-    void* address;
+    uint32_t address;
     uint32_t size;
     uint32_t type;                // Firmware Type ('0'=ARM9/'1'=ARM11)
     uint8_t hash[0x20];         // SHA-256 Hash of Firmware Section
@@ -23,8 +23,8 @@ typedef struct firm_section_h {
 typedef struct firm_h {
     uint32_t magic;             // FIRM
     uint32_t reserved1;
-    void* a11Entry;             // ARM11 entry
-    void* a9Entry;                // ARM9 entry
+    uint32_t a11Entry;             // ARM11 entry
+    uint32_t a9Entry;                // ARM9 entry
     uint8_t reserved2[0x30];
     firm_section_h section[4];
     uint8_t sig[0x100];

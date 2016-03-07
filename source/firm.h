@@ -16,12 +16,15 @@ struct firm_signature {
     enum consoles console;
 };
 
+extern struct firm_signature firm_signatures[];
 extern firm_h *firm_loc;
 extern struct firm_signature *current_firm;
+extern struct firm_signature agb_firm_signatures[];
 extern firm_h *agb_firm_loc;
 extern struct firm_signature *current_agb_firm;
 extern int save_firm;
 
+struct firm_signature *get_firm_info(firm_h *firm, struct firm_signature *signatures);
 void slot0x11key96_init();
 int load_firm();
 int load_firms();

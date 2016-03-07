@@ -2,6 +2,7 @@
 build
 out
 Cakes_*.zip
+standalone_patcher/standalone_patcher
 
 # My own files
 env

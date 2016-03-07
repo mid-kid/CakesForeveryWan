@@ -1,4 +1,4 @@
-description: Disable signature checks
+description: Enable emuNAND
 
 patches:
     patch1.bin:

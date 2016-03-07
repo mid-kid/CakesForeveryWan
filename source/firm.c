@@ -1,5 +1,6 @@
 #include "firm.h"
 
+#ifndef STANDALONE
 #include <stdint.h>
 #include <stddef.h>
 #include "headers.h"
@@ -13,7 +14,11 @@
 #include "fcram.h"
 #include "paths.h"
 #include "fatfs/ff.h"
+#else
+#include <string.h>
+#endif
 
+#ifndef STANDALONE
 firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
 static uint32_t firm_size = FCRAM_SPACING;
 struct firm_signature *current_firm = NULL;
@@ -24,6 +29,7 @@ struct firm_signature *current_agb_firm = NULL;
 
 static int update_96_keys = 0;
 int save_firm = 0;
+#endif
 
 volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
 
@@ -96,6 +102,18 @@ struct firm_signature agb_firm_signatures[] = {
     }, {.version = 0xFF}
 };
 
+struct firm_signature *get_firm_info(firm_h *firm, struct firm_signature *signatures)
+{
+    for (int i = 0; signatures[i].version != 0xff; i++) {
+        if (memcmp(signatures[i].sig, firm->section[0].hash, 0x10) == 0) {
+            return &signatures[i];
+        }
+    }
+
+    return NULL;
+}
+
+#ifndef STANDALONE
 void slot0x11key96_init()
 {
     // 9.6 crypto may need us to get the key from somewhere else.
@@ -279,12 +297,7 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     }
 
     // Determine firmware version
-    for (int i = 0; signatures[i].version != 0xFF; i++) {
-        if (memcmp(signatures[i].sig, dest->section[0].hash, 0x10) == 0) {
-            firm_current = &signatures[i];
-            break;
-        }
-    }
+    firm_current = get_firm_info(dest, signatures);
 
     if (!firm_current) {
         print("Couldn't determine firmware version");
@@ -353,9 +366,9 @@ void boot_firm()
 
     firm_section_h *sections = firm_loc->section;
 
-    memcpy32(sections[0].address, (void *)firm_loc + sections[0].offset, sections[0].size);
-    memcpy32(sections[1].address, (void *)firm_loc + sections[1].offset, sections[1].size);
-    memcpy32(sections[2].address, (void *)firm_loc + sections[2].offset, sections[2].size);
+    memcpy32((void *)sections[0].address, (void *)firm_loc + sections[0].offset, sections[0].size);
+    memcpy32((void *)sections[1].address, (void *)firm_loc + sections[1].offset, sections[1].size);
+    memcpy32((void *)sections[2].address, (void *)firm_loc + sections[2].offset, sections[2].size);
     print("Copied FIRM");
 
     *a11_entry = (uint32_t)disable_lcds;
@@ -421,3 +434,4 @@ void boot_cfw()
     draw_loading(title, "Booting...");
     boot_firm();
 }
+#endif
