@@ -3,6 +3,7 @@
 #include "headers.h"
 #include "patch.h"
 #include "firm.h"
+#include "fcram.h"
 
 #define check(condition, message, ...) if (!(condition)) { fprintf(stderr, message "\n", ##__VA_ARGS__); goto error; }
 
@@ -58,29 +59,35 @@ int main(int argc, char *argv[])
     void *cake = NULL;
     long firm_size, agb_firm_size;
 
-    check(argc > 2, "Usage: %s <cake file> <NATIVE_FIRM> [AGB_FIRM] [TWL_FIRM]", argv[0]);
+    check(argc > 3, "Usage: %s <cake file> <memory file> <NATIVE_FIRM> [AGB_FIRM] [TWL_FIRM]", argv[0]);
 
     cake = load_file(argv[1], NULL);
     check(cake, "Failed to load cake: %s", argv[1]);
 
-    firm_loc = load_file(argv[2], &firm_size);
-    check(firm_loc, "Failed to load NATIVE_FIRM: %s", argv[2]);
-    current_firm = get_firm_info(firm_loc, firm_signatures);
-    check(current_firm, "Unsupported NATIVE_FIRM: %s", argv[2]);
+    memory_loc = malloc(FCRAM_SPACING);
+    check(memory_loc, "Failed to allocate memory");
 
-    if (argc > 3) {
-        agb_firm_loc = load_file(argv[3], &agb_firm_size);
-        check(agb_firm_loc, "Failed to load AGB_FIRM: %s", argv[3]);
+    firm_loc = load_file(argv[3], &firm_size);
+    check(firm_loc, "Failed to load NATIVE_FIRM: %s", argv[3]);
+    current_firm = get_firm_info(firm_loc, firm_signatures);
+    check(current_firm, "Unsupported NATIVE_FIRM: %s", argv[3]);
+
+    if (argc > 4) {
+        agb_firm_loc = load_file(argv[4], &agb_firm_size);
+        check(agb_firm_loc, "Failed to load AGB_FIRM: %s", argv[4]);
         current_agb_firm = get_firm_info(agb_firm_loc, agb_firm_signatures);
-        check(current_agb_firm, "Unsupported AGB_FIRM: %s", argv[3]);
+        check(current_agb_firm, "Unsupported AGB_FIRM: %s", argv[4]);
     }
 
+    patch_reset();
     check(patch_firm(cake) == 0, "Failed to apply cake");
 
-    check(write_file(argv[2], firm_loc, firm_size) == 0, "Failed to write NATIVE_FIRM: %s", argv[2]);
+    check(write_file(argv[2], memory_loc, *memory_loc) == 0, "Failed to write memory file: %s", argv[2]);
 
-    if (argc > 3) {
-        check(write_file(argv[3], agb_firm_loc, agb_firm_size) == 0, "Failed to write AGB_FIRM: %s", argv[3]);
+    check(write_file(argv[3], firm_loc, firm_size) == 0, "Failed to write NATIVE_FIRM: %s", argv[3]);
+
+    if (argc > 4) {
+        check(write_file(argv[4], agb_firm_loc, agb_firm_size) == 0, "Failed to write AGB_FIRM: %s", argv[4]);
     }
 
     goto cleanup;
@@ -90,6 +97,7 @@ error:
 
 cleanup:
     if (cake) free(cake);
+    if (memory_loc) free(memory_loc);
     if (firm_loc) free(firm_loc);
     if (agb_firm_loc) free(agb_firm_loc);
 

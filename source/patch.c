@@ -20,11 +20,13 @@
 #else
 #include <string.h>
 #include <stdio.h>
+#include "fcram.h"
 #define print(string) puts(string)
 #define draw_message(title, description) printf("-- %s:\n%s\n", title, description)
 #endif
 
 #define FORMAT_VERSION 1
+#define MAX_MEMORY_PATCHES 0x10
 
 enum types {
     TYPE_FIRM,
@@ -78,17 +80,36 @@ struct patch_versions {
         } __attribute__((packed));
         uint32_t version;
     };
-    uint32_t memory_offset;
+    uint32_t offset;
     uint32_t values_offset;
 } __attribute__((packed));
+
+struct memory_location {
+    uint32_t location;
+    uint32_t size;
+    uint32_t used_size;
+};
 
 #ifndef STANDALONE
 struct cake_info *cake_list = (struct cake_info *)FCRAM_CAKE_LIST;
 unsigned int cake_count = 0;
 
 static struct cake_header *firm_patch_temp = (struct cake_header *)FCRAM_FIRM_PATCH_TEMP;
+#endif
 
-void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_search)
+uint32_t *memory_loc = (uint32_t *)FCRAM_MEMORY_LOC;
+static void *current_memory_loc;
+
+// Usable memory locations for arm9 memory patches.
+struct memory_location memory_locations[] = {
+    {
+        .location = 0x01FF8000,
+        .size = 0x00008000
+    }, {.location = 0xFFFFFFFF}
+};
+
+#ifndef STANDALONE
+void *memsearch(void *start_pos, const void *search, const uint32_t size, const uint32_t size_search)
 {
     // Searching backwards, since most of the stuff we'll search with this are near the end.
     for (void *pos = start_pos + size - size_search; pos >= start_pos; pos--) {
@@ -100,7 +121,7 @@ void *memsearch(void *start_pos, void *search, uint32_t size, uint32_t size_sear
     return NULL;
 }
 
-int get_emunand_offsets(uint32_t location, uint32_t *offset, uint32_t *header)
+int get_emunand_offsets(const uint32_t location, uint32_t *offset, uint32_t *header)
 {
     if (sdmmc_sdcard_readsectors(location + 1, 1, fcram_temp) == 0) {
         if (*(uint32_t *)(fcram_temp + 0x100) == NCSD_MAGIC) {
@@ -129,7 +150,7 @@ int get_emunand_offsets(uint32_t location, uint32_t *offset, uint32_t *header)
     return 1;
 }
 
-int patch_options(void *address, uint32_t size, uint8_t options, enum firm_types type)
+int patch_options(void *address, const uint32_t size, const uint8_t options, const enum firm_types type)
 {
     if (options & patch_option_keyx) {
         print("Patch option: Adding keyX");
@@ -169,8 +190,12 @@ int patch_options(void *address, uint32_t size, uint8_t options, enum firm_types
             *pos_offset = offset;
             *pos_header = header;
         } else {
-            print("I don't know where to set the offsets.\n"
-                  "  Ignoring...");
+            print("Dunno where to set the offsets");
+            draw_message("Dunno where to set the offsets",
+                    "Hey, you! Yes, I'm looking at you.\n"
+                    "Did you remember to have NAND and NCSD somewhere in the binary?\n"
+                    "I believe not, because I couldn't find them.");
+            return 1;
         }
     }
     if (options & patch_option_save && type == NATIVE_FIRM) {
@@ -193,6 +218,17 @@ int patch_options()
 }
 #endif
 
+void patch_reset()
+{
+    // TODO: Back up and restore unpatched firm.
+    *memory_loc = sizeof(*memory_loc);
+    current_memory_loc = memory_loc + 1;
+    for (struct memory_location *location = memory_locations;
+            location->location != 0xFFFFFFFF; location++) {
+        location->used_size = 0;
+    }
+}
+
 int patch_firm(const void *_cake)
 {
     struct cake_header *cake = (struct cake_header *)_cake;
@@ -206,24 +242,39 @@ int patch_firm(const void *_cake)
     print("Applying cake:");
     print(cake->description);
 
+    // This struct will be used to store and in the end patch all the locations of the memory patches.
+    struct memory_ids {
+        uint16_t id;
+        uint32_t *patch_location;
+        uint32_t memory_location;
+    } memory_ids[MAX_MEMORY_PATCHES] = {0};
+
     struct patch *patches = (struct patch *)((uintptr_t)cake + cake->patches_offset);
 
     for (struct patch *patch = patches;
             patch < patches + cake->patch_count; patch++) {
-        // Depending on the type, we have to use it in a different way
-        if (patch->type == TYPE_FIRM) {
-            // Process9 locations for all the different firms
-            static firm_section_h native_process9;
-            static int native_process9_init;
-            static firm_section_h agb_process9;
-            static int agb_process9_init;
+        void *patch_code = (void *)((uintptr_t)cake + patch->offset);
+        struct patch_versions *versions = (struct patch_versions *)((uintptr_t)cake + patch->versions_offset);
+        uint32_t *variables = (uint32_t *)((uintptr_t)cake + patch->variables_offset);
+        struct patch_versions *version = NULL;
+        uint32_t *values;
+        void *patch_location = NULL;
 
-            // Variables for the current firm
-            firm_h *firm = NULL;
-            struct firm_signature *firm_info = NULL;
-            firm_section_h *process9 = NULL;
-            int *process9_init = NULL;
+        // Process9 location cache for all the different firms
+        static firm_section_h native_process9;
+        static int native_process9_init;
+        static firm_section_h agb_process9;
+        static int agb_process9_init;
 
+        // Variables for the current firm
+        firm_h *firm;
+        struct firm_signature *firm_info;
+        firm_section_h *process9;
+        int *process9_init;
+        firm_section_h *firm_sections;
+
+        // For firm and memory patches, we require some additional info.
+        if (patch->type == TYPE_FIRM || patch->type == TYPE_MEMORY) {
             // Figure out which firm we have to patch
             switch (patch->firm_type) {
                 case NATIVE_FIRM:
@@ -253,9 +304,9 @@ int patch_firm(const void *_cake)
                 return 1;
             }
 
-            firm_section_h *firm_sections = firm->section;
+            firm_sections = firm->section;
 
-            if (!*process9_init) {
+            if (patch->type == TYPE_FIRM && !*process9_init) {
                 // Look for process9 in all sections
                 for (firm_section_h *section = firm_sections;
                         section < firm_sections + 4; section++) {
@@ -294,10 +345,6 @@ int patch_firm(const void *_cake)
             }
 found_process9:;
 
-            void *patch_code = (void *)((uintptr_t)cake + patch->offset);
-            struct patch_versions *versions = (struct patch_versions *)((uintptr_t)cake + patch->versions_offset);
-            struct patch_versions *version = NULL;
-
             // Look for the correct patch version info
             for (struct patch_versions *patch_version = versions;
                     patch_version < versions + patch->version_count; patch_version++) {
@@ -310,18 +357,21 @@ found_process9:;
 
             if (!version) {
                 print("Unsupported FIRM version");
-                draw_message("Unsupported FIRM version", "This patch doesn't support the currently used FIRM version");
+                draw_message("Unsupported FIRM version", "This patch doesn't support the currently used FIRM version.");
                 return 1;
             }
 
             // Apply all the variables for this version
-            uint32_t *variables = (uint32_t *)((uintptr_t)cake + patch->variables_offset);
-            uint32_t *values = (uint32_t *)((uintptr_t)cake + version->values_offset);
+            values = (uint32_t *)((uintptr_t)cake + version->values_offset);
 
             for (int x = 0; x < patch->variable_count; x++) {
-                *(uint32_t *)(patch_code + variables[x]) = values[x];
+                // Memcpy because ARM is quirky about aligning 32-bit values
+                memcpy(patch_code + variables[x], values + x, sizeof(uint32_t));
             }
+        }
 
+        // Depending on the type, we have to use it in a different way
+        if (patch->type == TYPE_FIRM) {
             // Look for the location in the FIRM to apply the patch
             int x;
             for (x = 0; x < 5; x++) {
@@ -339,13 +389,16 @@ found_process9:;
                     }
                 }
 
-                if (version->memory_offset >= section->address &&
-                        version->memory_offset < section->address + section->size) {
-                    void *offset = (void *)((uintptr_t)firm + section->offset + (version->memory_offset - section->address));
-                    memcpy(offset, (void *)((uintptr_t)cake + patch->offset), patch->size);
+                if (version->offset >= section->address &&
+                        version->offset < section->address + section->size) {
+                    patch_location = (void *)((uintptr_t)firm + section->offset + (version->offset - section->address));
 
+                    // Apply the patch
+                    memcpy(patch_location, patch_code, patch->size);
+
+                    // Apply whatever options it needs
                     if (patch->options) {
-                        if (patch_options(offset, patch->size, patch->options, patch->type) != 0) {
+                        if (patch_options(patch_location, patch->size, patch->options, patch->type) != 0) {
                             return 1;
                         }
                     }
@@ -357,6 +410,48 @@ found_process9:;
             if (x >= 5) {
                 print("Failed to apply patch");
                 draw_message("Failed to apply patch", "The location where the patch should be applied could not be found");
+                return 1;
+            }
+
+        } else if (patch->type == TYPE_MEMORY) {
+            // Check for the remaining space in memory_loc
+            if (current_memory_loc + patch->size > (void *)memory_loc + FCRAM_SPACING) {
+                print("Out of memory");
+                draw_message("Out of memory", "We ran out of available memory to store memory patches.");
+                return 1;
+            }
+
+            struct memory_location *location;
+            for (location = memory_locations; location->location != 0xFFFFFFFF; location++) {
+                if (location->size - location->used_size > patch->size) {
+                    // Create the header
+                    struct memory_header *header = current_memory_loc;
+                    header->location = location->location + location->used_size;
+                    header->size = patch->size;
+                    patch_location = (void *)(uintptr_t)header->location;
+
+                    // Copy the code
+                    memcpy(header + 1, patch_code, patch->size);
+
+                    // Apply whatever options it needs
+                    if (patch->options) {
+                        if (patch_options(header + 1, patch->size, patch->options, patch->type) != 0) {
+                            return 1;
+                        }
+                    }
+
+                    // Let everyone know we have a new memory patch.
+                    current_memory_loc += sizeof(struct memory_header) + patch->size;
+                    *memory_loc += sizeof(struct memory_header) + patch->size;
+                    location->used_size += patch->size;
+
+                    break;
+                }
+            }
+            if (location->location == 0xFFFFFFFF) {
+                print("Out of system memory");
+                draw_message("Out of system memory", "We ran out of usable space to install this memory patch to.");
+                return 1;
             }
 
         } else {
@@ -364,6 +459,66 @@ found_process9:;
             draw_message("Unsupported patch type", "This cake uses an unknown or unsupported patch type.");
             return 1;
         }
+
+        // For firm and memory patches, add some info to the memory_ids array.
+        if ((patch->type == TYPE_FIRM && patch->memory_id) || patch->type == TYPE_MEMORY) {
+            struct memory_ids *copy_id = NULL;
+            int found = 0;
+            struct memory_ids *memory_id;
+            // Look for the correct memory_id
+            for (memory_id = memory_ids;
+                    memory_id < memory_ids + MAX_MEMORY_PATCHES && memory_id->id;
+                    memory_id++) {
+                if (memory_id->id == patch->memory_id) {
+                    // We found the entry.
+                    found++;
+
+                    if (patch->type == TYPE_FIRM) {
+                        // If this hook has already been set, copy the current one memory_id and look for more.
+                        if (memory_id->patch_location) {
+                            copy_id = memory_id;
+                            continue;
+                        }
+                        memory_id->patch_location = patch_location + patch->memory_offset;
+                        break;
+                    } else {
+                        memory_id->memory_location = (uintptr_t)patch_location;
+                    }
+                }
+            }
+
+            if (memory_id >= memory_ids + MAX_MEMORY_PATCHES) {
+                // If we stopped looping because there's no more room, end.
+                print("Too many memory patches");
+                draw_message("Too many memory patches", "This cake contains too many different memory ids. We can't hold them all.");
+                return 1;
+            } else if (!memory_id->id && (!found || copy_id)) {
+                // Else, create a new entry.
+                memory_id->id = patch->memory_id;
+                // Fill the data we need.
+                if (patch->type == TYPE_FIRM) {
+                    if (copy_id) {
+                        memory_id->memory_location = copy_id->memory_location;
+                    }
+                    memory_id->patch_location = patch_location + patch->memory_offset;
+                } else {
+                    memory_id->memory_location = (uintptr_t)patch_location;
+                }
+            }
+        }
+    }
+
+    // Make all the hook patches point to the right memory location.
+    for (struct memory_ids *memory_id = memory_ids;
+            memory_id < memory_ids + MAX_MEMORY_PATCHES && memory_id->id;
+            memory_id++) {
+        if (!memory_id->patch_location || !memory_id->memory_location) {
+            print("Missing hook or memory patch");
+            draw_message("Missing hook or memory patch", "This cake lacks either a memory patch or a hook.");
+            return 1;
+        }
+
+        *memory_id->patch_location = memory_id->memory_location;
     }
 
     return 0;
@@ -372,6 +527,8 @@ found_process9:;
 #ifndef STANDALONE
 int patch_firm_all()
 {
+    patch_reset();
+
     for (unsigned int i = 0; i < cake_count; i++) {
         if (cake_selected[i]) {
             if (read_file(firm_patch_temp, cake_list[i].path, FCRAM_SPACING) != 0) {

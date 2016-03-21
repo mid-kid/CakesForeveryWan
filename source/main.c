@@ -195,21 +195,26 @@ void main()
     if (config->autoboot_enabled && *hid_regs ^ 0xFFF ^ key_l) {
         print("Autobooting...");
 
-        if (read_file(firm_loc, PATH_PATCHED_FIRMWARE, 0) != 0 ||
+        if (read_file(firm_loc, PATH_PATCHED_FIRMWARE, FCRAM_SPACING) != 0 ||
                 firm_loc->magic != FIRM_MAGIC) {
             print("Failed to load patched FIRM");
-            draw_message("Failed to load patched FIRM", "The option to autoboot was selected,\n  but no valid FIRM could be found at\n  " PATH_PATCHED_FIRMWARE);
+            draw_message("Failed to load patched FIRM", "The option to autoboot was selected,\n  but no valid FIRM could be found at:\n  " PATH_PATCHED_FIRMWARE);
         } else {
-            if (config->firm_console == console_n3ds && config->firm_ver > 0x0F) {
-                slot0x11key96_init();
+            if (read_file(memory_loc, PATH_MEMORY, FCRAM_SPACING) != 0) {
+                print("Failed to load memory patches");
+                draw_message("Failed to load memory patches", "The option to autoboot was selected,\n  but no valid memory patches could be found at:\n  " PATH_MEMORY);
+            } else {
+                if (config->firm_console == console_n3ds && config->firm_ver > 0x0F) {
+                    slot0x11key96_init();
+                }
+
+                // boot_firm() requires current_firm->console and current_firm->version.
+                struct firm_signature config_firm = {.console = config->firm_console,
+                                                     .version = config->firm_ver};
+                current_firm = &config_firm;
+
+                boot_firm();
             }
-
-            // boot_firm() requires current_firm->console and current_firm->version.
-            struct firm_signature config_firm = {.console = config->firm_console,
-                                                 .version = config->firm_ver};
-            current_firm = &config_firm;
-
-            boot_firm();
         }
     }
 

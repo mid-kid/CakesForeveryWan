@@ -36,6 +36,7 @@ _start:
 
     @ Enable caches
     mrc p15, 0, r4, c1, c0, 0  @ read control register
+    orr r4, r4, #(1<<18)       @ - itcm enable
     orr r4, r4, #(1<<12)       @ - instruction cache enable
     orr r4, r4, #(1<<2)        @ - data cache enable
     orr r4, r4, #(1<<0)        @ - mpu enable

@@ -15,6 +15,7 @@
 #define PATH_AGB_FIRMKEY PATH_CAKES "/agb_firmkey.bin"
 #define PATH_AGB_CETK PATH_CAKES "/agb_cetk"
 
+#define PATH_MEMORY PATH_CAKES "/memory.bin"
 #define PATH_UNSUPPORTED_FIRMWARE PATH_CAKES "/firmware_unsupported.bin"
 #define PATH_SLOT0X25KEYX "/slot0x25keyX.bin"
 #define PATH_SLOT0X11KEY96 "/slot0x11key96.bin"

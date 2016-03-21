@@ -104,9 +104,9 @@ struct firm_signature agb_firm_signatures[] = {
 
 struct firm_signature *get_firm_info(firm_h *firm, struct firm_signature *signatures)
 {
-    for (int i = 0; signatures[i].version != 0xff; i++) {
-        if (memcmp(signatures[i].sig, firm->section[0].hash, 0x10) == 0) {
-            return &signatures[i];
+    for (struct firm_signature *signature = signatures; signature->version != 0xFF; signature++) {
+        if (memcmp(signature->sig, firm->section[0].hash, 0x10) == 0) {
+            return signature;
         }
     }
 
@@ -364,11 +364,18 @@ void boot_firm()
         print("Updated keyX keyslots");
     }
 
-    firm_section_h *sections = firm_loc->section;
+    struct memory_header *memory = (void *)(memory_loc + 1);
+    print("Started copying");
+    while ((uintptr_t)memory < (uintptr_t)memory_loc + *memory_loc) {
+        memcpy((void *)memory->location, memory + 1, memory->size);
+        memory = (void *)((uintptr_t)(memory + 1) + memory->size);
+    }
+    print("Copied memory");
 
-    memcpy32((void *)sections[0].address, (void *)firm_loc + sections[0].offset, sections[0].size);
-    memcpy32((void *)sections[1].address, (void *)firm_loc + sections[1].offset, sections[1].size);
-    memcpy32((void *)sections[2].address, (void *)firm_loc + sections[2].offset, sections[2].size);
+    for (firm_section_h *section = firm_loc->section;
+            section < firm_loc->section + 4 && section->address != 0; section++) {
+        memcpy32((void *)section->address, (void *)firm_loc + section->offset, section->size);
+    }
     print("Copied FIRM");
 
     *a11_entry = (uint32_t)disable_lcds;
@@ -418,6 +425,16 @@ void boot_cfw()
             draw_message("Failed to save the patched FIRM",
                     "One or more patches you selected requires this.\n"
                     "But, for some reason, we failed to write it.");
+            return;
+        }
+    }
+
+    if ((save_firm || config->autoboot_enabled) &&
+            (patches_modified || f_stat(PATH_MEMORY, NULL) != 0)) {
+        draw_loading(title, "Saving Memory...");
+        print("Saving memory");
+        if (write_file(memory_loc, PATH_MEMORY, *memory_loc) != 0) {
+            draw_message("Failed to save the patched FIRM", "For some reason, we haven't been able to write to the SD card.");
             return;
         }
     }

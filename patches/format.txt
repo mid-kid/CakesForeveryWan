@@ -19,12 +19,12 @@ Patch headers (array):
 
 Subtype (FIRM):
 2 | FIRM type
-2 | Memory ID | Used to match Memory and FIRM patches. Optional, zero if unused
+2 | Memory ID | Used to match Memory and FIRM patches. Optional, zero if unused. Every ID can have multiple FIRM patches.
 4 | Memory patch offset | Offset in patch where the offset of the memory patch will be written. Optional, zero if unused. Mandatory if the above is non-zero
 
 Subtype (Memory):
 2 | FIRM type
-2 | Memory ID | Used to match memory and FIRM patches
+2 | Memory ID | Used to match memory and FIRM patches. Zero is invalid! Every ID can only have one memory patch.
 4 | Unused
 
 Subtype (Userland):

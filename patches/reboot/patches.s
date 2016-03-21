@@ -25,7 +25,8 @@ patch005:
     blx r4
 
     ldr r4, =0x44846
-    blx pxi_wait_recv
+    ldr r5, [pxi_wait_recv]
+    blx r5
     cmp r0, r4
     bne patch005
     mov r2, #0
@@ -135,17 +136,12 @@ firm_fname:
 .align 4
 firm_addr2: .ascii "addr"
 .pool
-memcpy32: ; memcpy32(void *src, void *dst, unsigned int size)
-    mov r12, lr
-    stmfd sp!, {r0-r4}
-    add r2, r2, r0
-@memcpy_loop:
-    ldr r3, [r0], #4
-    str r3, [r1], #4
-    cmp r0, r2
-    blt @memcpy_loop
-    ldmfd sp!, {r0-r4}
-    mov lr, r12
+memcpy32:
+    add r2, r1
+    memcpy32_loop:
+        ldmia r1!, {r3}
+        stmia r0!, {r3}
+        cmp r1, r2
+        bcc memcpy32_loop
     bx lr
-.pool
 .close
