@@ -424,10 +424,13 @@ found_process9:;
             struct memory_location *location;
             for (location = memory_locations; location->location != 0xFFFFFFFF; location++) {
                 if (location->size - location->used_size > patch->size) {
+                    // Calculate alignment to 4 bytes
+                    int align = 4 - patch->size % 4;
+
                     // Create the header
                     struct memory_header *header = current_memory_loc;
                     header->location = location->location + location->used_size;
-                    header->size = patch->size;
+                    header->size = patch->size + align;
                     patch_location = (void *)(uintptr_t)header->location;
 
                     // Copy the code
@@ -441,9 +444,9 @@ found_process9:;
                     }
 
                     // Let everyone know we have a new memory patch.
-                    current_memory_loc += sizeof(struct memory_header) + patch->size;
-                    *memory_loc += sizeof(struct memory_header) + patch->size;
-                    location->used_size += patch->size;
+                    current_memory_loc += sizeof(struct memory_header) + patch->size + align;
+                    *memory_loc += sizeof(struct memory_header) + patch->size + align;
+                    location->used_size += patch->size + align;
 
                     break;
                 }

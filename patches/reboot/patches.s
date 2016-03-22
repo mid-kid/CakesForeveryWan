@@ -13,19 +13,22 @@ patch005:
     cmp r0, r1
     blt @@memset_loop
     ldr r0, =0x2000E000
-    ldr r1, =firm_fname
+    adr r1, firm_fname
     mov r2, #1
     ldr r4, [fopen]
+    orr r4, 1
     blx r4
     ldr r0, =0x2000E000
     ldr r1, =0x2000E100
     ldr r2, [firm_addr]
     ldr r3, [firm_size]
     ldr r4, [fread]
+    orr r4, 1
     blx r4
 
     ldr r4, =0x44846
     ldr r5, [pxi_wait_recv]
+    orr r5, 1
     blx r5
     cmp r0, r4
     bne patch005
@@ -39,7 +42,6 @@ patch005:
 
 @@inf_loop:
     b @@inf_loop
-
 .align 4
 firm_addr: .ascii "addr"
 firm_size: .ascii "size"
@@ -136,12 +138,13 @@ firm_fname:
 .align 4
 firm_addr2: .ascii "addr"
 .pool
-memcpy32:
-    add r2, r1
+memcpy32: ; memcpy32(void *src, void *dst, unsigned int size)
+    push {r0-r4, lr}
+    add r2, r0
     memcpy32_loop:
-        ldmia r1!, {r3}
-        stmia r0!, {r3}
-        cmp r1, r2
-        bcc memcpy32_loop
-    bx lr
+        ldmia r0!, {r3}
+        stmia r1!, {r3}
+        cmp r0, r2
+        blt memcpy32_loop
+    pop {r0-r4, pc}
 .close
