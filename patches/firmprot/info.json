@@ -1,0 +1,110 @@
+{
+    "name": "firmprot",
+    "description": "Block FIRM partition updates",
+    "type": "NATIVE_FIRM",
+    "patches": [
+        {
+            "name": "patch1.bin"
+        }
+    ],
+    "version_specific": [
+        {
+            "console": "o3ds",
+            "version": "0x50",
+            "patches": [
+                {
+                    "offset": "0x08043FB6"
+                }
+            ]
+        }, {
+            "console": "o3ds",
+            "version": "0x49",
+            "patches": [
+                {
+                    "offset": "0x08043F0E"
+                }
+            ]
+        },
+        {
+            "console": "o3ds",
+            "version": "0x38",
+            "patches": [
+                {
+                    "offset": "0x08043F0E"
+                }
+            ]
+        },
+        {
+            "console": "o3ds",
+            "version": "0x37",
+            "patches": [
+                {
+                    "offset": "0x08043E9E"
+                }
+            ]
+        },
+        {
+            "console": "o3ds",
+            "version": "0x30",
+            "patches": [
+                {
+                    "offset": "0x08043DD6"
+                }
+            ]
+        },
+        {
+            "console": "o3ds",
+            "version": "0x2A",
+            "patches": [
+                {
+                    "offset": "0x08043EEE"
+                }
+            ]
+        },
+        {
+            "console": "o3ds",
+            "version": "0x1F",
+            "patches": [
+                {
+                    "offset": "0x0804ED1C"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x1F",
+            "patches": [
+                {
+                    "offset": "0x08043F7A"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x1B",
+            "patches": [
+                {
+                    "offset": "0x08043F76"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x0F",
+            "patches": [
+                {
+                    "offset": "0x08043F3A"
+                }
+            ]
+        },
+        {
+            "console": "n3ds",
+            "version": "0x04",
+            "patches": [
+                {
+                    "offset": "0x08043F96"
+                }
+            ]
+        }
+    ]
+}
