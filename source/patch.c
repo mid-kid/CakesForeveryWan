@@ -17,6 +17,7 @@
 #include "config.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
+#define memmove memcpy
 #else
 #include <string.h>
 #include <stdio.h>
@@ -31,7 +32,8 @@
 enum types {
     TYPE_FIRM,
     TYPE_MEMORY,
-    TYPE_USERLAND
+    TYPE_USERLAND,
+    TYPE_SYSMODULE
 };
 
 enum firm_types {
@@ -267,14 +269,13 @@ int patch_firm(const void *_cake)
         static int agb_process9_init;
 
         // Variables for the current firm
-        firm_h *firm;
+        firm_h *firm = NULL;
         struct firm_signature *firm_info;
         firm_section_h *process9;
         int *process9_init;
-        firm_section_h *firm_sections;
 
         // For firm and memory patches, we require some additional info.
-        if (patch->type == TYPE_FIRM || patch->type == TYPE_MEMORY) {
+        if (patch->type == TYPE_FIRM || patch->type == TYPE_MEMORY || patch->type == TYPE_SYSMODULE) {
             // Figure out which firm we have to patch
             switch (patch->firm_type) {
                 case NATIVE_FIRM:
@@ -304,12 +305,38 @@ int patch_firm(const void *_cake)
                 return 1;
             }
 
-            firm_sections = firm->section;
+            // Look for the correct patch version info
+            for (struct patch_versions *patch_version = versions;
+                    patch_version < versions + patch->version_count; patch_version++) {
+                if (patch_version->console == firm_info->console &&
+                        patch_version->firm_version == firm_info->version) {
+                    version = patch_version;
+                    break;
+                }
+            }
 
-            if (patch->type == TYPE_FIRM && !*process9_init) {
+            if (!version) {
+                print("Unsupported FIRM version");
+                draw_message("Unsupported FIRM version", "This patch doesn't support the currently used FIRM version.");
+                return 1;
+            }
+
+            // Apply all the variables for this version
+            values = (uint32_t *)((uintptr_t)cake + version->values_offset);
+
+            for (int x = 0; x < patch->variable_count; x++) {
+                // Memcpy because ARM is quirky about aligning 32-bit values
+                memcpy(patch_code + variables[x], values + x, sizeof(uint32_t));
+            }
+        }
+
+        // Depending on the type, we have to use it in a different way
+        if (patch->type == TYPE_FIRM) {
+            // Look for Process9
+            if (!*process9_init) {
                 // Look for process9 in all sections
-                for (firm_section_h *section = firm_sections;
-                        section < firm_sections + 4; section++) {
+                for (firm_section_h *section = firm->section;
+                        section < firm->section + 4; section++) {
                     if (section->address == 0) {
                         // Stop looping if the section address is null
                         break;
@@ -345,33 +372,6 @@ int patch_firm(const void *_cake)
             }
 found_process9:;
 
-            // Look for the correct patch version info
-            for (struct patch_versions *patch_version = versions;
-                    patch_version < versions + patch->version_count; patch_version++) {
-                if (patch_version->console == firm_info->console &&
-                        patch_version->firm_version == firm_info->version) {
-                    version = patch_version;
-                    break;
-                }
-            }
-
-            if (!version) {
-                print("Unsupported FIRM version");
-                draw_message("Unsupported FIRM version", "This patch doesn't support the currently used FIRM version.");
-                return 1;
-            }
-
-            // Apply all the variables for this version
-            values = (uint32_t *)((uintptr_t)cake + version->values_offset);
-
-            for (int x = 0; x < patch->variable_count; x++) {
-                // Memcpy because ARM is quirky about aligning 32-bit values
-                memcpy(patch_code + variables[x], values + x, sizeof(uint32_t));
-            }
-        }
-
-        // Depending on the type, we have to use it in a different way
-        if (patch->type == TYPE_FIRM) {
             // Look for the location in the FIRM to apply the patch
             int x;
             for (x = 0; x < 5; x++) {
@@ -381,7 +381,7 @@ found_process9:;
                 if (x == 0) {
                     section = process9;
                 } else {
-                    section = &firm_sections[x - 1];
+                    section = &firm->section[x - 1];
 
                     // Stop scanning at the end of the section list
                     if (section->address == 0) {
@@ -455,6 +455,55 @@ found_process9:;
                 print("Out of system memory");
                 draw_message("Out of system memory", "We ran out of usable space to install this memory patch to.");
                 return 1;
+            }
+
+        } else if (patch->type == TYPE_SYSMODULE) {
+            // Look for the section that holds all the sysmodules
+            firm_section_h *sysmodule_section = NULL;
+            for (firm_section_h *section = firm->section;
+                    section < firm->section + 4; section++) {
+                if (section->address == 0x1FF00000 && section->type == FIRM_TYPE_ARM11) {
+                    sysmodule_section = section;
+                    break;
+                }
+            }
+
+            if (!sysmodule_section) {
+                print("Couldn't find sysmodule section");
+                draw_message("Couldn't find sysmodule section", "The patcher was unable to find the section where the sysmodules are stored in this firmware.");
+                return 1;
+            }
+
+            ncch_h *module = patch_code;
+            ncch_h *sysmodule = (ncch_h *)((uintptr_t)firm + sysmodule_section->offset);
+
+            // Check if we want to replace an existing sysmodule
+            while (sysmodule->magic == NCCH_MAGIC) {
+                if (memcmp(sysmodule->programID, module->programID, 8) == 0) {
+                    if (module->contentSize > sysmodule->contentSize) {
+                        // TODO: Expanding a module's size isn't supported yet...
+                        continue;
+                    }
+
+                    // Move the remaining modules closer
+                    if (module->contentSize < sysmodule->contentSize) {
+                        int remaining_size = sysmodule_section->size - (((uintptr_t)sysmodule + sysmodule->contentSize * 0x200) - ((uintptr_t)firm + sysmodule_section->offset));
+                        memmove((char *)sysmodule + module->contentSize * 0x200, (char *)sysmodule + sysmodule->contentSize * 0x200, remaining_size);
+                    }
+
+                    // Copy the module into the firm
+                    memcpy(sysmodule, module, module->contentSize * 0x200);
+
+                    break;
+                }
+
+                sysmodule = (ncch_h *)((uintptr_t)sysmodule + sysmodule->contentSize * 0x200);
+            }
+
+            // TODO: Adding a new sysmodule is not supported yet...
+            if (sysmodule->magic != NCCH_MAGIC) {
+                print("Unuspported feature");
+                draw_message("Unsupported feature", "This CakesFW version doesn't support injecting bigger sysmodules than those available or adding new ones yet.");
             }
 
         } else {

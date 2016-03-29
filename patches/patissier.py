@@ -18,7 +18,8 @@ subtype_struct = "<HHI"
 patch_types = {
     "FIRM": 0,
     "Memory": 1,
-    "Userland": 2
+    "Userland": 2,
+    "Sysmodule": 3
 }
 firm_types = {
     "NATIVE_FIRM": 0,
@@ -101,7 +102,7 @@ for patch_name in info["patches"]:
         # Userland patches don't have console-specific versions
         version_count = len(patch["versions"])
     else:
-        # Memory and FIRM patches, however, do have console-specific versions.
+        # Memory and FIRM patches, and Sysmodules, however, do have console-specific versions.
         version_count = 0
         for console in patch["versions"]:
             if not console in consoles_dict:
@@ -128,8 +129,12 @@ for patch_name in info["patches"]:
         subtype = patch["subtype"]
 
     # Convert subtype into the appropiate value
-    if type == "FIRM" or type == "Memory":
-        # FIRM and Memory patches have a bit more complicated structure for subtype
+    if type == "Userland":
+        # Userland patches use the title ID
+        if not isinstance(subtype, int):
+            die("Incompatible subtype in patch: %s" % patch_name)
+    else:
+        # Most other patches have a bit more complicated structure.
         if not subtype in firm_types:
             die("Unknown subtype in patch: %s" % patch_name)
 
@@ -137,6 +142,7 @@ for patch_name in info["patches"]:
         memory_var = 0
         memory_name = None
 
+        # Fix the memory ID for Memory and FIRM patches
         if type == "FIRM" and "memory" in patch:
             # If a FIRM patch requires a memory patch, set the info for it right.
             if not isinstance(patch["memory"], dict):
@@ -169,9 +175,6 @@ for patch_name in info["patches"]:
             memory_id,
             memory_var
         )
-    else:
-        # Everything else is supposed to be a string (Or something else yet to be implemented)
-        subtype = subtype.encode()
 
     # Type is converted the same way in either case
     type = patch_types[type]
@@ -224,7 +227,7 @@ for patch_name in info["patches"]:
             # Userland patches don't have console-specific versions
             # TODO: Implement this.
         else:
-            # Memory and FIRM patches, however, do have console-specific versions.
+            # Memory and FIRM patches, and Sysmodules, however, do have console-specific versions.
             console = version
             for version in patch["versions"][console]:
                 version_info = patch["versions"][console][version]
