@@ -286,6 +286,7 @@ for patch_name in info["patches"]:
     cake.seek(variables_offset)
 
     # Write the actual code to the file
+    cake.write(b'\0' * (4 - cake.tell() % 4))  # Align to 4 bytes
     patch_offset = cake.tell()  # The current location is the start of the patch
     cake.write(patch_code)
 
