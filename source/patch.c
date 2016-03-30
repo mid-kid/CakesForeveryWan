@@ -325,8 +325,7 @@ int patch_firm(const void *_cake)
             values = (uint32_t *)((uintptr_t)cake + version->values_offset);
 
             for (int x = 0; x < patch->variable_count; x++) {
-                // Memcpy because ARM is quirky about aligning 32-bit values
-                memcpy(patch_code + variables[x], values + x, sizeof(uint32_t));
+                *(uint32_t *)(patch_code + variables[x]) = values[x];
             }
         }
 
@@ -426,6 +425,7 @@ found_process9:;
                 if (location->size - location->used_size > patch->size) {
                     // Calculate alignment to 4 bytes
                     int align = 4 - patch->size % 4;
+                    if (align == 4) align = 0;
 
                     // Create the header
                     struct memory_header *header = current_memory_loc;

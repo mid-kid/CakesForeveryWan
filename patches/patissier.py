@@ -41,6 +41,12 @@ def die(string):
     print(string, file=stderr)
     exit(1)
 
+# Pad file to align it to x bytes
+def align(file, alignment):
+    x = alignment - file.tell() % alignment
+    if x < alignment:
+        file.write(b'\0' * x)
+
 if len(argv) < 3:
     die("Usage: %s <info.yaml> <output.cake>" % argv[0])
 
@@ -286,11 +292,12 @@ for patch_name in info["patches"]:
     cake.seek(variables_offset)
 
     # Write the actual code to the file
-    cake.write(b'\0' * (4 - cake.tell() % 4))  # Align to 4 bytes
+    align(cake, 4)  # Align to 4 bytes
     patch_offset = cake.tell()  # The current location is the start of the patch
     cake.write(patch_code)
 
     # Set the current location for writing the next versions array.
+    align(cake, 4)  # Align to 4 bytes
     versions_offset = cake.tell()
 
     # Close the patch file
