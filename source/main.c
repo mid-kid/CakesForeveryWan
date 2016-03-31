@@ -87,7 +87,7 @@ void menu_emunand()
         break;
     }
 
-    if (count < 0) {
+    if (count <= 0) {
         print("Failed to find any emuNAND");
         draw_message("Failed to find any emuNAND",
                 "There's 3 possible causes for this error:\n"
