@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-volatile uint16_t *hid_regs = (volatile uint16_t *)0x10146000;
+volatile uint16_t *const hid_regs = (volatile uint16_t *)0x10146000;
 static uint16_t old_status = 0;
 
 uint16_t wait_key()

@@ -25,7 +25,7 @@ struct firm_signature *current_agb_firm = NULL;
 static int update_96_keys = 0;
 int save_firm = 0;
 
-volatile uint32_t *a11_entry = (volatile uint32_t *)0x1FFFFFF8;
+volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
 
 // We use the firm's section 0's hash to identify the version
 struct firm_signature firm_signatures[] = {

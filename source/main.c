@@ -51,8 +51,8 @@ void menu_toggle()
     // Apply the options
     config->autoboot_enabled = result[0];
     save_firm = result[1];
-    patches_modified |= result[0];
-    patches_modified |= result[1];
+    patches_modified |= preselected[0] ? 0 : result[0];
+    patches_modified |= preselected[1] ? 0 : result[1];
 }
 
 void menu_emunand()
