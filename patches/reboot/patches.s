@@ -58,19 +58,28 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
 
     ; Get the FIRM path
     cmp r0, #0x0002  ; NATIVE_FIRM
-    adreq r1, firm_fname
-    beq load_firm
+    ldreq r1, [firm_fname]
+    beq check_fname
+
     ldr r5, =0x0102  ; TWL_FIRM
     cmp r0, r5
-    beq fallback  ; TODO: Stubbed
+    ldreq r1, [twl_firm_fname]
+    beq check_fname
+
     ldr r5, =0x0202  ; AGB_FIRM
     cmp r0, r5
-    beq fallback  ; TODO: Stubbed
+    ldreq r1, [agb_firm_fname]
+    beq check_fname
 
     fallback:
         ; Fallback: Load specified FIRM from exefs
         add r1, sp, #0x3A8-0x70  ; Location of exefs string.
         b load_firm
+
+    check_fname:
+        ; Check the given string offset
+        cmp r1, #0
+        beq fallback
 
     load_firm:
         ; Open file
@@ -80,18 +89,18 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
         orr r6, 1
         blx r6
 
-        ;cmp r0, #0  ; Check if we were able to load the FIRM
-        ;bne fallback  ; Otherwise, try again with the FIRM from exefs.
+        cmp r0, #0  ; Check if we were able to load the FIRM
+        bne fallback  ; Otherwise, try again with the FIRM from exefs.
         ; This will loop indefinitely if the exefs FIRM fails to load, but whatever.
 
         ; Read file
-		mov r0, r7
+        mov r0, r7
         adr r1, bytes_read
         mov r2, firm_addr
         mov r3, firm_maxsize
-		ldr r6, [sp, #0x3A8-0x198]
-		ldr r6, [r6, #0x28]
-		blx r6
+        ldr r6, [sp, #0x3A8-0x198]
+        ldr r6, [r6, #0x28]
+        blx r6
 
     ; Set kernel state
     mov r0, #0
@@ -111,7 +120,9 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
 bytes_read: .word 0
 fopen: .ascii "open"
 .pool
-firm_fname:
+firm_fname: .ascii "NATF"
+twl_firm_fname: .ascii "TWLF"
+agb_firm_fname: .ascii "AGBF"
 .close
 
 .create "patch2.bin", 0

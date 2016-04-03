@@ -110,6 +110,43 @@ struct memory_location memory_locations[] = {
     }, {.location = 0xFFFFFFFF}
 };
 
+// Allocates memory for usage AFTER booting.
+void *allocate_memory(uint32_t *physical_address, size_t size)
+{
+    // Check for the remaining space in memory_loc
+    if (current_memory_loc + size > (void *)memory_loc + FCRAM_SPACING) {
+        print("Out of memory");
+        draw_message("Out of memory", "We ran out of available memory to store memory patches.");
+        return NULL;
+    }
+
+    struct memory_location *location;
+    for (location = memory_locations; location->location != 0xFFFFFFFF; location++) {
+        if (location->size - location->used_size > size) {
+            // Calculate alignment to 4 bytes
+            int align = 4 - size % 4;
+            if (align == 4) align = 0;
+
+            // Create the header
+            struct memory_header *header = current_memory_loc;
+            header->location = location->location + location->used_size;
+            header->size = size + align;
+
+            // Let everyone know we have allocated new memory
+            current_memory_loc += sizeof(struct memory_header) + size + align;
+            *memory_loc += sizeof(struct memory_header) + size + align;
+            location->used_size += size + align;
+
+            *physical_address = header->location;
+            return header + 1;
+        }
+    }
+
+    print("Out of system memory");
+    draw_message("Out of system memory", "We ran out of usable space to install this memory patch to.");
+    return NULL;
+}
+
 #ifndef STANDALONE
 void *memsearch(void *start_pos, const void *search, const uint32_t size, const uint32_t size_search)
 {
@@ -203,12 +240,37 @@ int patch_options(void *address, const uint32_t size, const uint8_t options, con
     if (options & patch_option_save && type == NATIVE_FIRM) {
         print("Patch option: Save firm");
 
+        uint32_t *pos_native = memsearch(address, "NATF", size, 4);
+        uint32_t *pos_twl = memsearch(address, "TWLF", size, 4);
+        uint32_t *pos_agb = memsearch(address, "AGBF", size, 4);
+        if (!pos_native && !pos_twl && !pos_agb) {
+            print("Dunno where to set the offsets to the firm paths");
+            draw_message("Dunno where to set the offsets to the firm paths",
+                    "You should make sure you at least one of:\n"
+                    "'NATF', 'TWLF' or 'AGBF' in your patch.");
+            return 1;
+        }
+
         save_firm = 1;
 
-        // This absolutely requires the -fshort-wchar option to be enabled.
-        char *offset = address + size;
-        memcpy(offset, L"sdmc:", 10);
-        memcpy(offset + 10, L"" PATH_PATCHED_FIRMWARE, sizeof(PATH_PATCHED_FIRMWARE) * 2);
+        uint32_t *pos[] = {pos_native, pos_twl, pos_agb};
+        size_t size[] = {sizeof(PATH_PATCHED_FIRMWARE) * 2,
+            0, sizeof(PATH_PATCHED_AGB_FIRMWARE) * 2};
+        wchar_t *string[] = {L"" PATH_PATCHED_FIRMWARE,
+            NULL, L"" PATH_PATCHED_AGB_FIRMWARE};
+
+        // NOTE: This won't work unless all three arrays have the exact same amount of entries.
+
+        for (unsigned int x = 0; x < sizeof(pos) / sizeof(uint32_t *); x++) {
+            if (pos[x]) {
+                uint32_t paddr = 0;
+                char *addr = allocate_memory(&paddr, size[x] + 10);
+                memcpy(addr, L"sdmc:", 10);
+                memcpy(addr + 10, string[x], size[x]);
+
+                *pos[x] = paddr;
+            }
+        }
     }
 
     return 0;
@@ -413,48 +475,18 @@ found_process9:;
             }
 
         } else if (patch->type == TYPE_MEMORY) {
-            // Check for the remaining space in memory_loc
-            if (current_memory_loc + patch->size > (void *)memory_loc + FCRAM_SPACING) {
-                print("Out of memory");
-                draw_message("Out of memory", "We ran out of available memory to store memory patches.");
-                return 1;
-            }
+            // Allocate memory for the patch
+            void *memory = allocate_memory((uint32_t *)&patch_location, patch->size);
+            if (!memory) return 1;
 
-            struct memory_location *location;
-            for (location = memory_locations; location->location != 0xFFFFFFFF; location++) {
-                if (location->size - location->used_size > patch->size) {
-                    // Calculate alignment to 4 bytes
-                    int align = 4 - patch->size % 4;
-                    if (align == 4) align = 0;
+            // Copy the code
+            memcpy(memory, patch_code, patch->size);
 
-                    // Create the header
-                    struct memory_header *header = current_memory_loc;
-                    header->location = location->location + location->used_size;
-                    header->size = patch->size + align;
-                    patch_location = (void *)(uintptr_t)header->location;
-
-                    // Copy the code
-                    memcpy(header + 1, patch_code, patch->size);
-
-                    // Apply whatever options it needs
-                    if (patch->options) {
-                        if (patch_options(header + 1, patch->size, patch->options, patch->type) != 0) {
-                            return 1;
-                        }
-                    }
-
-                    // Let everyone know we have a new memory patch.
-                    current_memory_loc += sizeof(struct memory_header) + patch->size + align;
-                    *memory_loc += sizeof(struct memory_header) + patch->size + align;
-                    location->used_size += patch->size + align;
-
-                    break;
+            // Apply whatever options it needs
+            if (patch->options) {
+                if (patch_options(memory, patch->size, patch->options, patch->type) != 0) {
+                    return 1;
                 }
-            }
-            if (location->location == 0xFFFFFFFF) {
-                print("Out of system memory");
-                draw_message("Out of system memory", "We ran out of usable space to install this memory patch to.");
-                return 1;
             }
 
         } else if (patch->type == TYPE_SYSMODULE) {
