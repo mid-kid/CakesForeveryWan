@@ -31,7 +31,7 @@ static int update_96_keys = 0;
 int save_firm = 0;
 #endif
 
-volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
+static volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
 
 // We use the firm's section 0's hash to identify the version
 struct firm_signature firm_signatures[] = {
