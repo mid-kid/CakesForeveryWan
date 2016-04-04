@@ -110,7 +110,7 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
     swi 0x7C
 
     ; Jump to reboot code
-    ldr r0, =0x80FF4FC
+    ldr r0, [reboot_code]
     swi 0x7B
 
     die:
@@ -119,6 +119,7 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
 .align 4
 bytes_read: .word 0
 fopen: .ascii "open"
+reboot_code: .ascii "rebc"
 .pool
 firm_fname: .ascii "NATF"
 twl_firm_fname: .ascii "TWLF"

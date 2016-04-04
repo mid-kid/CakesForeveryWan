@@ -7,36 +7,60 @@ patches:
             - save
         variables:
             - open  # fopen
+            - rebc  # reboot_code
         versions:
             o3ds:
                 0x50:
                     offset: 0x08084A10
                     variables:
                         - 0x08059D10
+                        - &reboot_code_o3ds 0x080FF4FC
                 0x49:
                     offset: 0x080859FC
                     variables:
                         - 0x0805B180
+                        - *reboot_code_o3ds
                 0x38:
                     offset: 0x08085914
                     variables:
                         - 0x0805AF20
+                        - *reboot_code_o3ds
                 0x37:
                     offset: 0x08085894
                     variables:
                         - 0x0805AF88
+                        - *reboot_code_o3ds
                 0x30:
                     offset: 0x080855C4
                     variables:
                         - 0x0805ADA4
+                        - *reboot_code_o3ds
                 0x2A:
                     offset: 0x08085568
                     variables:
                         - 0x0805AF88
+                        - *reboot_code_o3ds
                 0x1F:
                     offset: 0x08086B64
                     variables:
                         - 0x0805CF04
+                        - *reboot_code_o3ds
+            n3ds:
+                0x1F:
+                    offset: 0x08084A0C
+                    variables:
+                        - 0x08059D10
+                        - &reboot_code_n3ds 0x0817F4FC
+                0x1B:
+                    offset: 0x080849F0
+                    variables:
+                        - 0x08059D0C
+                        - *reboot_code_n3ds
+                0x0F:
+                    offset: 0x08085968
+                    variables:
+                        - 0x0805B014
+                        - *reboot_code_n3ds
 
     patch2.bin:
         type: NATIVE_FIRM
@@ -49,3 +73,7 @@ patches:
                 0x30: 0x080940AC
                 0x2A: 0x08093F28
                 0x1F: 0x0809744C
+            n3ds:
+                0x1F: 0x0809343C
+                0x1B: 0x08093420
+                0x0F: 0x0809435C
