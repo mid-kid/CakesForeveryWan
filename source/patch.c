@@ -36,12 +36,6 @@ enum types {
     TYPE_SYSMODULE
 };
 
-enum firm_types {
-    NATIVE_FIRM,
-    TWL_FIRM,
-    AGB_FIRM
-};
-
 enum patch_options {
     patch_option_keyx = 0b00000001,
     patch_option_emunand = 0b00000010,

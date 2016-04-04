@@ -99,6 +99,11 @@ struct firm_signature agb_firm_signatures[] = {
         .version = 0x0B,
         .version_string = "6.0.0",
         .console = console_o3ds
+    }, {
+        .sig = {0xAF, 0x81, 0xA1, 0xAB, 0xBA, 0xAC, 0xAC, 0xA7, 0x30, 0xE8, 0xD8, 0x74, 0x7C, 0x47, 0x1C, 0x5D},
+        .version = 0x00,
+        .version_string = "9.0.0",
+        .console = console_n3ds
     }, {.version = 0xFF}
 };
 
@@ -212,39 +217,38 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t *size, void *key)
     return 0;
 }
 
-int decrypt_arm9bin(arm9bin_h *header, const unsigned int version)
+int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned int version)
 {
-    uint8_t decrypted_keyx[AES_BLOCK_SIZE];
+    uint8_t slot = 0x15;
 
     print("Decrypting ARM9 FIRM binary");
 
-    if (version > 0x0F) {
+    if (firm_type == NATIVE_FIRM && version > 0x0F) {
+        uint8_t decrypted_keyx[AES_BLOCK_SIZE];
+
         slot0x11key96_init();
-    }
+        slot = 0x16;
 
-    aes_use_keyslot(0x11);
-    if (version < 0x0F) {
-        aes(decrypted_keyx, header->keyx, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
-    } else {
+        aes_use_keyslot(0x11);
         aes(decrypted_keyx, header->slot0x16keyX, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+        aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
     }
 
-    aes_setkey(0x16, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
-    aes_setkey(0x16, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_setkey(slot, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_setiv(header->ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     void *arm9bin = (uint8_t *)header + 0x800;
     int size = atoi(header->size);
 
-    aes_use_keyslot(0x16);
+    aes_use_keyslot(slot);
     aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-    if (*(uint32_t *)arm9bin != ARM9BIN_MAGIC) return 1;
-
-    return 0;
+    if (firm_type == NATIVE_FIRM) return *(uint32_t *)arm9bin != ARM9BIN_MAGIC;
+    else if (firm_type == AGB_FIRM) return *(uint32_t *)arm9bin != AGB_ARM9BIN_MAGIC;
+    else return 0;
 }
 
-int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uint32_t *size, struct firm_signature *signatures, struct firm_signature **current, int is_native)
+int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uint32_t *size, struct firm_signature *signatures, struct firm_signature **current, enum firm_types firm_type)
 {
     uint8_t firm_key[AES_BLOCK_SIZE];
     struct firm_signature *firm_current = NULL;
@@ -253,7 +257,7 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
         print("Failed to load FIRM");
 
         // Only whine about this if it's NATIVE_FIRM, which is important.
-        if (is_native) {
+        if (firm_type == NATIVE_FIRM) {
             draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at " PATH_FIRMWARE);
         }
         return 2;
@@ -266,7 +270,7 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
         if (read_file(fcram_temp, path_cetk, FCRAM_SPACING) != 0) {
             print("Failed to load CETK");
 
-            if (is_native) {
+            if (firm_type == NATIVE_FIRM) {
                 draw_loading("Failed to load FIRM key or CETK",
                         "Make sure you have a firmkey.bin or cetk\n"
                         "  located at " PATH_FIRMKEY "\n"
@@ -312,18 +316,37 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     }
 
     // The N3DS firm has an additional encryption layer for ARM9
-    if (is_native && firm_current->console == console_n3ds) {
-        // All the firmwares we've encountered have ARM9 as their second section
-        if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + dest->section[2].offset),
-                    firm_current->version) != 0) {
-            print("Couldn't decrypt ARM9 FIRM binary");
-            draw_loading("Couldn't decrypt ARM9 FIRM binary",
-                    "Double-check you've got the right firmware.bin.\n"
-                    "If you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n"
-                    "  " PATH_SLOT0X11KEY96 "\n"
-                    "We remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
-            return 1;
+    if (firm_current->console == console_n3ds) {
+        // Look for the arm9 section
+        for (firm_section_h *section = dest->section;
+                section < dest->section + 4; section++) {
+            if (section->type == FIRM_TYPE_ARM9) {
+                // Decrypt the arm9bin
+                if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + section->offset),
+                            firm_type, firm_current->version) != 0) {
+                    print("Couldn't decrypt ARM9 FIRM binary");
+                    draw_loading("Couldn't decrypt ARM9 FIRM binary",
+                            "Double-check you've got the right firmware.bin.\n"
+                            "If you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n"
+                            "  " PATH_SLOT0X11KEY96 "\n"
+                            "We remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
+                    return 1;
+                }
+
+                // We assume there's only one section to decrypt.
+                break;
+            }
         }
+
+        // Patch the entrypoint to skip arm9loader
+        if (firm_type == NATIVE_FIRM) {
+            dest->a9Entry = 0x0801B01C;
+        } else if (firm_type == TWL_FIRM ||
+                firm_type == AGB_FIRM) {
+            dest->a9Entry = 0x0801301C;
+        }
+        // The entrypoints seem to be the same across different FIRM versions,
+        //  so we don't change them.
     }
 
     *current = firm_current;
@@ -385,12 +408,7 @@ void boot_firm()
 
     print("Booting...");
 
-    if (current_firm->console == console_n3ds) {
-        // Jump to the actual entry instead of the loader
-        ((void (*)())0x0801B01C)();
-    } else {
-        ((void (*)())firm_loc->a9Entry)();
-    }
+    ((void (*)())firm_loc->a9Entry)();
 }
 
 int load_firms()
@@ -399,11 +417,11 @@ int load_firms()
 
     print("Loading NATIVE_FIRM...");
     draw_loading(title, "Loading NATIVE_FIRM...");
-    if (load_firm(firm_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, 1) != 0) return 1;
+    if (load_firm(firm_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
 
     print("Loading AGB_FIRM...");
     draw_loading(title, "Loading AGB_FIRM...");
-    if (load_firm(agb_firm_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, 0) == 1) return 1;
+    if (load_firm(agb_firm_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) return 1;
 
     return 0;
 }

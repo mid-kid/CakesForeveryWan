@@ -9,6 +9,12 @@ enum consoles {
     console_n3ds
 };
 
+enum firm_types {
+    NATIVE_FIRM,
+    TWL_FIRM,
+    AGB_FIRM
+};
+
 struct firm_signature {
     uint8_t sig[0x10];
     unsigned int version;
@@ -26,7 +32,6 @@ extern int save_firm;
 
 struct firm_signature *get_firm_info(firm_h *firm, struct firm_signature *signatures);
 void slot0x11key96_init();
-int load_firm();
 int load_firms();
 void boot_firm();
 void boot_cfw();
