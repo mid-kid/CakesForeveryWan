@@ -136,6 +136,13 @@ void version_info()
     draw_string(screen_top_left, "NATIVE_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
     draw_string(screen_top_left, current_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
 
+    if (current_twl_firm) {
+        pos_y += SPACING_VERT;
+
+        draw_string(screen_top_left, "TWL_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+        draw_string(screen_top_left, current_twl_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
+    }
+
     if (current_agb_firm) {
         pos_y += SPACING_VERT;
 

@@ -23,6 +23,10 @@ firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
 static uint32_t firm_size = FCRAM_SPACING;
 struct firm_signature *current_firm = NULL;
 
+firm_h *twl_firm_loc = (firm_h *)FCRAM_TWL_FIRM_LOC;
+static uint32_t twl_firm_size = FCRAM_SPACING * 2;
+struct firm_signature *current_twl_firm = NULL;
+
 firm_h *agb_firm_loc = (firm_h *)FCRAM_AGB_FIRM_LOC;
 static uint32_t agb_firm_size = FCRAM_SPACING;
 struct firm_signature *current_agb_firm = NULL;
@@ -89,6 +93,20 @@ struct firm_signature firm_signatures[] = {
         .sig = {0x1A, 0x56, 0x5C, 0xFF, 0xC9, 0xCC, 0x62, 0xBB, 0x2B, 0xC2, 0x23, 0xB6, 0x4F, 0x48, 0xD1, 0xCC},
         .version = 0x1F,
         .version_string = "10.4.0",
+        .console = console_n3ds
+    }, {.version = 0xFF}
+};
+
+struct firm_signature twl_firm_signatures[] = {
+    {
+        .sig = {0xE8, 0xB8, 0x82, 0xF5, 0x8C, 0xC4, 0x1B, 0x24, 0x05, 0x60, 0x6D, 0xB8, 0x74, 0xF5, 0xE5, 0xDD},
+        .version = 0x16,
+        .version_string = "6.2.0",
+        .console = console_o3ds
+    }, {
+        .sig = {0x0F, 0x05, 0xC5, 0xF3, 0x60, 0x83, 0x8B, 0x9D, 0xC8, 0x44, 0x3F, 0xB3, 0x06, 0x4D, 0x30, 0xC7},
+        .version = 0x00,
+        .version_string = "9.0.0",
         .console = console_n3ds
     }, {.version = 0xFF}
 };
@@ -244,7 +262,7 @@ int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned
     aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
 
     if (firm_type == NATIVE_FIRM) return *(uint32_t *)arm9bin != ARM9BIN_MAGIC;
-    else if (firm_type == AGB_FIRM) return *(uint32_t *)arm9bin != AGB_ARM9BIN_MAGIC;
+    else if (firm_type == AGB_FIRM || firm_type == TWL_FIRM) return *(uint32_t *)arm9bin != LGY_ARM9BIN_MAGIC;
     else return 0;
 }
 
@@ -310,7 +328,7 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
                 "  most probably not supported by Cakes.\n"
                 "Dumping it to your SD card:\n"
                 "  " PATH_UNSUPPORTED_FIRMWARE);
-        write_file(dest, PATH_UNSUPPORTED_FIRMWARE, firm_size);
+        write_file(dest, PATH_UNSUPPORTED_FIRMWARE, *size);
         print("Dumped unsupported firmware");
         return 1;
     }
@@ -419,6 +437,10 @@ int load_firms()
     draw_loading(title, "Loading NATIVE_FIRM...");
     if (load_firm(firm_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
 
+    print("Loading TWL_FIRM...");
+    draw_loading(title, "Loading TWL_FIRM...");
+    if (load_firm(twl_firm_loc, PATH_TWL_FIRMWARE, PATH_TWL_FIRMKEY, PATH_TWL_CETK, &twl_firm_size, twl_firm_signatures, &current_twl_firm, TWL_FIRM) == 1) return 1;
+
     print("Loading AGB_FIRM...");
     draw_loading(title, "Loading AGB_FIRM...");
     if (load_firm(agb_firm_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) return 1;
@@ -452,6 +474,15 @@ void boot_cfw()
         draw_loading(title, "Saving Memory...");
         print("Saving memory");
         if (write_file(memory_loc, PATH_MEMORY, *memory_loc) != 0) {
+            draw_message("Failed to save the patched FIRM", "For some reason, we haven't been able to write to the SD card.");
+            return;
+        }
+    }
+
+    if (current_twl_firm && (patches_modified || f_stat(PATH_PATCHED_TWL_FIRMWARE, NULL) != 0)) {
+        draw_loading(title, "Saving TWL_FIRM...");
+        print("Saving patched TWL_FIRM");
+        if (write_file(twl_firm_loc, PATH_PATCHED_TWL_FIRMWARE, twl_firm_size) != 0) {
             draw_message("Failed to save the patched FIRM", "For some reason, we haven't been able to write to the SD card.");
             return;
         }

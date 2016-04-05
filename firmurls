@@ -1,0 +1,23 @@
+Old 3DS NATIVE_FIRM (The standard 3DS firmware - REQUIRED):
+firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000002/00000050
+cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000002/cetk
+
+New 3DS NATIVE_FIRM (The standard 3DS firmware - REQUIRED):
+firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000002/0000001F
+cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000002/cetk
+
+Old 3DS TWL_FIRM (Firmware for DS/DSi games):
+twl_firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000102/00000016
+twl_cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000102/cetk
+
+New 3DS TWL_FIRM (Firmware for DS/DSi games):
+twl_firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000102/00000000
+twl_cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000102/cetk
+
+Old 3DS AGB_FIRM (Firmware for GBA games):
+agb_firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000202/0000000B
+agb_cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000202/cetk
+
+New 3DS AGB_FIRM (Firmware for GBA games):
+agb_firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000202/00000000
+agb_cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000202/cetk

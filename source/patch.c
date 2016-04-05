@@ -248,10 +248,13 @@ int patch_options(void *address, const uint32_t size, const uint8_t options, con
         save_firm = 1;
 
         uint32_t *pos[] = {pos_native, pos_twl, pos_agb};
-        size_t size[] = {sizeof(PATH_PATCHED_FIRMWARE) * 2,
-            0, sizeof(PATH_PATCHED_AGB_FIRMWARE) * 2};
+        size_t size[] = {
+            sizeof(PATH_PATCHED_FIRMWARE) * 2,
+            sizeof(PATH_PATCHED_TWL_FIRMWARE) * 2,
+            sizeof(PATH_PATCHED_AGB_FIRMWARE) * 2
+        };
         wchar_t *string[] = {L"" PATH_PATCHED_FIRMWARE,
-            NULL, L"" PATH_PATCHED_AGB_FIRMWARE};
+            L"" PATH_PATCHED_TWL_FIRMWARE, L"" PATH_PATCHED_AGB_FIRMWARE};
 
         // NOTE: This won't work unless all three arrays have the exact same amount of entries.
 
@@ -321,6 +324,8 @@ int patch_firm(const void *_cake)
         // Process9 location cache for all the different firms
         static firm_section_h native_process9;
         static int native_process9_init;
+        static firm_section_h twl_process9;
+        static int twl_process9_init;
         static firm_section_h agb_process9;
         static int agb_process9_init;
 
@@ -341,6 +346,13 @@ int patch_firm(const void *_cake)
                     process9_init = &native_process9_init;
                     break;
 
+                case TWL_FIRM:
+                    firm = twl_firm_loc;
+                    firm_info = current_twl_firm;
+                    process9 = &twl_process9;
+                    process9_init = &twl_process9_init;
+                    break;
+
                 case AGB_FIRM:
                     firm = agb_firm_loc;
                     firm_info = current_agb_firm;
@@ -348,7 +360,6 @@ int patch_firm(const void *_cake)
                     process9_init = &agb_process9_init;
                     break;
 
-                case TWL_FIRM:
                 default:
                     print("Unsupported FIRM type");
                     draw_message("Unsupported FIRM type", "This cake uses an unknown or unsupported FIRM type.");

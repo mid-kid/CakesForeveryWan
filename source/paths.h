@@ -10,6 +10,11 @@
 #define PATH_FIRMKEY PATH_CAKES "/firmkey.bin"
 #define PATH_CETK PATH_CAKES "/cetk"
 
+#define PATH_TWL_FIRMWARE PATH_CAKES "/twl_firmware.bin"
+#define PATH_PATCHED_TWL_FIRMWARE PATH_CAKES "/twl_firmware_patched.bin"
+#define PATH_TWL_FIRMKEY PATH_CAKES "/twl_firmkey.bin"
+#define PATH_TWL_CETK PATH_CAKES "/twl_cetk"
+
 #define PATH_AGB_FIRMWARE PATH_CAKES "/agb_firmware.bin"
 #define PATH_PATCHED_AGB_FIRMWARE PATH_CAKES "/agb_firmware_patched.bin"
 #define PATH_AGB_FIRMKEY PATH_CAKES "/agb_firmkey.bin"

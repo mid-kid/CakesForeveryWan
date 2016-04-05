@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_SELECTED_OPTIONS 10
+#define MAX_SELECTED_OPTIONS 0x10
 
 #define COLOR_TITLE 0x0000FF
 #define COLOR_NEUTRAL 0xFFFFFF

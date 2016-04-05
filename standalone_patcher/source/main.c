@@ -9,6 +9,8 @@
 
 firm_h *firm_loc = NULL;
 struct firm_signature *current_firm = NULL;
+firm_h *twl_firm_loc = NULL;
+struct firm_signature *current_twl_firm = NULL;
 firm_h *agb_firm_loc = NULL;
 struct firm_signature *current_agb_firm = NULL;
 
@@ -57,9 +59,9 @@ int main(int argc, char *argv[])
 {
     int rc = 0;
     void *cake = NULL;
-    long firm_size, agb_firm_size;
+    long firm_size, twl_firm_size, agb_firm_size;
 
-    check(argc > 3, "Usage: %s <cake file> <memory file> <NATIVE_FIRM> [AGB_FIRM] [TWL_FIRM]", argv[0]);
+    check(argc > 3, "Usage: %s <cake file> <memory file> <NATIVE_FIRM> [TWL_FIRM] [AGB_FIRM]", argv[0]);
 
     cake = load_file(argv[1], NULL);
     check(cake, "Failed to load cake: %s", argv[1]);
@@ -73,10 +75,17 @@ int main(int argc, char *argv[])
     check(current_firm, "Unsupported NATIVE_FIRM: %s", argv[3]);
 
     if (argc > 4) {
-        agb_firm_loc = load_file(argv[4], &agb_firm_size);
-        check(agb_firm_loc, "Failed to load AGB_FIRM: %s", argv[4]);
-        current_agb_firm = get_firm_info(agb_firm_loc, agb_firm_signatures);
-        check(current_agb_firm, "Unsupported AGB_FIRM: %s", argv[4]);
+        twl_firm_loc = load_file(argv[4], &twl_firm_size);
+        check(twl_firm_loc, "Failed to load TWL_FIRM: %s", argv[5]);
+        current_twl_firm = get_firm_info(twl_firm_loc, twl_firm_signatures);
+        check(current_twl_firm, "Unsupported TWL_FIRM: %s", argv[5]);
+
+        if (argc > 5) {
+            agb_firm_loc = load_file(argv[5], &agb_firm_size);
+            check(agb_firm_loc, "Failed to load AGB_FIRM: %s", argv[5]);
+            current_agb_firm = get_firm_info(agb_firm_loc, agb_firm_signatures);
+            check(current_agb_firm, "Unsupported AGB_FIRM: %s", argv[5]);
+        }
     }
 
     patch_reset();
@@ -87,7 +96,11 @@ int main(int argc, char *argv[])
     check(write_file(argv[3], firm_loc, firm_size) == 0, "Failed to write NATIVE_FIRM: %s", argv[3]);
 
     if (argc > 4) {
-        check(write_file(argv[4], agb_firm_loc, agb_firm_size) == 0, "Failed to write AGB_FIRM: %s", argv[4]);
+        check(write_file(argv[4], twl_firm_loc, twl_firm_size) == 0, "Failed to write TWL_FIRM: %s", argv[4]);
+
+        if (argc > 5) {
+            check(write_file(argv[5], agb_firm_loc, agb_firm_size) == 0, "Failed to write AGB_FIRM: %s", argv[5]);
+        }
     }
 
     goto cleanup;
