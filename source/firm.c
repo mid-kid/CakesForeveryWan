@@ -230,7 +230,7 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t *size, void *key)
 
     if (firm->magic != FIRM_MAGIC) return 1;
 
-    memcpy32(dest, firm, *size);
+    memcpy(dest, firm, *size);
 
     return 0;
 }
@@ -415,7 +415,7 @@ void boot_firm()
 
     for (firm_section_h *section = firm_loc->section;
             section < firm_loc->section + 4 && section->address != 0; section++) {
-        memcpy32((void *)section->address, (void *)firm_loc + section->offset, section->size);
+        memcpy((void *)section->address, (void *)firm_loc + section->offset, section->size);
     }
     print("Copied FIRM");
 

@@ -236,5 +236,10 @@ void main()
 
     load_config_cakes();
 
+    /*print("Shalabalabalading dang dong to the death and beyond and we will kill ourselves till we blled and fuck eachother to death");*/
+    print("One thing");
+    print("Another thing");
+    print("Yay scrolling?");
+
     menu_main();
 }

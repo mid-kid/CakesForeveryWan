@@ -3,7 +3,7 @@
 .global _start
 _start:
     @ Change the stack pointer
-    mov sp, #0x27000000
+    mov sp, #0x23000000
 
     @ Give read/write access to all the memory regions
     ldr r5, =0x33333333

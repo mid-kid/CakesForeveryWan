@@ -43,10 +43,10 @@ void clear_screen(enum screen screen)
     struct buffer_select select = {0};
     set_buffers(screen, &select);
 
-    memset32(select.buffer1, 0, select.size);
+    memset(select.buffer1, 0, select.size);
 
     if (select.buffer2) {
-        memset32(select.buffer2, 0, select.size);
+        memset(select.buffer2, 0, select.size);
     }
 }
 

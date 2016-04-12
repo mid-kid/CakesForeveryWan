@@ -65,7 +65,7 @@ int *draw_selection_menu(const char *title, int count, char *options[], const in
         return NULL;
     }
 
-    memset32(selected_options, 0, sizeof(selected_options));
+    memset(selected_options, 0, sizeof(selected_options));
 
     int current = 0;
     int pos_x_text = 10 + 4 * SPACING_HORIZ;

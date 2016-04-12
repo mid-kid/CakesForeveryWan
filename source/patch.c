@@ -17,7 +17,6 @@
 #include "config.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
-#define memmove memcpy
 #else
 #include <string.h>
 #include <stdio.h>
@@ -196,7 +195,7 @@ int patch_options(void *address, const uint32_t size, const uint8_t options, con
 
         void *pos = memsearch(address, "slot0x25keyXhere", size, AES_BLOCK_SIZE);
         if (pos) {
-            memcpy32(pos, fcram_temp, AES_BLOCK_SIZE);
+            memcpy(pos, fcram_temp, AES_BLOCK_SIZE);
         } else {
             print("I don't know where to add keyX.\n  Ignoring...");
         }

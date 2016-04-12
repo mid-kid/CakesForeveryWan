@@ -84,7 +84,7 @@ void save_config()
     config->firm_console = current_firm->console;
 
     // Clean the memory area. We don't want to dump random bytes.
-    memset32(config->cake_list, 0, cake_list_size);
+    memset(config->cake_list, 0, cake_list_size);
 
     // More boundary checking.
     const unsigned int max_cakes = (FCRAM_SPACING - sizeof(struct config_file)) /

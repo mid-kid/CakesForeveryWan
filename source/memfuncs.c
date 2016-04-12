@@ -1,6 +1,7 @@
 #include "memfuncs.h"
 
 #include <stdint.h>
+#include <stddef.h>
 
 int strlen(const char *string)
 {
@@ -9,45 +10,85 @@ int strlen(const char *string)
     return string_end - string;
 }
 
-void memcpy32(void *dest, const void *src, uint32_t size)
-{
-    uint32_t *dest32 = (uint32_t *)dest;
-    uint32_t *src32 = (uint32_t *)src;
-    for (uint32_t i = 0; i < size / 4; i++) {
-        dest32[i] = src32[i];
-    }
-}
-
-void memset32(void *dest, uint32_t filler, uint32_t size)
-{
-    uint32_t *dest32 = (uint32_t *)dest;
-    for (uint32_t i = 0; i < size / 4; i++) {
-        dest32[i] = filler;
-    }
-}
-
-void memcpy(void *dest, const void *src, uint32_t size)
+void memcpy(void *dest, const void *src, size_t size)
 {
     char *destc = (char *)dest;
     const char *srcc = (const char *)src;
-    for (uint32_t i = 0; i < size; i++) {
-        destc[i] = srcc[i];
+
+    // If we can align both dest and src together...
+    if ((uintptr_t)srcc % sizeof(size_t) == (uintptr_t)destc % sizeof(size_t)) {
+        // Align them and copy faster
+        while ((uintptr_t)srcc % sizeof(size_t) && size--) {
+            *destc++ = *srcc++;
+        }
+
+        for (; size >= sizeof(size_t); size -= sizeof(size_t),
+                destc += sizeof(size_t), srcc += sizeof(size_t)) {
+            *(size_t *)destc = *(size_t *)srcc;
+        }
+    }
+
+    // Finish by copying the leftovers
+    while (size--) {
+        *destc++ = *srcc++;
     }
 }
 
-void memset(void *dest, int filler, uint32_t size)
+void memmove(void *dest, const void *src, size_t size)
+{
+    // memcpy does the job of moving backwards just fine
+    if (dest < src || src + size <= dest) {
+        return memcpy(dest, src, size);
+    }
+
+    // Moving forward is just a reverse memcpy
+    char *destc = (char *)(dest + size - 1);
+    const char *srcc = (const char *)(src + size - 1);
+
+    // If we can align both dest and src together...
+    if ((uintptr_t)srcc % sizeof(size_t) == (uintptr_t)destc % sizeof(size_t)) {
+        // Align them and copy faster
+        while ((uintptr_t)srcc % sizeof(size_t) && size--) {
+            *destc-- = *srcc--;
+        }
+
+        for (; size >= sizeof(size_t); size -= sizeof(size_t),
+                destc -= sizeof(size_t), srcc -= sizeof(size_t)) {
+            *(size_t *)destc = *(size_t *)srcc;
+        }
+    }
+
+    // Finish by copying the leftovers
+    while (size--) {
+        *destc-- = *srcc--;
+    }
+}
+
+void memset(void *dest, const int filler, size_t size)
 {
     char *destc = (char *)dest;
-    for (uint32_t i = 0; i < size; i++) {
-        destc[i] = filler;
+
+    // Align dest to 4 bytes
+    while ((uintptr_t)destc % sizeof(size_t) && size--) {
+        *destc++ = filler;
+    }
+
+    // Set 32 bytes at a time
+    for (; size >= sizeof(size_t); size -= sizeof(size_t), destc += sizeof(size_t)) {
+        *(size_t *)destc = filler;
+    }
+
+    // Finish
+    while (size--) {
+        *destc++ = filler;
     }
 }
 
-int memcmp(const void *buf1, const void *buf2, uint32_t size)
+int memcmp(const void *buf1, const void *buf2, const size_t size)
 {
     const char *buf1c = (const char *)buf1;
     const char *buf2c = (const char *)buf2;
-    for (uint32_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         int cmp = buf1c[i] - buf2c[i];
         if (cmp) {
             return cmp;
@@ -57,12 +98,12 @@ int memcmp(const void *buf1, const void *buf2, uint32_t size)
     return 0;
 }
 
-void strncpy(void *dest, const void *src, uint32_t size)
+void strncpy(void *dest, const void *src, const size_t size)
 {
     char *destc = (char *)dest;
     const char *srcc = (const char *)src;
 
-    uint32_t i;
+    size_t i;
     for (i = 0; i < size && srcc[i] != 0; i++) {
         destc[i] = srcc[i];
     }
@@ -71,12 +112,12 @@ void strncpy(void *dest, const void *src, uint32_t size)
     destc[i] = 0;
 }
 
-int strncmp(const void *buf1, const void *buf2, uint32_t size)
+int strncmp(const void *buf1, const void *buf2, const size_t size)
 {
     const char *buf1c = (const char *)buf1;
     const char *buf2c = (const char *)buf2;
 
-    uint32_t i;
+    size_t i;
     for (i = 0; i < size && buf1c[i] != 0 && buf2c[i] != 0; i++) {
         int cmp = buf1c[i] - buf2c[i];
         if (cmp) {
