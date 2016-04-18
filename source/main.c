@@ -131,26 +131,26 @@ void menu_more()
 void version_info()
 {
     int pos_y = draw_loading("Version info", "CakesFW version " CAKES_VERSION) + SPACING_VERT;
-    int version_pos_x = 10 + SPACING_HORIZ * 21;
+    int version_pos_x = SPACING_HORIZ * 21;
 
-    draw_string(screen_top_left, "NATIVE_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+    draw_string(screen_top_left, "NATIVE_FIRM version:", 0, pos_y, COLOR_NEUTRAL);
     draw_string(screen_top_left, current_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
 
     if (current_twl_firm) {
         pos_y += SPACING_VERT;
 
-        draw_string(screen_top_left, "TWL_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+        draw_string(screen_top_left, "TWL_FIRM version:", 0, pos_y, COLOR_NEUTRAL);
         draw_string(screen_top_left, current_twl_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
     }
 
     if (current_agb_firm) {
         pos_y += SPACING_VERT;
 
-        draw_string(screen_top_left, "AGB_FIRM version:", 10, pos_y, COLOR_NEUTRAL);
+        draw_string(screen_top_left, "AGB_FIRM version:", 0, pos_y, COLOR_NEUTRAL);
         draw_string(screen_top_left, current_agb_firm->version_string, version_pos_x, pos_y, COLOR_NEUTRAL);
     }
 
-    draw_string(screen_top_left, "Press B to return", 10, pos_y + 20, COLOR_SELECTED);
+    draw_string(screen_top_left, "Press B to return", 0, pos_y + 20, COLOR_SELECTED);
     while (1) {
         uint16_t key = wait_key();
 

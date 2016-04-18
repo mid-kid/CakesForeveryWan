@@ -42,25 +42,25 @@ void memmove(void *dest, const void *src, size_t size)
     }
 
     // Moving forward is just a reverse memcpy
-    char *destc = (char *)(dest + size - 1);
-    const char *srcc = (const char *)(src + size - 1);
+    char *destc = (char *)dest;
+    const char *srcc = (const char *)src;
 
     // If we can align both dest and src together...
     if ((uintptr_t)srcc % sizeof(size_t) == (uintptr_t)destc % sizeof(size_t)) {
         // Align them and copy faster
-        while ((uintptr_t)srcc % sizeof(size_t) && size--) {
-            *destc-- = *srcc--;
+        while ((uintptr_t)(destc + size) % sizeof(size_t) && size--) {
+            destc[size] = srcc[size];
         }
 
-        for (; size >= sizeof(size_t); size -= sizeof(size_t),
-                destc -= sizeof(size_t), srcc -= sizeof(size_t)) {
-            *(size_t *)destc = *(size_t *)srcc;
+        while (size >= sizeof(size_t)) {
+            size -= sizeof(size_t);
+            *(size_t *)(destc + size) = *(size_t *)(srcc + size);
         }
     }
 
     // Finish by copying the leftovers
     while (size--) {
-        *destc-- = *srcc--;
+        destc[size] = srcc[size];
     }
 }
 
