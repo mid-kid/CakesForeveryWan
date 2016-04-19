@@ -1,10 +1,10 @@
 /*-----------------------------------------------------------------------*/
-/* Low level disk I/O module skeleton for FatFs     (C)ChaN, 2014        */
+/* Low level disk I/O module skeleton for FatFs	 (C)ChaN, 2016		*/
 /*-----------------------------------------------------------------------*/
-/* If a working storage control module is available, it should be        */
+/* If a working storage control module is available, it should be		*/
 /* attached to the FatFs via a glue function rather than modifying it.   */
-/* This is an example of glue functions to attach various exsisting      */
-/* storage control modules to the FatFs module with a defined API.       */
+/* This is an example of glue functions to attach various exsisting	  */
+/* storage control modules to the FatFs module with a defined API.	   */
 /*-----------------------------------------------------------------------*/
 
 #include "diskio.h"		/* FatFs lower layer API */
@@ -12,7 +12,7 @@
 
 
 /*-----------------------------------------------------------------------*/
-/* Get Drive Status                                                      */
+/* Get Drive Status													  */
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_status (
@@ -26,7 +26,7 @@ DSTATUS disk_status (
 
 
 /*-----------------------------------------------------------------------*/
-/* Inidialize a Drive                                                    */
+/* Inidialize a Drive													*/
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_initialize (
@@ -41,7 +41,7 @@ DSTATUS disk_initialize (
 
 
 /*-----------------------------------------------------------------------*/
-/* Read Sector(s)                                                        */
+/* Read Sector(s)														*/
 /*-----------------------------------------------------------------------*/
 
 DRESULT disk_read (
@@ -62,10 +62,9 @@ DRESULT disk_read (
 
 
 /*-----------------------------------------------------------------------*/
-/* Write Sector(s)                                                       */
+/* Write Sector(s)													   */
 /*-----------------------------------------------------------------------*/
 
-#if _USE_WRITE
 DRESULT disk_write (
 	__attribute__((unused))
 	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
@@ -80,15 +79,13 @@ DRESULT disk_write (
 
 	return RES_OK;
 }
-#endif
 
 
 
 /*-----------------------------------------------------------------------*/
-/* Miscellaneous Functions                                               */
+/* Miscellaneous Functions											   */
 /*-----------------------------------------------------------------------*/
 
-#if _USE_IOCTL
 DRESULT disk_ioctl (
 	__attribute__((unused))
 	BYTE pdrv,		/* Physical drive nmuber (0..) */
@@ -100,4 +97,4 @@ DRESULT disk_ioctl (
 {
 	return RES_PARERR;
 }
-#endif
+

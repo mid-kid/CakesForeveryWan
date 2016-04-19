@@ -51,7 +51,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	void waitcycles(uint32_t val);
+	void ioDelay(uint32_t val);
 #ifdef __cplusplus
 };
 #endif
@@ -431,7 +431,7 @@ void InitSD()
 int Nand_Init()
 {
 	inittarget(&handelNAND);
-	waitcycles(0xF000);
+	ioDelay(0xF000);
 	
 	DEBUGPRINT(topScreen, "0x00000 ", handelNAND.error, 10, 20 + 13*8, RGB(40, 40, 40), RGB(208, 208, 208));
 	
@@ -507,8 +507,8 @@ int Nand_Init()
 int SD_Init()
 {
 	inittarget(&handelSD);
-	//waitcycles(0x3E8);
-	waitcycles(0xF000);
+	//ioDelay(0x3E8);
+	ioDelay(0xF000);
 	DEBUGPRINT(topScreen, "0x00000 ", handelSD.error, 10, 20 + 14*8, RGB(40, 40, 40), RGB(208, 208, 208));
 	sdmmc_send_command(&handelSD,0,0);
 	DEBUGPRINT(topScreen, "0x10408 ", handelSD.error, 10, 20 + 14*8, RGB(40, 40, 40), RGB(208, 208, 208));
