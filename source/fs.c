@@ -12,7 +12,6 @@ int mount_sd()
         print("Failed to mount SD card!");
         return 1;
     }
-    print("Mounted SD card");
     return 0;
 }
 
