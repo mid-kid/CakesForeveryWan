@@ -266,22 +266,11 @@ int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned
     else return 0;
 }
 
-int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uint32_t *size, struct firm_signature *signatures, struct firm_signature **current, enum firm_types firm_type)
+int decrypt_firm(firm_h *dest, char *path_firmkey, char *path_cetk, uint32_t *size, enum firm_types firm_type)
 {
     uint8_t firm_key[AES_BLOCK_SIZE];
-    struct firm_signature *firm_current = NULL;
 
-    if (read_file(dest, path, *size) != 0) {
-        print("Failed to load FIRM");
-
-        // Only whine about this if it's NATIVE_FIRM, which is important.
-        if (firm_type == NATIVE_FIRM) {
-            draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at " PATH_FIRMWARE);
-        }
-        return 2;
-    }
-    print("Loaded FIRM");
-
+    // Firmware is likely encrypted. Decrypt.
     if (read_file(firm_key, path_firmkey, AES_BLOCK_SIZE) != 0) {
         print("Failed to load FIRM key,\n  will try to create it...");
 
@@ -290,9 +279,9 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
 
             if (firm_type == NATIVE_FIRM) {
                 draw_loading("Failed to load FIRM key or CETK",
-                        "Make sure you have a firmkey.bin or cetk\n"
-                        "  located at " PATH_FIRMKEY "\n"
-                        "  or " PATH_CETK ", respectively.");
+                             "Make sure you have a firmkey.bin or cetk\n"
+                             "  located at " PATH_FIRMKEY "\n"
+                             "  or " PATH_CETK ", respectively.");
             }
             return 2;
         }
@@ -313,9 +302,38 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     if (decrypt_firm_title(dest, (void *)dest, size, firm_key) != 0) {
         print("Failed to decrypt the firmware");
         draw_loading("Failed to decrypt the firmware",
-                "Please double check your firmware and\n"
-                "  firmkey/cetk are right.");
+                     "Please double check your firmware and\n"
+                     "  firmkey/cetk are right.");
         return 1;
+    }
+    return 0;
+}
+
+int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uint32_t *size, struct firm_signature *signatures, struct firm_signature **current, enum firm_types firm_type)
+{
+    struct firm_signature *firm_current = NULL;
+    int status = 0;
+    int firmware_changed = 0;
+
+    if (read_file(dest, path, *size) != 0) {
+        print("Failed to load FIRM");
+
+        // Only whine about this if it's NATIVE_FIRM, which is important.
+        if (firm_type == NATIVE_FIRM) {
+            draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located at " PATH_FIRMWARE);
+        }
+        return 2;
+    }
+    print("Loaded FIRM");
+
+    // Check and decrypt FIRM if it is encrypted.
+    if (dest->magic != FIRM_MAGIC) {
+        status = decrypt_firm(dest, path_firmkey, path_cetk, size, firm_type);
+        if (status != 0)
+            return status;
+        firmware_changed = 1; // Decryption performed.
+    } else {
+        print("FIRM seems not encrypted");
     }
 
     // Determine firmware version
@@ -324,10 +342,10 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
     if (!firm_current) {
         print("Couldn't determine firmware version");
         draw_loading("Couldn't determine firmware version",
-                "The firmware you're trying to use is\n"
-                "  most probably not supported by Cakes.\n"
-                "Dumping it to your SD card:\n"
-                "  " PATH_UNSUPPORTED_FIRMWARE);
+                     "The firmware you're trying to use is\n"
+                     "  most probably not supported by Cakes.\n"
+                     "Dumping it to your SD card:\n"
+                     "  " PATH_UNSUPPORTED_FIRMWARE);
         write_file(dest, PATH_UNSUPPORTED_FIRMWARE, *size);
         print("Dumped unsupported firmware");
         return 1;
@@ -339,22 +357,48 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uin
         for (firm_section_h *section = dest->section;
                 section < dest->section + 4; section++) {
             if (section->type == FIRM_TYPE_ARM9) {
-                // Decrypt the arm9bin
-                if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + section->offset),
-                            firm_type, firm_current->version) != 0) {
-                    print("Couldn't decrypt ARM9 FIRM binary");
-                    draw_loading("Couldn't decrypt ARM9 FIRM binary",
-                            "Double-check you've got the right firmware.bin.\n"
-                            "If you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n"
-                            "  " PATH_SLOT0X11KEY96 "\n"
-                            "We remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
-                    return 1;
+                // Check whether the arm9bin is encrypted.
+                int arm9bin_iscrypt = 0;
+                uint32_t magic = *(uint32_t*)((uintptr_t)dest + section->offset + 0x800);
+                if (firm_type == NATIVE_FIRM)
+                    arm9bin_iscrypt = (magic != ARM9BIN_MAGIC);
+                else if (firm_type == AGB_FIRM || firm_type == TWL_FIRM)
+                    arm9bin_iscrypt = (magic != LGY_ARM9BIN_MAGIC);
+
+                if (arm9bin_iscrypt) {
+                    // Decrypt the arm9bin.
+                    if (decrypt_arm9bin((arm9bin_h *)((uintptr_t)dest + section->offset),
+                                firm_type, firm_current->version) != 0) {
+                        print("Couldn't decrypt ARM9 FIRM binary");
+                        draw_loading("Couldn't decrypt ARM9 FIRM binary",
+                                     "Double-check you've got the right firmware.bin.\n"
+                                     "If you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n"
+                                     "  " PATH_SLOT0X11KEY96 "\n"
+                                     "We remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
+                        return 1;
+                    }
+                    firmware_changed = 1; // Decryption of arm9bin performed.
+                } else {
+                    print("ARM9 FIRM binary seems not encrypted");
+                    if (firm_type == NATIVE_FIRM && firm_current->version > 0x0F) {
+                        slot0x11key96_init(); // This has to be loaded regardless, otherwise boot will fail.
+                    }
                 }
 
                 // We assume there's only one section to decrypt.
                 break;
             }
         }
+    }
+
+    // Save firmware.bin if decryption was done.
+    if (firmware_changed) {
+        print("Saving decrypted FIRM");
+        write_file(dest, path, *size);
+    }
+
+    if (firm_current->console == console_n3ds) {
+        print("Fixing arm9 entrypoint...");
 
         // Patch the entrypoint to skip arm9loader
         if (firm_type == NATIVE_FIRM) {
