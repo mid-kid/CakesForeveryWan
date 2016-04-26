@@ -9,7 +9,7 @@
 #include "fcram.h"
 #include "paths.h"
 
-static unsigned int config_ver = 3;
+static unsigned int config_ver = 4;
 
 struct config_file *config = (struct config_file *)FCRAM_CONFIG;
 int patches_modified = 0;

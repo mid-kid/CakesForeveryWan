@@ -9,6 +9,7 @@ struct config_file {
     uint8_t firm_console;
     uint32_t emunand_location;
     unsigned int autoboot_enabled: 1;
+    unsigned int silent_boot: 1;
     unsigned int cake_count;
     char cake_list[][_MAX_LFN + 1];
 } __attribute__((packed));
