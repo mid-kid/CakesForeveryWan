@@ -8,6 +8,7 @@
 #include "draw.h"
 #include "fs.h"
 #include "hid.h"
+#include "i2c.h"
 #include "fcram.h"
 #include "paths.h"
 #include "headers.h"
@@ -169,7 +170,7 @@ void menu_main()
         char *options[] = {"Boot CFW",
                            "Select Patches",
                            "More options...",
-                           "Version info"};
+                           "Version info",
         int result = draw_menu("CakesFW " CAKES_VERSION, 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -186,6 +187,9 @@ void menu_main()
             case 3:
                 version_info();
                 break;
+			case 4:
+				i2cWriteRegister(I2C_DEV_MCU, 0x20, 1);
+				while(1); // Won't break out of this one >:D
         }
     }
 }
