@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "memfuncs.h"
 #include "font.h"
+#include "config.h"
 
 static struct framebuffers {
     uint8_t *top_left;
@@ -150,6 +151,10 @@ int draw_string(const enum screen screen, const char *string, const unsigned int
 
 void print(const char *string)
 {
+    // If silent boot is enabled, don't output.
+    if (config->silent_boot)
+        return;
+
     struct buffer_select select = {0};
     set_buffers(print_screen, &select);
 

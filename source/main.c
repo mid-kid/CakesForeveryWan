@@ -42,9 +42,11 @@ void menu_select_patches()
 void menu_toggle()
 {
     char *options[] = {"Enable autoboot (Press L to enter the menu)",
-                       "Force saving patched firmware"};
+                       "Force saving patched firmware",
+                       "Silence debug output"};
     int preselected[] = {config->autoboot_enabled,
-                         save_firm};
+                         save_firm,
+                         config->silent_boot};
 
     int *result = draw_selection_menu("Toggleable options", sizeof(options) / sizeof(char *),
                                       options, preselected);
@@ -52,6 +54,7 @@ void menu_toggle()
     // Apply the options
     config->autoboot_enabled = result[0];
     save_firm = result[1];
+    config->silent_boot = result[2]; // This doesn't change patches.
     patches_modified |= preselected[0] ? 0 : result[0];
     patches_modified |= preselected[1] ? 0 : result[1];
 }
