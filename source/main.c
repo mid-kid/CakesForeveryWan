@@ -171,6 +171,7 @@ void menu_main()
                            "Select Patches",
                            "More options...",
                            "Version info",
+                           "Power Off"};
         int result = draw_menu("CakesFW " CAKES_VERSION, 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -188,8 +189,15 @@ void menu_main()
                 version_info();
                 break;
 			case 4:
+				if ((*(volatile char *)0x10010000) == 7) // It's a reboot from AGB_FIRM
+				{
+					draw_message("Can't power off", "You just rebooted from AGB_FIRM and will\nlose your save if you poweroff\nYou can poweroff manually,\nbut you've been warned");
+				}
+				else
+				{
 				i2cWriteRegister(I2C_DEV_MCU, 0x20, 1);
 				while(1); // Won't break out of this one >:D
+				}
         }
     }
 }
