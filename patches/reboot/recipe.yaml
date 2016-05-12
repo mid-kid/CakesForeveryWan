@@ -10,11 +10,16 @@ patches:
             - rebc  # reboot_code
         versions:
             o3ds:
+                0x52:
+                    offset: 0x08084ACC
+                    variables:
+                        - 0x08059D24
+                        - &reboot_code_o3ds 0x080FF4FC
                 0x50:
                     offset: 0x08084A10
                     variables:
                         - 0x08059D10
-                        - &reboot_code_o3ds 0x080FF4FC
+                        - *reboot_code_o3ds
                 0x49:
                     offset: 0x080859FC
                     variables:
@@ -46,11 +51,16 @@ patches:
                         - 0x0805CF04
                         - *reboot_code_o3ds
             n3ds:
+                0x21:
+                    offset: 0x08084AC4
+                    variables:
+                        - 0x08059D20
+                        - &reboot_code_n3ds 0x0817F4FC
                 0x1F:
                     offset: 0x08084A0C
                     variables:
                         - 0x08059D10
-                        - &reboot_code_n3ds 0x0817F4FC
+                        - *reboot_code_n3ds
                 0x1B:
                     offset: 0x080849F0
                     variables:
@@ -66,6 +76,7 @@ patches:
         type: NATIVE_FIRM
         versions:
             o3ds:
+                0x52: 0x080940C8
                 0x50: 0x080933CC
                 0x49: 0x08094454
                 0x38: 0x08094200
@@ -74,6 +85,7 @@ patches:
                 0x2A: 0x08093F28
                 0x1F: 0x0809744C
             n3ds:
+                0x21: 0x08094134
                 0x1F: 0x0809343C
                 0x1B: 0x08093420
                 0x0F: 0x0809435C

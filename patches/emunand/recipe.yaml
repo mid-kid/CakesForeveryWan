@@ -10,6 +10,8 @@ patches:
             - sdmmc
         versions:
             o3ds:
+                0x52:
+                    - 0x080D8A70
                 0x50:
                     - 0x080D8A50
                 0x49:
@@ -27,6 +29,8 @@ patches:
                 0x18:
                     - 0x080D91D8
             n3ds:
+                0x21:
+                    - 0x080F0AF0
                 0x1F:
                     - 0x080F0AD0
                 0x1B:
@@ -38,6 +42,7 @@ patches:
         type: NATIVE_FIRM
         versions:
             o3ds:
+                0x52: 0x0801B564
                 0x50: 0x0801B564
                 0x49: 0x0801B564
                 0x38: 0x0801B564
@@ -47,6 +52,7 @@ patches:
                 0x1F: 0x0801B568
                 0x18: 0x0801B568
             n3ds:
+                0x21: 0x0801B3D4
                 0x1F: 0x0801B3D4
                 0x1B: 0x0801B3D4
                 0x0F: 0x0801B3D4
@@ -58,6 +64,7 @@ patches:
             variable: mem
         versions:
             o3ds:
+                0x52: 0x08077BF0
                 0x50: 0x08077B5C
                 0x49: 0x0807882C
                 0x38: 0x08078724
@@ -67,6 +74,7 @@ patches:
                 0x1F: 0x08078C30
                 0x18: 0x08078852
             n3ds:
+                0x21: 0x08077BEC
                 0x1F: 0x08077B5C
                 0x1B: 0x08077B40
                 0x0F: 0x0807877C
@@ -78,6 +86,7 @@ patches:
             variable: mem
         versions:
             o3ds:
+                0x52: 0x08077C30
                 0x50: 0x08077B9C
                 0x49: 0x0807886C
                 0x38: 0x08078764
@@ -87,6 +96,7 @@ patches:
                 0x1F: 0x08078C70
                 0x18: 0x08078892
             n3ds:
+                0x21: 0x08077C2C
                 0x1F: 0x08077B9C
                 0x1B: 0x08077B80
                 0x0F: 0x080787BC

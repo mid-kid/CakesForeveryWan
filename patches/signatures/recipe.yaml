@@ -5,6 +5,7 @@ patches:
         type: NATIVE_FIRM
         versions:
             o3ds:
+                0x52: 0x08062BA0
                 0x50: 0x08062B0C
                 0x49: 0x080632B8
                 0x38: 0x08063324
@@ -13,6 +14,7 @@ patches:
                 0x2A: 0x08063208
                 0x1F: 0x0804D5C0
             n3ds:
+                0x21: 0x08062B9C
                 0x1F: 0x08062B0C
                 0x1B: 0x08062B08
                 0x0F: 0x08063374
@@ -22,6 +24,7 @@ patches:
         type: NATIVE_FIRM
         versions:
             o3ds:
+                0x52: 0x0805C334
                 0x50: 0x0805C320
                 0x49: 0x0805D628
                 0x38: 0x0805D458
@@ -30,6 +33,7 @@ patches:
                 0x2A: 0x0805D458
                 0x1F: 0x0805FAC0
             n3ds:
+                0x21: 0x0805C330
                 0x1F: 0x0805C320
                 0x1B: 0x0805C31C
                 0x0F: 0x0805D498
