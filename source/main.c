@@ -9,6 +9,7 @@
 #include "fs.h"
 #include "hid.h"
 #include "fcram.h"
+#include "i2c.h"
 #include "paths.h"
 #include "headers.h"
 #include "fatfs/sdmmc/sdmmc.h"
@@ -54,7 +55,7 @@ void menu_toggle()
     // Apply the options
     config->autoboot_enabled = result[0];
     save_firm = result[1];
-    config->silent_boot = result[2]; // This doesn't change patches.
+    config->silent_boot = result[2];  // This doesn't change patches.
     patches_modified |= preselected[0] ? 0 : result[0];
     patches_modified |= preselected[1] ? 0 : result[1];
 }
@@ -169,7 +170,8 @@ void menu_main()
         char *options[] = {"Boot CFW",
                            "Select Patches",
                            "More options...",
-                           "Version info"};
+                           "Version info",
+                           "Power off"};
         int result = draw_menu("CakesFW " CAKES_VERSION, 0, sizeof(options) / sizeof(char *), options);
 
         switch (result) {
@@ -186,6 +188,9 @@ void menu_main()
             case 3:
                 version_info();
                 break;
+            case 4:
+                i2cWriteRegister(I2C_DEV_MCU, 0x20, 1);
+                while(1);  // Won't break out of this one >:D
         }
     }
 }
