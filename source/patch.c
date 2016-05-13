@@ -67,7 +67,7 @@ struct patch {
     uint32_t variables_offset;
 } __attribute__((packed));
 
-struct patch_versions {
+struct patch_version {
     union {
         struct {
             uint16_t firm_version;
@@ -311,12 +311,14 @@ int patch_firm(const void *_cake)
 
     struct patch *patches = (struct patch *)((uintptr_t)cake + cake->patches_offset);
 
+    int applied = 0;
+
     for (struct patch *patch = patches;
             patch < patches + cake->patch_count; patch++) {
         void *patch_code = (void *)((uintptr_t)cake + patch->offset);
-        struct patch_versions *versions = (struct patch_versions *)((uintptr_t)cake + patch->versions_offset);
+        struct patch_version *versions = (struct patch_version *)((uintptr_t)cake + patch->versions_offset);
         uint32_t *variables = (uint32_t *)((uintptr_t)cake + patch->variables_offset);
-        struct patch_versions *version = NULL;
+        struct patch_version *version = NULL;
         uint32_t *values;
         void *patch_location = NULL;
 
@@ -330,7 +332,7 @@ int patch_firm(const void *_cake)
 
         // Variables for the current firm
         firm_h *firm = NULL;
-        struct firm_signature *firm_info;
+        struct firm_signature *firm_info = NULL;
         firm_section_h *process9;
         int *process9_init;
 
@@ -365,14 +367,14 @@ int patch_firm(const void *_cake)
                     return 1;
             }
 
-            if (!firm) {
+            if (!firm_info) {
                 print("FIRM not loaded");
                 draw_message("FIRM not loaded", "The FIRM this cake tries to patch isn't loaded.\nPlease make sure it's installed correctly and is loaded.");
                 return 1;
             }
 
             // Look for the correct patch version info
-            for (struct patch_versions *patch_version = versions;
+            for (struct patch_version *patch_version = versions;
                     patch_version < versions + patch->version_count; patch_version++) {
                 if (patch_version->console == firm_info->console &&
                         patch_version->firm_version == firm_info->version) {
@@ -382,9 +384,9 @@ int patch_firm(const void *_cake)
             }
 
             if (!version) {
-                print("Unsupported FIRM version");
-                draw_message("Unsupported FIRM version", "This patch doesn't support the currently used FIRM version.");
-                return 1;
+                // This specific patch doesn't support this FIRM version,
+                //  but a different one might.
+                continue;
             }
 
             // Apply all the variables for this version
@@ -540,6 +542,7 @@ found_process9:;
             if (sysmodule->magic != NCCH_MAGIC) {
                 print("Unuspported feature");
                 draw_message("Unsupported feature", "This CakesFW version doesn't support injecting bigger sysmodules than those available or adding new ones yet.");
+                return 1;
             }
 
         } else {
@@ -594,6 +597,17 @@ found_process9:;
                 }
             }
         }
+
+        applied = 1;
+    }
+
+    if (!applied) {
+        print("Unable to apply cake");
+        draw_message("Unable to apply cake",
+                "This cake was unable to be applied correctly,\n"
+                "  probably because there was no patch available\n"
+                "  for your current FIRM version");
+        return 1;
     }
 
     // Make all the hook patches point to the right memory location.
@@ -681,10 +695,65 @@ int load_cakes_info(const char *dirpath)
         unsigned int bytes_read = 0;
         struct cake_header header;
         fr = f_read(&handle, &header, sizeof(header), &bytes_read);
+        if (fr != FR_OK || bytes_read != sizeof(header)) goto error;
+
+        // Get patch list
+        bytes_read = 0;
+        struct patch patches[header.patch_count];
+        fr = f_lseek(&handle, header.patches_offset);
         if (fr != FR_OK) goto error;
+        fr = f_read(&handle, patches, sizeof(patches), &bytes_read);
+        if (fr != FR_OK || bytes_read != sizeof(patches)) goto error;
+
+        // Check if the right FIRM version is available.
+        for (struct patch *patch = patches;
+                patch < patches + header.patch_count; patch++) {
+            // We check if the cake file has at least one patch that can be applied.
+            // If it's a patch which needs a FIRM, we check if the correct FIRM version is available.
+            if (patch->type == TYPE_FIRM || patch->type == TYPE_MEMORY || patch->type == TYPE_SYSMODULE) {
+                // Read the versions.
+                bytes_read = 0;
+                struct patch_version versions[patch->version_count];
+                fr = f_lseek(&handle, patch->versions_offset);
+                if (fr != FR_OK) goto error;
+                fr = f_read(&handle, versions, sizeof(versions), &bytes_read);
+                if (fr != FR_OK || bytes_read != sizeof(versions)) goto error;
+
+                struct firm_signature *firm_info = NULL;
+
+                switch (patch->firm_type) {
+                    case NATIVE_FIRM:
+                        firm_info = current_firm;
+                        break;
+                    case TWL_FIRM:
+                        firm_info = current_twl_firm;
+                        break;
+                    case AGB_FIRM:
+                        firm_info = current_agb_firm;
+                        break;
+                }
+
+                // If the FIRM isn't loaded, this patch can't be applied.
+                if (!firm_info) continue;
+
+                // If this patch doesn't have a version for the currently loaded FIRM, it can't be applied.
+                for (struct patch_version *version = versions;
+                        version < versions + patch->version_count; version++) {
+                    if (version->console == firm_info->console &&
+                            version->firm_version == firm_info->version) {
+                        goto patch_applicable;
+                    }
+                }
+            }
+        }
+
+        // This patch can't be applied.
+        continue;
+patch_applicable:;
 
         // Get the patch description
         const int desc_size = header.patches_offset - sizeof(header);
+        fr = f_lseek(&handle, 3);
         fr = f_read(&handle, cake_list[cake_count].description, desc_size, &bytes_read);
         if (fr != FR_OK) goto error;
 
@@ -693,6 +762,7 @@ int load_cakes_info(const char *dirpath)
 
         cake_count++;
     }
+
     f_closedir(&dir);
 
     return 0;
