@@ -19,16 +19,16 @@
 #endif
 
 #ifndef STANDALONE
-firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
-static uint32_t firm_size = FCRAM_SPACING;
+firm_h *firm_orig_loc = (firm_h *)FCRAM_FIRM_ORIG_LOC;
+size_t firm_size = FCRAM_SPACING;
 struct firm_signature *current_firm = NULL;
 
-firm_h *twl_firm_loc = (firm_h *)FCRAM_TWL_FIRM_LOC;
-static uint32_t twl_firm_size = FCRAM_SPACING * 2;
+firm_h *twl_firm_orig_loc = (firm_h *)FCRAM_TWL_FIRM_ORIG_LOC;
+size_t twl_firm_size = FCRAM_SPACING * 2;
 struct firm_signature *current_twl_firm = NULL;
 
-firm_h *agb_firm_loc = (firm_h *)FCRAM_AGB_FIRM_LOC;
-static uint32_t agb_firm_size = FCRAM_SPACING;
+firm_h *agb_firm_orig_loc = (firm_h *)FCRAM_AGB_FIRM_ORIG_LOC;
+size_t agb_firm_size = FCRAM_SPACING;
 struct firm_signature *current_agb_firm = NULL;
 
 static int update_96_keys = 0;
@@ -208,7 +208,7 @@ int decrypt_cetk_key(void *key, const void *cetk)
     return 0;
 }
 
-int decrypt_firm_title(firm_h *dest, ncch_h *ncch, uint32_t *size, void *key)
+int decrypt_firm_title(firm_h *dest, ncch_h *ncch, size_t *size, void *key)
 {
     uint8_t firm_iv[16] = {0};
     uint8_t exefs_key[16] = {0};
@@ -276,7 +276,7 @@ int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned
     else return 0;
 }
 
-int decrypt_firm(firm_h *dest, char *path_firmkey, char *path_cetk, uint32_t *size, enum firm_types firm_type)
+int decrypt_firm(firm_h *dest, char *path_firmkey, char *path_cetk, size_t *size, enum firm_types firm_type)
 {
     uint8_t firm_key[AES_BLOCK_SIZE];
 
@@ -319,7 +319,7 @@ int decrypt_firm(firm_h *dest, char *path_firmkey, char *path_cetk, uint32_t *si
     return 0;
 }
 
-int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, uint32_t *size, struct firm_signature *signatures, struct firm_signature **current, enum firm_types firm_type)
+int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, size_t *size, struct firm_signature *signatures, struct firm_signature **current, enum firm_types firm_type)
 {
     struct firm_signature *firm_current = NULL;
     int status = 0;
@@ -448,9 +448,9 @@ void boot_firm()
     if (update_96_keys && current_firm->console == console_n3ds && current_firm->version > 0x0F) {
         void *keydata = NULL;
         if (current_firm->version == 0x1B || current_firm->version == 0x1F) {
-            keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89814);
+            keydata = (void *)((uintptr_t)firm_orig_loc + firm_orig_loc->section[2].offset + 0x89814);
         } else if (current_firm->version == 0x21) {
-            keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89A14);
+            keydata = (void *)((uintptr_t)firm_orig_loc + firm_orig_loc->section[2].offset + 0x89A14);
         }
 
         aes_use_keyslot(0x11);
@@ -494,15 +494,15 @@ int load_firms()
 
     print("Loading NATIVE_FIRM...");
     draw_loading(title, "Loading NATIVE_FIRM...");
-    if (load_firm(firm_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
+    if (load_firm(firm_orig_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
 
     print("Loading TWL_FIRM...");
     draw_loading(title, "Loading TWL_FIRM...");
-    if (load_firm(twl_firm_loc, PATH_TWL_FIRMWARE, PATH_TWL_FIRMKEY, PATH_TWL_CETK, &twl_firm_size, twl_firm_signatures, &current_twl_firm, TWL_FIRM) == 1) return 1;
+    if (load_firm(twl_firm_orig_loc, PATH_TWL_FIRMWARE, PATH_TWL_FIRMKEY, PATH_TWL_CETK, &twl_firm_size, twl_firm_signatures, &current_twl_firm, TWL_FIRM) == 1) return 1;
 
     print("Loading AGB_FIRM...");
     draw_loading(title, "Loading AGB_FIRM...");
-    if (load_firm(agb_firm_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) return 1;
+    if (load_firm(agb_firm_orig_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) return 1;
 
     return 0;
 }

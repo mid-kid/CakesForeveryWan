@@ -86,6 +86,10 @@ struct memory_location {
 };
 
 #ifndef STANDALONE
+firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
+firm_h *twl_firm_loc = (firm_h *)FCRAM_TWL_FIRM_LOC;
+firm_h *agb_firm_loc = (firm_h *)FCRAM_AGB_FIRM_LOC;
+
 struct cake_info *cake_list = (struct cake_info *)FCRAM_CAKE_LIST;
 unsigned int cake_count = 0;
 
@@ -280,7 +284,12 @@ int patch_options()
 
 void patch_reset()
 {
-    // TODO: Back up and restore unpatched firm.
+    // Reset the FIRM
+    memcpy(firm_loc, firm_orig_loc, firm_size);
+    if (current_twl_firm) memcpy(twl_firm_loc, twl_firm_orig_loc, twl_firm_size);
+    if (current_agb_firm) memcpy(agb_firm_loc, agb_firm_orig_loc, agb_firm_size);
+
+    // Reset memory
     *memory_loc = sizeof(*memory_loc);
     current_memory_loc = memory_loc + 1;
     for (struct memory_location *location = memory_locations;
@@ -629,6 +638,7 @@ found_process9:;
 #ifndef STANDALONE
 int patch_firm_all()
 {
+    print("Resetting FIRM...");
     patch_reset();
 
     for (unsigned int i = 0; i < cake_count; i++) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "headers.h"
 #include "fatfs/ffconf.h"
 
 #define MAX_CAKES 0x10
@@ -14,6 +15,10 @@ struct memory_header {
     uint32_t location;
     uint32_t size;
 };
+
+extern firm_h *firm_loc;
+extern firm_h *twl_firm_loc;
+extern firm_h *agb_firm_loc;
 
 extern struct cake_info *cake_list;
 extern unsigned int cake_count;
