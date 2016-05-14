@@ -448,9 +448,9 @@ void boot_firm()
     if (update_96_keys && current_firm->console == console_n3ds && current_firm->version > 0x0F) {
         void *keydata = NULL;
         if (current_firm->version == 0x1B || current_firm->version == 0x1F) {
-            keydata = (void *)((uintptr_t)firm_orig_loc + firm_orig_loc->section[2].offset + 0x89814);
+            keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89814);
         } else if (current_firm->version == 0x21) {
-            keydata = (void *)((uintptr_t)firm_orig_loc + firm_orig_loc->section[2].offset + 0x89A14);
+            keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89A14);
         }
 
         aes_use_keyslot(0x11);
