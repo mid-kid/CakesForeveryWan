@@ -663,6 +663,8 @@ int load_cakes_info(const char *dirpath)
     FIL handle;
 
     const int pathlen = strlen(dirpath);
+    cake_count = 0;
+    memset(cake_selected, 0, MAX_CAKES);
 
     fr = f_opendir(&dir, dirpath);
     if (fr != FR_OK) goto error;

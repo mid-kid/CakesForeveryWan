@@ -9,7 +9,7 @@
 #include "fcram.h"
 #include "paths.h"
 
-static unsigned int config_ver = 4;
+static unsigned int config_ver = 5;
 
 struct config_file *config = (struct config_file *)FCRAM_CONFIG;
 int patches_modified = 0;
@@ -21,7 +21,7 @@ void load_config()
 
     if (read_file(config, PATH_CONFIG, 0x100000) != 0) {
         print("Failed to load the config.\n  Starting from scratch.");
-
+        memcpy(config->firm_path, PATH_FIRMWARE, strlen(PATH_FIRMWARE));
         patches_modified = 1;
         return;
     }
@@ -29,8 +29,14 @@ void load_config()
     if (config->config_ver != config_ver) {
         print("Invalid config version\n  Starting from scratch");
         memset(config, 0, sizeof(struct config_file));
+        memcpy(config->firm_path, PATH_FIRMWARE, strlen(PATH_FIRMWARE));
         patches_modified = 1;
         return;
+    }
+
+    if (!config->firm_path[0]) {
+        print("Firmware config not found.\n Defaulting to firmware.bin");
+        strncpy(config->firm_path, PATH_FIRMWARE, strlen(PATH_FIRMWARE));
     }
 
     print("Loaded config file");

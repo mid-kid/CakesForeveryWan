@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "draw.h"
 #include "fatfs/ff.h"
+#include "memfuncs.h"
 
 static FATFS fs;
 
@@ -76,4 +77,27 @@ int write_file(const void *buffer, const char *path, unsigned int size)
 error:
     f_close(&handle);
     return fr;
+}
+
+int find_file_pattern(char buffer[][_MAX_LFN + 1], const char *dirpath, int pathlen, int max_entries, const char *pattern)
+{
+    int count = 0;
+
+    FRESULT fr;
+    DIR dj;
+    FILINFO fno;
+
+    fr = f_findfirst(&dj, &fno, dirpath, pattern);
+
+    while (fr == FR_OK && fno.fname[0] && count < max_entries) {
+        memcpy(buffer[count], dirpath, pathlen);
+        buffer[count][pathlen] = '/';
+        strncpy(&buffer[count][pathlen + 1], fno.fname, _MAX_LFN + 1 - pathlen + 1);
+        fr = f_findnext(&dj, &fno);
+        count++;
+    }
+
+    f_closedir(&dj);
+
+    return count;
 }

@@ -40,5 +40,6 @@ extern int save_firm;
 struct firm_signature *get_firm_info(firm_h *firm, struct firm_signature *signatures);
 void slot0x11key96_init();
 int load_firms();
+int reload_native_firm();
 void boot_firm();
 void boot_cfw();

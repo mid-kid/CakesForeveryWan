@@ -494,7 +494,7 @@ int load_firms()
 
     print("Loading NATIVE_FIRM...");
     draw_loading(title, "Loading NATIVE_FIRM...");
-    if (load_firm(firm_orig_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
+    if (load_firm(firm_orig_loc, config->firm_path, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
 
     print("Loading TWL_FIRM...");
     draw_loading(title, "Loading TWL_FIRM...");
@@ -503,6 +503,15 @@ int load_firms()
     print("Loading AGB_FIRM...");
     draw_loading(title, "Loading AGB_FIRM...");
     if (load_firm(agb_firm_orig_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) return 1;
+
+    return 0;
+}
+
+int reload_native_firm()
+{
+    const char *title = "Reloading NATIVE_FIRM";
+    draw_loading(title, "Loading NATIVE_FIRM...");
+    if (load_firm(firm_orig_loc, config->firm_path, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
 
     return 0;
 }
