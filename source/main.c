@@ -112,23 +112,30 @@ void menu_emunand()
     patches_modified = 1;
 }
 
-void menu_firms()
+int menu_firms()
 {
     char firms[MAX_OPTIONS][_MAX_LFN + 1], dirpath[] = PATH_FIRMWARE_DIR;
 
     int pathlen = strlen(dirpath);
     int count = find_file_pattern(firms, dirpath, pathlen, MAX_OPTIONS, "firmware*.bin");
 
+    if (!count) {
+        draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located in the firmware directory");
+        return 1;
+    }
+
     char *options[count];
     for (int x = 0; x <= count; x++) options[x] = firms[x];
 
-    int result = draw_menu("Select firmware", 1, count, options);
-    if (result == -1) return;
+    int result = draw_menu("Select firmware", 0, count, options);
+    if (result == -1) return 0;
 
     memcpy(config->firm_path, firms[result], _MAX_LFN + 1);
 
-    load_cakes_info(PATH_PATCHES);
     reload_native_firm();
+    load_cakes_info(PATH_PATCHES);
+
+    return 0;
 }
 
 void menu_more()
@@ -138,7 +145,7 @@ void menu_more()
                            "Select emuNAND",
                            "Select firmware"};
         int result = draw_menu("More options", 1, sizeof(options) / sizeof(char *), options);
-
+        
         switch (result) {
             case 0:
                 menu_toggle();
@@ -256,8 +263,9 @@ void main()
         }
     }
 
-    // This function already correctly draws error messages
-    if (load_firms() != 0) return;
+    if (load_firms() != 0) {
+        if(menu_firms() !=0) return;
+    }
 
     print("Loading cakes");
     if (load_cakes_info(PATH_PATCHES) != 0) {
