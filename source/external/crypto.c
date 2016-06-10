@@ -3,7 +3,7 @@
 #include "crypto.h"
 
 #include <stddef.h>
-#include "memfuncs.h"
+#include "../memfuncs.h"
 /* original version by megazig */
 
 #ifndef __thumb__

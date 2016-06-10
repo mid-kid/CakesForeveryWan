@@ -13,10 +13,10 @@
 #include "menu.h"
 #include "fcram.h"
 #include "paths.h"
-#include "crypto.h"
 #include "config.h"
 #include "fatfs/ff.h"
 #include "fatfs/sdmmc/sdmmc.h"
+#include "external/crypto.h"
 #else
 #include <string.h>
 #include <stdio.h>
@@ -682,6 +682,7 @@ int load_cakes_info(const char *dirpath)
         memcpy(cake_list[cake_count].path, dirpath, pathlen);
         cake_list[cake_count].path[pathlen] = '/';
         strncpy(&cake_list[cake_count].path[pathlen + 1], fno.fname, sizeof(cake_list->path) - pathlen - 1);
+        cake_list[cake_count].path[sizeof(cake_list->path)] = 0;  // Make sure it terminates.
 
         // Recurse into subdirectories
         if (fno.fattrib & AM_DIR) {

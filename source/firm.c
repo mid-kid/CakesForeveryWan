@@ -8,12 +8,12 @@
 #include "memfuncs.h"
 #include "fs.h"
 #include "menu.h"
-#include "crypto.h"
 #include "patch.h"
 #include "config.h"
 #include "fcram.h"
 #include "paths.h"
 #include "fatfs/ff.h"
+#include "external/crypto.h"
 #else
 #include <string.h>
 #endif

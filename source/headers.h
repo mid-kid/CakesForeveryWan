@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: Rewrite this to conform to this project's coding standards.
+
 #include <stdint.h>
 
 #define FIRM_TYPE_ARM9          0
