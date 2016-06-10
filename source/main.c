@@ -9,10 +9,10 @@
 #include "fs.h"
 #include "hid.h"
 #include "fcram.h"
-#include "i2c.h"
 #include "paths.h"
 #include "headers.h"
 #include "fatfs/sdmmc/sdmmc.h"
+#include "external/i2c.h"
 
 #define MAX_EMUNANDS 9
 

@@ -682,7 +682,7 @@ int load_cakes_info(const char *dirpath)
         memcpy(cake_list[cake_count].path, dirpath, pathlen);
         cake_list[cake_count].path[pathlen] = '/';
         strncpy(&cake_list[cake_count].path[pathlen + 1], fno.fname, sizeof(cake_list->path) - pathlen - 1);
-        cake_list[cake_count].path[sizeof(cake_list->path)] = 0;  // Make sure it terminates.
+        cake_list[cake_count].path[sizeof(cake_list->path) - 1] = 0;  // Make sure it terminates.
 
         // Recurse into subdirectories
         if (fno.fattrib & AM_DIR) {

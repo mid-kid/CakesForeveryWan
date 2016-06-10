@@ -10,9 +10,9 @@ CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 LD := arm-none-eabi-ld
 OC := arm-none-eabi-objcopy
-OPENSSL := openssl
 
 PYTHON := python3
+CONVERT := convert
 
 dir_source := source
 dir_build := build
@@ -31,7 +31,8 @@ BRAHFLAGS := dir_out=$(abspath $(dir_out)/3ds/Cakes) \
 
 objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 			  $(patsubst $(dir_source)/%.c, $(dir_build)/%.o, \
-			  $(call rwildcard, $(dir_source), *.s *.c)))
+			  $(patsubst $(dir_source)/%.mono, $(dir_build)/%.o, \
+			  $(call rwildcard, $(dir_source), *.s *.c *.mono))))
 
 cakes := $(patsubst $(dir_patches)/%/, $(dir_out)/cakes/patches/%.cake, $(wildcard $(dir_patches)/*/))
 
@@ -110,5 +111,13 @@ $(dir_build)/fatfs/%.o: $(dir_source)/fatfs/%.c
 $(dir_build)/fatfs/%.o: $(dir_source)/fatfs/%.s
 	@mkdir -p "$(@D)"
 	$(COMPILE.s) -mthumb -mthumb-interwork $(OUTPUT_OPTION) $<
+
+$(dir_build)/%.o: $(dir_source)/%.mono
+	@mkdir -p "$(@D)"
+	printf '.global $*\n$*: .incbin "$<"\n' | $(COMPILE.s) $(OUTPUT_OPTION)
+
+$(dir_source)/%.mono: $(dir_source)/%.pbm
+	@mkdir -p "$(@D)"
+	$(CONVERT) $< $@
 
 include $(call rwildcard, $(dir_build), *.d)

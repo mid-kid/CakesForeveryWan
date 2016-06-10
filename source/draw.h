@@ -28,6 +28,9 @@ extern enum screen print_screen;
 
 void clear_screen(const enum screen screen);
 void clear_screens();
+void scroll_area(const enum screen screen, const unsigned int pos_x, const unsigned int pos_y, const unsigned int width, const unsigned int height, const int pixels);
 void draw_character(const enum screen screen, const char character, const unsigned int pos_x, const unsigned int pos_y, const uint32_t color);
-int draw_string(const enum screen screen, const char *string, const unsigned int pos_x, unsigned int pos_y, const uint32_t color);
+int draw_string_count(const enum screen screen, const char *string, const unsigned int pos_x, unsigned int pos_y, const uint32_t color, const int no_op);
 void print(const char *string);
+
+#define draw_string(screen, string, pos_x, pos_y, color) draw_string_count(screen, string, pos_x, pos_y, color, 0)

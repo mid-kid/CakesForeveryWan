@@ -64,7 +64,7 @@ void scroll_area(const enum screen screen, const unsigned int pos_x, const unsig
     set_buffers(screen, &select);
 
     for (unsigned int x = pos_x; x < pos_x + width; x++) {
-        void *buffer1 = select.buffer1 + (x * select.height + pos_y) * 3;
+        void *buffer1 = select.buffer1 + (x * select.height + select.height - pos_y - height) * 3;
 
         if (pixels < 0) {
             memmove(buffer1 + pixels * -3, buffer1, (height + pixels) * 3);
@@ -75,7 +75,7 @@ void scroll_area(const enum screen screen, const unsigned int pos_x, const unsig
         }
 
         if (select.buffer2 && select.buffer1 != select.buffer2) {
-            void *buffer2 = select.buffer2 + (x * select.height + pos_y) * 3;
+            void *buffer2 = select.buffer2 + (x * select.height + select.height - pos_y - height) * 3;
 
             if (pixels < 0) {
                 memmove(buffer2 + pixels * -3, buffer2, (height + pixels) * 3);
@@ -99,7 +99,7 @@ void draw_character(const enum screen screen, const char character, const unsign
         for (int x = 7; x >= 0; x--) {
             int screen_pos = ((pos_x + MARGIN_LEFT) * select.height * 3 + (select.height - y - (pos_y + MARGIN_TOP) - 1) * 3) + (7 - x) * 3 * select.height;
 
-            if ((char_pos >> x) & 1) {
+            if ((char_pos >> (7 - x)) & 1) {
                 select.buffer1[screen_pos] = color >> 16;
                 select.buffer1[screen_pos + 1] = color >> 8;
                 select.buffer1[screen_pos + 2] = color;
@@ -114,14 +114,13 @@ void draw_character(const enum screen screen, const char character, const unsign
     }
 }
 
-int draw_string(const enum screen screen, const char *string, const unsigned int pos_x, unsigned int pos_y, const uint32_t color)
+int draw_string_count(const enum screen screen, const char *string, const unsigned int pos_x, unsigned int pos_y, const uint32_t color, const int no_op)
 {
-    unsigned int length = strlen(string);
     struct buffer_select select = {0};
 
     set_buffers(screen, &select);
 
-    for (unsigned int i = 0, line_i = 0; i < length; i++, line_i++) {
+    for (unsigned int i = 0, line_i = 0; string[i] != 0; i++, line_i++) {
         if (string[i] == '\n') {
             pos_y += SPACING_VERT;
             line_i = 0;
@@ -139,11 +138,14 @@ int draw_string(const enum screen screen, const char *string, const unsigned int
                 scroll_area(print_screen, MARGIN_LEFT, MARGIN_TOP, select.width - MARGIN_HORIZ, select.height - MARGIN_VERT, SPACING_VERT * -10);
                 pos_y -= SPACING_VERT * 10;
             } else {
-                return pos_y;  // Not sure how to handle this. Maybe I shouldn't.
+                return 0;  // Not sure how to handle this. Maybe I shouldn't.
             }
         }
 
-        draw_character(screen, string[i], pos_x + line_i * SPACING_HORIZ, pos_y, color);
+        // If no-op is set, we don't actually do anything, we just return the pos_y at which stuff will be placed.
+        if (!no_op) {
+            draw_character(screen, string[i], pos_x + line_i * SPACING_HORIZ, pos_y, color);
+        }
     }
 
     return pos_y;
