@@ -5,6 +5,13 @@ _start:
     @ Change the stack pointer
     mov sp, #0x23000000
 
+    @ Disable caches / MPU
+    mrc p15, 0, r0, c1, c0, 0 @ read control register
+    bic r0, #(1<<12)          @ - instruction cache disable
+    bic r0, #(1<<2)           @ - data cache disable
+    bic r0, #(1<<0)           @ - mpu disable
+    mcr p15, 0, r0, c1, c0, 0 @ write control register
+
     @ Give read/write access to all the memory regions
     ldr r5, =0x33333333
     mcr p15, 0, r5, c5, c0, 2 @ write data access
