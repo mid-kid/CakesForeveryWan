@@ -14,7 +14,7 @@
 #include "fatfs/sdmmc/sdmmc.h"
 #include "external/i2c.h"
 
-#define MAX_EMUNANDS 9
+#define MAX_OPTIONS 9
 
 void menu_select_patches()
 {
@@ -62,7 +62,7 @@ void menu_toggle()
 
 void menu_emunand()
 {
-    char emunands[MAX_EMUNANDS][0x20];  // We have a max size for the strings...
+    char emunands[MAX_OPTIONS][0x20];  // We have a max size for the strings...
     char unnamed[] = "emuNAND #";
 
     uint32_t gap;
@@ -74,7 +74,7 @@ void menu_emunand()
 
     // Scan for available emuNANDS. Assume they're placed right behind eachother.
     int count;
-    for (count = 0; count <= MAX_EMUNANDS; count++) {
+    for (count = 0; count <= MAX_OPTIONS; count++) {
         if (get_emunand_offsets(count * gap, NULL, NULL) == 0) {
             if (sdmmc_sdcard_readsectors(count * gap, 1, fcram_temp) == 0 &&
                     memcmp(fcram_temp + 11, "NAME", 4) == 0) {
@@ -112,19 +112,49 @@ void menu_emunand()
     patches_modified = 1;
 }
 
+int menu_firms()
+{
+    char firms[MAX_OPTIONS][_MAX_LFN + 1], dirpath[] = PATH_FIRMWARE_DIR;
+
+    int pathlen = strlen(dirpath);
+    int count = find_file_pattern(firms, dirpath, pathlen, MAX_OPTIONS, "firmware*.bin");
+
+    if (!count) {
+        draw_loading("Failed to load FIRM", "Make sure the encrypted FIRM is\n  located in the firmware directory");
+        return 1;
+    }
+
+    char *options[count];
+    for (int x = 0; x <= count; x++) options[x] = firms[x];
+
+    int result = draw_menu("Select firmware", 0, count, options);
+    if (result == -1) return 0;
+
+    memcpy(config->firm_path, firms[result], _MAX_LFN + 1);
+
+    reload_native_firm();
+    load_cakes_info(PATH_PATCHES);
+
+    return 0;
+}
+
 void menu_more()
 {
     while (1) {
         char *options[] = {"Toggleable options",
-                           "Select emuNAND"};
+                           "Select emuNAND",
+                           "Select firmware"};
         int result = draw_menu("More options", 1, sizeof(options) / sizeof(char *), options);
-
+        
         switch (result) {
             case 0:
                 menu_toggle();
                 break;
             case 1:
                 menu_emunand();
+                break;
+            case 2:
+                menu_firms();
                 break;
             case -1:
                 return;
@@ -233,8 +263,9 @@ void main()
         }
     }
 
-    // This function already correctly draws error messages
-    if (load_firms() != 0) return;
+    if (load_firms() != 0) {
+        if(menu_firms() !=0) return;
+    }
 
     print("Loading cakes");
     if (load_cakes_info(PATH_PATCHES) != 0) {
