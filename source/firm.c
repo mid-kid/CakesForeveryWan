@@ -13,6 +13,7 @@
 #include "fcram.h"
 #include "paths.h"
 #include "fatfs/ff.h"
+#include "fatfs/sdmmc/sdmmc.h"
 #include "external/crypto.h"
 #else
 #include <string.h>
@@ -162,6 +163,61 @@ void slot0x11key96_init()
     }
 }
 
+// 0x0B130000 = start of FIRM0 partition, 0x400000 = size of FIRM partition (4MB)
+int dump_firm(void *firm_buffer, const uint8_t firm_id)
+{
+    uint32_t firm_offset = (0x0B130000 + ((firm_id % 2) * 0x400000)),
+             firm_size = 0x100000; // 1MB, because that's the current FIRM size
+
+    uint8_t nand_ctr[0x10],
+            nand_cid[0x10],
+            sha_hash[0x20];
+
+    if (sdmmc_nand_readsectors(firm_offset / 0x200, firm_size / 0x200, firm_buffer) != 0)
+        return -1;
+
+    sdmmc_get_cid(1, (uint32_t*) nand_cid);
+    sha(sha_hash, nand_cid, 0x10, SHA_256_MODE);
+    memcpy(nand_ctr, sha_hash, 0x10);
+    aes_advctr(nand_ctr, firm_offset / AES_BLOCK_SIZE, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+    aes_use_keyslot(0x06);
+    aes_setiv(nand_ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes(firm_buffer, firm_buffer, firm_size / AES_BLOCK_SIZE, nand_ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+    return 0;
+}
+
+int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned int version)
+{
+    uint8_t slot = 0x15;
+
+    print("Decrypting ARM9 FIRM binary");
+
+    if (firm_type == NATIVE_FIRM && version > 0x0F) {
+        uint8_t decrypted_keyx[AES_BLOCK_SIZE];
+
+        slot0x11key96_init();
+        slot = 0x16;
+
+        aes_use_keyslot(0x11);
+        aes(decrypted_keyx, header->slot0x16keyX, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+        aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
+    }
+
+    aes_setkey(slot, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
+    aes_setiv(header->ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+    void *arm9bin = (uint8_t *)header + 0x800;
+    int size = atoi(header->size);
+
+    aes_use_keyslot(slot);
+    aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+
+    if (firm_type == NATIVE_FIRM) return *(uint32_t *)arm9bin != ARM9BIN_MAGIC;
+    else if (firm_type == AGB_FIRM || firm_type == TWL_FIRM) return *(uint32_t *)arm9bin != LGY_ARM9BIN_MAGIC;
+    else return 0;
+}
+
 int decrypt_cetk_key(void *key, const void *cetk)
 {
     // This function only decrypts the NATIVE_FIRM CETK.
@@ -170,6 +226,8 @@ int decrypt_cetk_key(void *key, const void *cetk)
 
     static int common_key_y_init = 0;
     uint8_t iv[AES_BLOCK_SIZE] = {0};
+    const uint8_t key_y_hash[0x20] = {0x21, 0x12, 0xF4, 0x50, 0x78, 0x6D, 0xCE, 0x64, 0x39, 0xFD, 0xB8, 0x71, 0x14, 0x74, 0x41, 0xF4,
+                                      0x69, 0xB6, 0xC4, 0x70, 0xA4, 0xB1, 0x5F, 0x7D, 0xFD, 0xE8, 0xCC, 0xE4, 0xC4, 0x62, 0x82, 0x5B};
 
     uint32_t sigtype = __builtin_bswap32(*(uint32_t *)cetk);
     if (sigtype != SIG_TYPE_RSA2048_SHA256) return 1;
@@ -179,19 +237,45 @@ int decrypt_cetk_key(void *key, const void *cetk)
 
     if (!common_key_y_init) {
         uint8_t common_key_y[AES_BLOCK_SIZE] = {0};
-        uint8_t *p9_base = (uint8_t *)0x08028000;
-        uint8_t *i;
-        for (i = p9_base + 0x70000 - AES_BLOCK_SIZE; i >= p9_base; i--) {
-            if (i[0] == 0xD0 && i[4] == 0x9C && i[8] == 0x32 && i[12] == 0x23) {
-                // At i, there's 7 keys with 4 bytes padding between them.
-                // We only need the 2nd.
-                memcpy(common_key_y, i + AES_BLOCK_SIZE + 4, sizeof(common_key_y));
-                print("Found the common key Y");
+        uint8_t *p9_base = (uint8_t *)0x08028000; // Process9 location on a regular boot (non-A9LH)
+        uint32_t search_len = 0x70000;
 
-                break;
+        if (A9LHBOOT) { // A workaround is necessary when booting from A9LH
+            uint8_t *firm_loc = (uint8_t *)fcram_temp + FCRAM_SPACING;
+            firm_h *firm = (firm_h*)firm_loc;
+            if (dump_firm(firm_loc, 0))
+            {
+                print("Couldn't dump FIRM0!");
+                while(1);
+            }
+
+            if (firm->magic != FIRM_MAGIC) {
+                print("Couldn't decrypt FIRM0!");
+                while(1);
+            }
+
+            // It can be assumed section 2 is ARM9 because it's either 8.1 or 9.0 N3DS
+            if (decrypt_arm9bin((arm9bin_h *)(firm_loc + firm->section[2].offset), NATIVE_FIRM, 0)) {
+                print("ARM9 binary couldn't be decrypted!");
+                while(1);
+            }
+
+            p9_base = (uint8_t *)(firm_loc + firm->section[2].offset); // Beggining of the ARM9 section
+            search_len = firm->section[2].size;
+        }
+
+        uint8_t tmp_hash[0x20];
+
+        for (uint32_t i = 0; i < search_len; i ++) {
+            if (*(p9_base + i) == 0x0C) { // First byte matches
+                sha(tmp_hash, p9_base + i, 0x10, SHA_256_MODE);
+                if (memcmp(tmp_hash, key_y_hash, 0x20) == 0) {
+                    memcpy(common_key_y, p9_base + i, sizeof(common_key_y));
+                    print("Found the common key Y");
+                    break;
+                }
             }
         }
-        if (i < p9_base) return 1;
 
         aes_setkey(0x3D, common_key_y, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
         common_key_y_init = 1;
@@ -243,37 +327,6 @@ int decrypt_firm_title(firm_h *dest, ncch_h *ncch, size_t *size, void *key)
     memcpy(dest, firm, *size);
 
     return 0;
-}
-
-int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned int version)
-{
-    uint8_t slot = 0x15;
-
-    print("Decrypting ARM9 FIRM binary");
-
-    if (firm_type == NATIVE_FIRM && version > 0x0F) {
-        uint8_t decrypted_keyx[AES_BLOCK_SIZE];
-
-        slot0x11key96_init();
-        slot = 0x16;
-
-        aes_use_keyslot(0x11);
-        aes(decrypted_keyx, header->slot0x16keyX, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
-        aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
-    }
-
-    aes_setkey(slot, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
-    aes_setiv(header->ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
-
-    void *arm9bin = (uint8_t *)header + 0x800;
-    int size = atoi(header->size);
-
-    aes_use_keyslot(slot);
-    aes(arm9bin, arm9bin, size / AES_BLOCK_SIZE, header->ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
-
-    if (firm_type == NATIVE_FIRM) return *(uint32_t *)arm9bin != ARM9BIN_MAGIC;
-    else if (firm_type == AGB_FIRM || firm_type == TWL_FIRM) return *(uint32_t *)arm9bin != LGY_ARM9BIN_MAGIC;
-    else return 0;
 }
 
 int decrypt_firm(firm_h *dest, char *path_firmkey, char *path_cetk, size_t *size, enum firm_types firm_type)

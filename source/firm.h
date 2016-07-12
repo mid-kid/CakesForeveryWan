@@ -5,6 +5,8 @@
 
 #include "headers.h"
 
+#define A9LHBOOT (*(volatile uint8_t *)0x10010000 == 0) // CFG_BOOTENV
+
 enum consoles {
     console_o3ds,
     console_n3ds
