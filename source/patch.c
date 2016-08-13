@@ -507,8 +507,9 @@ found_process9:;
         } else if (patch->type == TYPE_SYSMODULE) {
             // Look for the section that holds all the sysmodules
             firm_section_h *sysmodule_section = NULL;
+            int section_index = 0;
             for (firm_section_h *section = firm->section;
-                    section < firm->section + 4; section++) {
+                    section < firm->section + 4; section++, section_index++) {
                 if (section->address == 0x1FF00000 && section->type == FIRM_TYPE_ARM11) {
                     sysmodule_section = section;
                     break;
@@ -528,8 +529,20 @@ found_process9:;
             while (sysmodule->magic == NCCH_MAGIC) {
                 if (memcmp(sysmodule->programID, module->programID, 8) == 0) {
                     if (module->contentSize > sysmodule->contentSize) {
-                        // TODO: Expanding a module's size isn't supported yet...
-                        continue;
+                        // Expand the sysModule segment and adjust pointers accordingly.
+                        // WARNING - This changes the firmware.bin fundamentally.
+                        uint32_t need_units = (module->contentSize - sysmodule->contentSize);
+
+                        memmove((uint8_t *)sysmodule + module->contentSize * 0x200, (uint8_t *)sysmodule + sysmodule->contentSize * 0x200,
+                            ((uint8_t *)firm_loc + firm_size) - ((uint8_t *)sysmodule + (module->contentSize * 0x200)));
+
+                        sysmodule_section->size += 0x200 * need_units;
+                        for (int i = section_index + 1; i < 4; i++) {
+                            if (firm_loc->section[i].size != 0) { // The last section (3) is usually empty.
+                                firm_loc->section[i].offset += 0x200 * need_units;
+                                firm_loc->section[i].size += 0x200 * need_units;
+                            }
+                        }
                     }
 
                     // Move the remaining modules closer
