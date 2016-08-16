@@ -36,6 +36,7 @@ static int update_96_keys = 0;
 int save_firm = 0;
 #endif
 
+#define A9LHBOOT (*(volatile uint8_t *)0x10010000 == 0) // CFG_BOOTENV
 static volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
 
 // We use the firm's section 0's hash to identify the version
@@ -163,9 +164,9 @@ void slot0x11key96_init()
     }
 }
 
-// 0x0B130000 = start of FIRM0 partition, 0x400000 = size of FIRM partition (4MB)
 int dump_firm(void *firm_buffer, const uint8_t firm_id)
 {
+    // 0x0B130000 = start of FIRM0 partition, 0x400000 = size of FIRM partition (4MB)
     uint32_t firm_offset = (0x0B130000 + ((firm_id % 2) * 0x400000)),
              firm_size = 0x100000; // 1MB, because that's the current FIRM size
 
@@ -173,8 +174,7 @@ int dump_firm(void *firm_buffer, const uint8_t firm_id)
             nand_cid[0x10],
             sha_hash[0x20];
 
-    if (sdmmc_nand_readsectors(firm_offset / 0x200, firm_size / 0x200, firm_buffer) != 0)
-        return -1;
+    if (sdmmc_nand_readsectors(firm_offset / 0x200, firm_size / 0x200, firm_buffer) != 0) return -1;
 
     sdmmc_get_cid(1, (uint32_t*) nand_cid);
     sha(sha_hash, nand_cid, 0x10, SHA_256_MODE);
@@ -184,6 +184,7 @@ int dump_firm(void *firm_buffer, const uint8_t firm_id)
     aes_use_keyslot(0x06);
     aes_setiv(nand_ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes(firm_buffer, firm_buffer, firm_size / AES_BLOCK_SIZE, nand_ctr, AES_CTR_MODE, AES_INPUT_BE | AES_INPUT_NORMAL);
+
     return 0;
 }
 
@@ -220,7 +221,7 @@ int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned
 
 int decrypt_cetk_key(void *key, const void *cetk)
 {
-    // This function only decrypts the NATIVE_FIRM CETK.
+    // This function only decrypts the FIRM CETK.
     // I don't need it for anything else atm.
     // Either way, this is the reason for the two checks here at the top.
 
@@ -240,24 +241,25 @@ int decrypt_cetk_key(void *key, const void *cetk)
         uint8_t *p9_base = (uint8_t *)0x08028000; // Process9 location on a regular boot (non-A9LH)
         uint32_t search_len = 0x70000;
 
-        if (A9LHBOOT) { // A workaround is necessary when booting from A9LH
+        // A workaround is necessary when booting from A9LH
+        if (A9LHBOOT) {
             uint8_t *firm_loc = (uint8_t *)fcram_temp + FCRAM_SPACING;
             firm_h *firm = (firm_h*)firm_loc;
-            if (dump_firm(firm_loc, 0))
-            {
+
+            if (dump_firm(firm_loc, 0)) {
                 print("Couldn't dump FIRM0!");
-                while(1);
+                return 1;
             }
 
             if (firm->magic != FIRM_MAGIC) {
                 print("Couldn't decrypt FIRM0!");
-                while(1);
+                return 1;
             }
 
-            // It can be assumed section 2 is ARM9 because it's either 8.1 or 9.0 N3DS
+            // It can be assumed section 2 is ARM9 because it's either a 8.1 or a 9.0 N3DS FIRM
             if (decrypt_arm9bin((arm9bin_h *)(firm_loc + firm->section[2].offset), NATIVE_FIRM, 0)) {
                 print("ARM9 binary couldn't be decrypted!");
-                while(1);
+                return 1;
             }
 
             p9_base = (uint8_t *)(firm_loc + firm->section[2].offset); // Beggining of the ARM9 section
@@ -547,15 +549,27 @@ int load_firms()
 
     print("Loading NATIVE_FIRM...");
     draw_loading(title, "Loading NATIVE_FIRM...");
-    if (load_firm(firm_orig_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) return 1;
+    if (load_firm(firm_orig_loc, PATH_FIRMWARE, PATH_FIRMKEY, PATH_CETK, &firm_size, firm_signatures, &current_firm, NATIVE_FIRM) != 0) {
+        draw_string(screen_top_left, "FIRM that failed: NATIVE_FIRM",
+                0, SCREEN_TOP_HEIGHT - MARGIN_VERT - SPACING_VERT, COLOR_NEUTRAL);
+        return 1;
+    }
 
     print("Loading TWL_FIRM...");
     draw_loading(title, "Loading TWL_FIRM...");
-    if (load_firm(twl_firm_orig_loc, PATH_TWL_FIRMWARE, PATH_TWL_FIRMKEY, PATH_TWL_CETK, &twl_firm_size, twl_firm_signatures, &current_twl_firm, TWL_FIRM) == 1) return 1;
+    if (load_firm(twl_firm_orig_loc, PATH_TWL_FIRMWARE, PATH_TWL_FIRMKEY, PATH_TWL_CETK, &twl_firm_size, twl_firm_signatures, &current_twl_firm, TWL_FIRM) == 1) {
+        draw_string(screen_top_left, "FIRM that failed: TWL_FIRM",
+                0, SCREEN_TOP_HEIGHT - MARGIN_VERT - SPACING_VERT, COLOR_NEUTRAL);
+        return 1;
+    }
 
     print("Loading AGB_FIRM...");
     draw_loading(title, "Loading AGB_FIRM...");
-    if (load_firm(agb_firm_orig_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) return 1;
+    if (load_firm(agb_firm_orig_loc, PATH_AGB_FIRMWARE, PATH_AGB_FIRMKEY, PATH_AGB_CETK, &agb_firm_size, agb_firm_signatures, &current_agb_firm, AGB_FIRM) == 1) {
+        draw_string(screen_top_left, "FIRM that failed: AGB_FIRM",
+                0, SCREEN_TOP_HEIGHT - MARGIN_VERT - SPACING_VERT, COLOR_NEUTRAL);
+        return 1;
+    }
 
     return 0;
 }

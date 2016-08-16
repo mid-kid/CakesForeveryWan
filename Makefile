@@ -23,6 +23,7 @@ dir_cakebrah := CakeBrah
 
 ASFLAGS := -mlittle-endian -mcpu=arm946e-s -march=armv5te
 CFLAGS := -MMD -MP -marm $(ASFLAGS) -fno-builtin -fshort-wchar -Wall -Wextra -O2 -std=c11 -Wno-main -DCAKES_VERSION=\"$(revision)\"
+LDFLAGS := -flto
 CAKEFLAGS := dir_out=$(abspath $(dir_out))
 BRAHFLAGS := dir_out=$(abspath $(dir_out)/3ds/Cakes) \
 			 APP_DESCRIPTION="CFW for 3DS" \
@@ -93,8 +94,7 @@ $(dir_build)/main.bin: $(dir_build)/main.elf
 	$(OC) -S -O binary $< $@
 
 $(dir_build)/main.elf: $(objects_cfw)
-	# FatFs requires libgcc for some optimizations
-	$(LD) -T linker.ld  $(OUTPUT_OPTION) $^ $(shell $(CC) -print-libgcc-file-name)
+	$(LD) $(LDFLAGS) -T linker.ld  $(OUTPUT_OPTION) $^ $(shell $(CC) -print-libgcc-file-name)
 
 $(dir_build)/%.o: $(dir_source)/%.c
 	@mkdir -p "$(@D)"
