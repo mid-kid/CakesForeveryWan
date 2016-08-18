@@ -630,7 +630,7 @@ int patch_firm_all()
 
     for (unsigned int i = 0; i < cake_count; i++) {
         if (cake_selected[i]) {
-            if (read_file(firm_patch_temp, cake_list[i].path, FCRAM_SPACING) != 0) {
+            if (read_file(firm_patch_temp, cake_list[i].path, FCRAM_SPACING * 2) != 0) {
                 print("Failed to load patch");
                 draw_message("Failed to load patch", "Please make sure all the patches you want\n  to apply actually exist on the SD card.");
                 return 1;

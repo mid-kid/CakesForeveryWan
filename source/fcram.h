@@ -23,8 +23,8 @@ extern void *fcram_temp;
 
 // patch.c
 #define FCRAM_MEMORY_LOC (FCRAM_START + FCRAM_SPACING * 8)
-#define FCRAM_FIRM_PATCH_TEMP (FCRAM_START + FCRAM_SPACING * 9)
-#define FCRAM_CAKE_LIST (FCRAM_START + FCRAM_SPACING * 10)
+#define FCRAM_FIRM_PATCH_TEMP (FCRAM_START + FCRAM_SPACING * 9)  // Double size (Yes, some sysmodules are bigger than NATIVE_FIRM)
+#define FCRAM_CAKE_LIST (FCRAM_START + FCRAM_SPACING * 11)
 
 // config.c
-#define FCRAM_CONFIG (FCRAM_START + FCRAM_SPACING * 11)
+#define FCRAM_CONFIG (FCRAM_START + FCRAM_SPACING * 12)
