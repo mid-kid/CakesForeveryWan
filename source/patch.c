@@ -505,21 +505,8 @@ found_process9:;
             }
 
         } else if (patch->type == TYPE_SYSMODULE) {
-            // Look for the section that holds all the sysmodules
-            firm_section_h *sysmodule_section = NULL;
-            for (firm_section_h *section = firm->section;
-                    section < firm->section + 4; section++) {
-                if (section->address == 0x1FF00000 && section->type == FIRM_TYPE_ARM11) {
-                    sysmodule_section = section;
-                    break;
-                }
-            }
-
-            if (!sysmodule_section) {
-                print("Couldn't find sysmodule section");
-                draw_message("Couldn't find sysmodule section", "The patcher was unable to find the section where the sysmodules are stored in this firmware.");
-                return 1;
-            }
+            // It seems safe to assume that the first section contains the sysmodules.
+            firm_section_h *sysmodule_section = &firm->section[0];
 
             ncch_h *module = patch_code;
             ncch_h *sysmodule = (ncch_h *)((uintptr_t)firm + sysmodule_section->offset);
