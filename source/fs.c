@@ -1,6 +1,7 @@
 #include "fs.h"
 
 #include <stddef.h>
+#include <stdint.h>
 #include "draw.h"
 #include "fatfs/ff.h"
 
@@ -25,7 +26,7 @@ int unmount_sd()
     return 0;
 }
 
-int read_file_offset(void *dest, const char *path, unsigned int size, unsigned int offset)
+int read_file_offset(void *dest, const char *path, uint32_t size, uint32_t offset)
 {
     FRESULT fr;
     FIL handle;
@@ -56,7 +57,7 @@ error:
     return fr;
 }
 
-int write_file(const void *buffer, const char *path, unsigned int size)
+int write_file(const void *buffer, const char *path, uint32_t size)
 {
     FRESULT fr;
     FIL handle;

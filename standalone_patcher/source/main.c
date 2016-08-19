@@ -7,17 +7,10 @@
 
 #define check(condition, message, ...) if (!(condition)) { fprintf(stderr, message "\n", ##__VA_ARGS__); goto error; }
 
-firm_h *firm_loc = NULL;
-struct firm_signature *current_firm = NULL;
-firm_h *twl_firm_loc = NULL;
-struct firm_signature *current_twl_firm = NULL;
-firm_h *agb_firm_loc = NULL;
-struct firm_signature *current_agb_firm = NULL;
-
-void *load_file(char *path, long *size)
+void *load_file(char *path, size_t *size)
 {
     if (!size) {
-        long local_size;
+        size_t local_size;
         size = &local_size;
     }
 
@@ -27,8 +20,9 @@ void *load_file(char *path, long *size)
     if (!fp) return NULL;
 
     if (fseek(fp, 0, SEEK_END) != 0) goto error;
-    *size = ftell(fp);
-    if (*size == -1) return NULL;
+    long tmp_size = ftell(fp);
+    if (tmp_size == -1) return NULL;
+    *size = (size_t)tmp_size;
     if (fseek(fp, 0, SEEK_SET) != 0) goto error;
 
     mem = malloc(*size);
@@ -46,7 +40,7 @@ error:
     return NULL;
 }
 
-int write_file(char *path, void *mem, long size)
+int write_file(char *path, void *mem, size_t size)
 {
     FILE *fp = fopen(path, "w");
     if (!fp) return 1;
@@ -59,11 +53,16 @@ int main(int argc, char *argv[])
 {
     int rc = 0;
     void *cake = NULL;
-    long firm_size, twl_firm_size, agb_firm_size;
+    size_t cake_size, firm_size, twl_firm_size, agb_firm_size;
+
+    memory_loc = NULL;
+    firm_loc = NULL;
+    twl_firm_loc = NULL;
+    agb_firm_loc = NULL;
 
     check(argc > 3, "Usage: %s <cake file> <memory file> <NATIVE_FIRM> [TWL_FIRM] [AGB_FIRM]", argv[0]);
 
-    cake = load_file(argv[1], NULL);
+    cake = load_file(argv[1], &cake_size);
     check(cake, "Failed to load cake: %s", argv[1]);
 
     memory_loc = malloc(FCRAM_SPACING);
@@ -89,7 +88,7 @@ int main(int argc, char *argv[])
     }
 
     patch_reset();
-    check(patch_firm(cake) == 0, "Failed to apply cake");
+    check(patch_firm(cake, cake_size) == 0, "Failed to apply cake");
 
     check(write_file(argv[2], memory_loc, *memory_loc) == 0, "Failed to write memory file: %s", argv[2]);
 
@@ -112,6 +111,7 @@ cleanup:
     if (cake) free(cake);
     if (memory_loc) free(memory_loc);
     if (firm_loc) free(firm_loc);
+    if (twl_firm_loc) free(twl_firm_loc);
     if (agb_firm_loc) free(agb_firm_loc);
 
     return rc;

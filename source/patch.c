@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "fcram.h"
+#include "firm.h"
 #define print(string) puts(string)
 #define draw_message(title, description) printf("-- %s:\n%s\n", title, description)
 #endif
@@ -86,15 +87,15 @@ struct memory_location {
 };
 
 #ifndef STANDALONE
-firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
-firm_h *twl_firm_loc = (firm_h *)FCRAM_TWL_FIRM_LOC;
-firm_h *agb_firm_loc = (firm_h *)FCRAM_AGB_FIRM_LOC;
-
 struct cake_info *cake_list = (struct cake_info *)FCRAM_CAKE_LIST;
 unsigned int cake_count = 0;
 
 static struct cake_header *firm_patch_temp = (struct cake_header *)FCRAM_FIRM_PATCH_TEMP;
 #endif
+
+firm_h *firm_loc = (firm_h *)FCRAM_FIRM_LOC;
+firm_h *twl_firm_loc = (firm_h *)FCRAM_TWL_FIRM_LOC;
+firm_h *agb_firm_loc = (firm_h *)FCRAM_AGB_FIRM_LOC;
 
 uint32_t *memory_loc = (uint32_t *)FCRAM_MEMORY_LOC;
 static void *current_memory_loc;
@@ -256,8 +257,11 @@ int patch_options(void *address, const uint32_t size, const uint8_t options, con
             sizeof(PATH_PATCHED_TWL_FIRMWARE) * 2,
             sizeof(PATH_PATCHED_AGB_FIRMWARE) * 2
         };
-        wchar_t *string[] = {L"" PATH_PATCHED_FIRMWARE,
-            L"" PATH_PATCHED_TWL_FIRMWARE, L"" PATH_PATCHED_AGB_FIRMWARE};
+        wchar_t *string[] = {
+            L"" PATH_PATCHED_FIRMWARE,
+            L"" PATH_PATCHED_TWL_FIRMWARE,
+            L"" PATH_PATCHED_AGB_FIRMWARE
+        };
 
         // NOTE: This won't work unless all three arrays have the exact same amount of entries.
 
@@ -284,10 +288,12 @@ int patch_options()
 
 void patch_reset()
 {
+#ifndef STANDALONE
     // Reset the FIRM
     memcpy(firm_loc, firm_orig_loc, firm_size);
     if (current_twl_firm) memcpy(twl_firm_loc, twl_firm_orig_loc, twl_firm_size);
     if (current_agb_firm) memcpy(agb_firm_loc, agb_firm_orig_loc, agb_firm_size);
+#endif
 
     // Reset memory
     *memory_loc = sizeof(*memory_loc);
@@ -298,9 +304,10 @@ void patch_reset()
     }
 }
 
-int patch_firm(const void *_cake)
+int patch_firm(const void *_cake, size_t cake_size)
 {
     struct cake_header *cake = (struct cake_header *)_cake;
+    uintptr_t cake_end = (uintptr_t)_cake + cake_size;
 
     if (cake->version != FORMAT_VERSION) {
         print("Outdated cake or unknown version");
@@ -319,6 +326,7 @@ int patch_firm(const void *_cake)
     } memory_ids[MAX_MEMORY_PATCHES] = {0};
 
     struct patch *patches = (struct patch *)((uintptr_t)cake + cake->patches_offset);
+    if ((uintptr_t)(patches + cake->patch_count) > cake_end) goto error_bounds;
 
     int applied = 0;
 
@@ -327,6 +335,13 @@ int patch_firm(const void *_cake)
         void *patch_code = (void *)((uintptr_t)cake + patch->offset);
         struct patch_version *versions = (struct patch_version *)((uintptr_t)cake + patch->versions_offset);
         uint32_t *variables = (uint32_t *)((uintptr_t)cake + patch->variables_offset);
+
+        if ((uintptr_t)(patch_code + patch->size) > cake_end ||
+                (uintptr_t)(versions + patch->version_count) > cake_end ||
+                (uintptr_t)(variables + patch->variable_count) > cake_end) {
+            goto error_bounds;
+        }
+
         struct patch_version *version = NULL;
         uint32_t *values;
         void *patch_location = NULL;
@@ -400,8 +415,10 @@ int patch_firm(const void *_cake)
 
             // Apply all the variables for this version
             values = (uint32_t *)((uintptr_t)cake + version->values_offset);
+            if ((uintptr_t)(values + patch->variable_count) > cake_end) goto error_bounds;
 
             for (int x = 0; x < patch->variable_count; x++) {
+                if (variables[x] > patch->size) goto error_bounds;
                 *(uint32_t *)(patch_code + variables[x]) = values[x];
             }
         }
@@ -620,6 +637,11 @@ found_process9:;
     }
 
     return 0;
+
+error_bounds:
+    print("Out of bounds error");
+    draw_message("Out of bounds error", "Some values in this cake caused a pointer to go beyond the bounds of the cake. This could mean the file is too big, and doesn't fit in the area CakesFW designates it to.");
+    return 1;
 }
 
 #ifndef STANDALONE
@@ -635,7 +657,7 @@ int patch_firm_all()
                 draw_message("Failed to load patch", "Please make sure all the patches you want\n  to apply actually exist on the SD card.");
                 return 1;
             }
-            if (patch_firm(firm_patch_temp)) return 1;
+            if (patch_firm(firm_patch_temp, FCRAM_SPACING * 2)) return 1;
         }
     }
 

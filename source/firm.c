@@ -22,22 +22,23 @@
 #ifndef STANDALONE
 firm_h *firm_orig_loc = (firm_h *)FCRAM_FIRM_ORIG_LOC;
 size_t firm_size = FCRAM_SPACING;
-struct firm_signature *current_firm = NULL;
 
 firm_h *twl_firm_orig_loc = (firm_h *)FCRAM_TWL_FIRM_ORIG_LOC;
 size_t twl_firm_size = FCRAM_SPACING * 2;
-struct firm_signature *current_twl_firm = NULL;
 
 firm_h *agb_firm_orig_loc = (firm_h *)FCRAM_AGB_FIRM_ORIG_LOC;
 size_t agb_firm_size = FCRAM_SPACING;
-struct firm_signature *current_agb_firm = NULL;
 
 static int update_96_keys = 0;
 int save_firm = 0;
-#endif
 
 #define A9LHBOOT (*(volatile uint8_t *)0x10010000 == 0) // CFG_BOOTENV
 static volatile uint32_t *const a11_entry = (volatile uint32_t *)0x1FFFFFF8;
+#endif
+
+struct firm_signature *current_firm = NULL;
+struct firm_signature *current_twl_firm = NULL;
+struct firm_signature *current_agb_firm = NULL;
 
 // We use the firm's section 0's hash to identify the version
 struct firm_signature firm_signatures[] = {
