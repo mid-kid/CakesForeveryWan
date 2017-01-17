@@ -64,6 +64,7 @@ void memmove(void *dest, const void *src, size_t size)
     }
 }
 
+__attribute__((used))
 void memset(void *dest, const int filler, size_t size)
 {
     char *destc = (char *)dest;

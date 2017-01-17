@@ -104,7 +104,7 @@ static void *current_memory_loc;
 struct memory_location memory_locations[] = {
     {
         .location = 0x01FF8000,
-        .size = 0x00008000
+        .size = 0x00003700  // It's probable more of this area is usable, but I'm not exactly sure what parts.
     }, {.location = 0xFFFFFFFF}
 };
 
