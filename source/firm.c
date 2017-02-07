@@ -517,6 +517,11 @@ void boot_firm()
             keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89814);
         } else if (current_firm->version == 0x21) {
             keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89A14);
+        } else if (current_firm->version == 0x2D) {
+            keydata = (void *)((uintptr_t)firm_loc + firm_loc->section[2].offset + 0x89C14);
+        } else {
+            draw_message("Welp.", "mid-kid forgot to update the keydata again. Please yell at him.");
+            return;
         }
 
         aes_use_keyslot(0x11);
