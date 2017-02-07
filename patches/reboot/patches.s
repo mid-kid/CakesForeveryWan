@@ -6,9 +6,11 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
 .create "patch1.bin", 0
 .arm
     ; Interesting registers and locations to keep in mind, set before this code is ran:
-    ; - sp + 0x3A8 - 0x70: FIRM path in exefs.
-    ; - r7 (which is sp + 0x3A8 - 0x198): Reserved space for file handle
-    ; - *(sp + 0x3A8 - 0x198) + 0x28: fread function.
+    ; - r1: FIRM path in exefs.
+    ; - r7: Reserved space for file handle
+    ; - *(*r7 + 0x28): fread function.
+
+    mov r4, r1  ; Back up the original FIRM path.
 
     pxi_wait_recv:
         ldr r2, =0x44846
@@ -25,8 +27,7 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
     ; This will be the method of getting the lower 2 bytes of the title ID
     ;   until someone bothers figuring out where the value is derived from.
     mov r0, #0  ; Result
-    add r1, sp, #0x3A8 - 0x70
-    add r1, #0x22  ; The significant bytes
+    add r1, r4, #0x22  ; The significant bytes
     mov r2, #4  ; Maximum loops (amount of bytes * 2)
 
     hex_string_to_int_loop:
@@ -73,7 +74,7 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
 
     fallback:
         ; Fallback: Load specified FIRM from exefs
-        add r1, sp, #0x3A8-0x70  ; Location of exefs string.
+        mov r1, r4
         b load_firm
 
     check_fname:
@@ -98,7 +99,7 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
         adr r1, bytes_read
         mov r2, firm_addr
         mov r3, firm_maxsize
-        ldr r6, [sp, #0x3A8-0x198]
+        ldr r6, [r7]
         ldr r6, [r6, #0x28]
         blx r6
 

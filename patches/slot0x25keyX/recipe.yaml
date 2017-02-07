@@ -11,6 +11,9 @@ patches:
             - unk
         versions:
             o3ds:
+                0x5C:
+                    - 0x08056618
+                    - 0x0805EB20
                 0x52:
                     - 0x08056558
                     - 0x0805EA5C
@@ -37,6 +40,7 @@ patches:
             variable: mem
         versions:
             o3ds:
+                0x5C: 0x080282F8
                 0x52: 0x080282F8
                 0x50: 0x080282F8
                 0x49: 0x080282F8
