@@ -430,9 +430,9 @@ int patch_firm(const void *_cake, size_t cake_size)
                 // Look for process9 in all sections
                 for (firm_section_h *section = firm->section;
                         section < firm->section + 4; section++) {
-                    if (section->address == 0) {
-                        // Stop looping if the section address is null
-                        break;
+                    if (section->size == 0) {
+                        // This section doesn't exist
+                        continue;
                     } else if (section->type != FIRM_TYPE_ARM9) {
                         // Process9 can only be found in arm9 sections
                         continue;

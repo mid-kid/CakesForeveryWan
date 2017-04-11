@@ -5,6 +5,7 @@ patches:
         type: NATIVE_FIRM
         versions:
             o3ds:
+                0x5E: 0x08043FB6
                 0x5C: 0x08043FB6
                 0x52: 0x08043FB6
                 0x50: 0x08043FB6

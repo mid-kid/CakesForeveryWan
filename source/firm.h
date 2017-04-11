@@ -4,28 +4,8 @@
 #include <stddef.h>
 
 #include "headers.h"
+#include "firm_signatures.h"
 
-enum consoles {
-    console_o3ds,
-    console_n3ds
-};
-
-enum firm_types {
-    NATIVE_FIRM,
-    TWL_FIRM,
-    AGB_FIRM
-};
-
-struct firm_signature {
-    uint8_t sig[0x10];
-    unsigned int version;
-    char version_string[8];
-    enum consoles console;
-};
-
-extern struct firm_signature firm_signatures[];
-extern struct firm_signature twl_firm_signatures[];
-extern struct firm_signature agb_firm_signatures[];
 extern firm_h *firm_orig_loc;
 extern size_t firm_size;
 extern struct firm_signature *current_firm;
