@@ -16,6 +16,7 @@ patches:
                 0x2A: 0x08043EEE
                 0x1F: 0x0804ED1C
             n3ds:
+                0x2F: 0x08043F82
                 0x2D: 0x08043F7A
                 0x21: 0x08043F7A
                 0x1F: 0x08043F7A

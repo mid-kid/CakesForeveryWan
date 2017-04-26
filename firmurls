@@ -1,9 +1,9 @@
 Old 3DS NATIVE_FIRM (The standard 3DS firmware - REQUIRED):
-firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000002/0000005C
+firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000002/0000005E
 cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013800000002/cetk
 
 New 3DS NATIVE_FIRM (The standard 3DS firmware - REQUIRED):
-firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000002/0000002D
+firmware.bin: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000002/0000002F
 cetk: http://nus.cdn.c.shop.nintendowifi.net/ccs/download/0004013820000002/cetk
 
 Old 3DS TWL_FIRM (Firmware for DS/DSi games):

@@ -61,11 +61,16 @@ patches:
                         - 0x0805CF04
                         - *reboot_code_o3ds
             n3ds:
+                0x2F:
+                    offset: 0x08084B7C
+                    variables:
+                        - 0x08059E44
+                        - &reboot_code_n3ds 0x0817F4FC
                 0x2D:
                     offset: 0x08084B3C
                     variables:
                         - 0x08059E30
-                        - &reboot_code_n3ds 0x0817F4FC
+                        - *reboot_code_n3ds
                 0x21:
                     offset: 0x08084AC4
                     variables:
@@ -102,6 +107,7 @@ patches:
                 0x2A: 0x08093F28
                 0x1F: 0x0809744C
             n3ds:
+                0x2F: 0x08094298
                 0x2D: 0x08094260
                 0x21: 0x08094134
                 0x1F: 0x0809343C

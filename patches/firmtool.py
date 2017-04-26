@@ -119,7 +119,7 @@ def simple_search(name, pattern, off=0):
 def decode_bl(instruction, offset):
     return (offset + 8 - (-((instruction & 0xFFFFFF) << 2) & (0xFFFFFF << 2)))
 
-if len(argv) >= 2:
+if len(argv) > 2:
     if argv[2] == "tofile":
         if len(argv) >= 3:
             offset = tofile(int(argv[3], 0))
