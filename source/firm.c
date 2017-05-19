@@ -35,6 +35,7 @@ int save_firm = 0;
 
 #define A9LHBOOT (*(volatile uint8_t *)0x10010000 == 0) // CFG_BOOTENV
 static volatile uint32_t *const arm11_entry = (volatile uint32_t *)0x1FFFFFF8;
+static volatile uint32_t *const arm11_entry2 = (volatile uint32_t *)0x1FFFFFFC;
 #endif
 
 struct firm_signature *current_firm = NULL;
@@ -443,6 +444,7 @@ void boot_firm()
     print("Copied FIRM");
 
     *arm11_entry = (uint32_t)disable_lcds;
+    *arm11_entry2 = (uint32_t)disable_lcds;
     while (*arm11_entry);  // Make sure it jumped there correctly before changing it.
     *arm11_entry = (uint32_t)firm_loc->arm11_entry;
     print("Prepared arm11 entry");

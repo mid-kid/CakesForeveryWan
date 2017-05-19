@@ -43,13 +43,19 @@ provide_files := $(dir_out)/slot0x25keyX_bin.here \
 				 $(dir_out)/cakes/cetk.here
 
 .PHONY: all
-all: launcher patches ninjhax
+all: launcher launcher_bin launcher_firm patches ninjhax
 
 .PHONY: release
 release: Cakes_$(revision).zip
 
 .PHONY: launcher
 launcher: $(dir_out)/Cakes.dat
+
+.PHONY: launcher_bin
+launcher_bin: $(dir_out)/Cakes.bin
+
+.PHONY: launcher_firm
+launcher_firm: $(dir_out)/Cakes.firm
 
 .PHONY: patches
 patches: $(cakes)
@@ -63,7 +69,7 @@ clean:
 	@$(MAKE) $(BRAHFLAGS) -C $(dir_cakebrah) clean
 	rm -rf $(dir_out) $(dir_build) Cakes_$(revision).zip
 
-Cakes_$(revision).zip: launcher patches ninjhax $(provide_files)
+Cakes_$(revision).zip: launcher launcher_bin launcher_firm patches ninjhax $(provide_files)
 	sh -c "cd $(dir_out); zip -r ../$@ *"
 
 $(dir_out)/%.here:
@@ -71,10 +77,17 @@ $(dir_out)/%.here:
 	touch $@
 
 .PHONY: $(dir_out)/Cakes.dat
-$(dir_out)/Cakes.dat: $(dir_build)/main.bin
+$(dir_out)/Cakes.dat: $(dir_out)/Cakes.bin
 	@mkdir -p "$(@D)"
 	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) launcher
 	dd if=$< of=$@ bs=512 seek=144
+
+$(dir_out)/Cakes.bin: $(dir_build)/main.elf
+	$(OC) -S -O binary $< $@
+
+$(dir_out)/Cakes.firm: $(dir_build)/main.elf
+	@mkdir -p "$(@D)"
+	firmtool build $@ -i -e 0 -D $^ -C NDMA
 
 # Simple make rule for armips cakes.
 $(dir_out)/cakes/patches/%.cake: $(dir_patches)/%/recipe.yaml $(dir_patches)/%/patches.s
@@ -89,9 +102,6 @@ $(dir_out)/cakes/patches/%.cake: $(dir_patches)/%/recipe.yaml $(dir_patches)/%/p
 $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh:
 	@mkdir -p "$(@D)"
 	@$(MAKE) $(BRAHFLAGS) -C $(dir_cakebrah) all
-
-$(dir_build)/main.bin: $(dir_build)/main.elf
-	$(OC) -S -O binary $< $@
 
 $(dir_build)/main.elf: $(objects_cfw)
 	$(LINK.o) -T linker.ld  $(OUTPUT_OPTION) $^
