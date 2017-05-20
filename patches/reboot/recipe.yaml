@@ -20,6 +20,16 @@ patches:
                     variables:
                         - 0x08059E34
                         - *reboot_code_o3ds
+                0x58:
+                    offset: 0x08084B18
+                    variables:
+                        - 0x08059D58
+                        - *reboot_code_o3ds
+                0x56:
+                    offset: 0x08084ACC
+                    variables:
+                        - 0x08059D24
+                        - *reboot_code_o3ds
                 0x52:
                     offset: 0x08084ACC
                     variables:
@@ -30,10 +40,30 @@ patches:
                     variables:
                         - 0x08059D10
                         - *reboot_code_o3ds
+                0x4C:
+                    offset: 0x080849F4
+                    variables:
+                        - 0x08059D0C
+                        - *reboot_code_o3ds
+                0x4B:
+                    offset: 0x080849F4
+                    variables:
+                        - 0x08059D0C
+                        - *reboot_code_o3ds
                 0x49:
                     offset: 0x080859FC
                     variables:
                         - 0x0805B180
+                        - *reboot_code_o3ds
+                0x40:
+                    offset: 0x0808596C
+                    variables:
+                        - 0x0805B014
+                        - *reboot_code_o3ds
+                0x3F:
+                    offset: 0x0808596C
+                    variables:
+                        - 0x0805B014
                         - *reboot_code_o3ds
                 0x38:
                     offset: 0x08085914
@@ -50,16 +80,46 @@ patches:
                     variables:
                         - 0x0805ADA4
                         - *reboot_code_o3ds
+                0x2E:
+                    offset: 0x080855BC
+                    variables:
+                        - 0x0805ADA0
+                        - *reboot_code_o3ds
                 0x2A:
                     offset: 0x08085568
                     variables:
                         - 0x0805AF88
+                        - *reboot_code_o3ds
+                0x29:
+                    offset: 0x08085564
+                    variables:
+                        - 0x0805AF88
+                        - *reboot_code_o3ds
+                0x26:
+                    offset: 0x080856E0
+                    variables:
+                        - 0x0805B2BC
+                        - *reboot_code_o3ds
+                0x25:
+                    offset: 0x08085650
+                    variables:
+                        - 0x0805B2BC
                         - *reboot_code_o3ds
                 0x1F:
                     offset: 0x08086B64
                     variables:
                         - 0x0805CF04
                         - *reboot_code_o3ds
+                0x1D:
+                    offset: 0x08086B64
+                    variables:
+                        - 0x0805CF04
+                        - *reboot_code_o3ds
+                0x18:
+                    offset: 0x08086708
+                    variables:
+                        - 0x0805CCB8
+                        - 0xE59F0018 # This is right?
             n3ds:
                 0x2F:
                     offset: 0x08084B7C
@@ -98,14 +158,26 @@ patches:
             o3ds:
                 0x5E: 0x08094220
                 0x5C: 0x080941F0
+                0x58: 0x08094114
+                0x56: 0x080940C8
                 0x52: 0x080940C8
                 0x50: 0x080933CC
+                0x4C: 0x080933B0
+                0x4B: 0x080933B0
                 0x49: 0x08094454
+                0x40: 0x080942F8
+                0x3F: 0x080942F8
                 0x38: 0x08094200
                 0x37: 0x080943A4
                 0x30: 0x080940AC
+                0x2E: 0x080940A8
                 0x2A: 0x08093F28
+                0x29: 0x08093F28
+                0x26: 0x08094228
+                0x25: 0x08094194
                 0x1F: 0x0809744C
+                0x1D: 0x0809744C
+                0x18: 0x08097178
             n3ds:
                 0x2F: 0x08094298
                 0x2D: 0x08094260
