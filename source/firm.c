@@ -494,8 +494,8 @@ void boot_cfw()
 
     // Only save the firm if that option is required (or it's needed for autoboot),
     //   and either the patches have been modified, or the file doesn't exist.
-    if ((save_firm || config->autoboot_enabled) &&
-            (patches_modified || f_stat(PATH_PATCHED_FIRMWARE, NULL) != 0)) {
+    if (save_firm || (config->autoboot_enabled &&
+            (patches_modified || f_stat(PATH_PATCHED_FIRMWARE, NULL) != 0))) {
         draw_loading(title, "Saving NATIVE_FIRM...");
         print("Saving patched NATIVE_FIRM");
         if (write_file(firm_loc, PATH_PATCHED_FIRMWARE, firm_size) != 0) {
@@ -506,8 +506,8 @@ void boot_cfw()
         }
     }
 
-    if ((save_firm || config->autoboot_enabled) &&
-            (patches_modified || f_stat(PATH_MEMORY, NULL) != 0)) {
+    if (save_firm || (config->autoboot_enabled &&
+            (patches_modified || f_stat(PATH_MEMORY, NULL) != 0))) {
         draw_loading(title, "Saving Memory...");
         print("Saving memory");
         if (write_file(memory_loc, PATH_MEMORY, *memory_loc) != 0) {
@@ -516,7 +516,7 @@ void boot_cfw()
         }
     }
 
-    if (current_twl_firm && (patches_modified || f_stat(PATH_PATCHED_TWL_FIRMWARE, NULL) != 0)) {
+    if (current_twl_firm && (save_firm || patches_modified || f_stat(PATH_PATCHED_TWL_FIRMWARE, NULL) != 0)) {
         draw_loading(title, "Saving TWL_FIRM...");
         print("Saving patched TWL_FIRM");
         if (write_file(twl_firm_loc, PATH_PATCHED_TWL_FIRMWARE, twl_firm_size) != 0) {
@@ -525,7 +525,7 @@ void boot_cfw()
         }
     }
 
-    if (current_agb_firm && (patches_modified || f_stat(PATH_PATCHED_AGB_FIRMWARE, NULL) != 0)) {
+    if (current_agb_firm && (save_firm || patches_modified || f_stat(PATH_PATCHED_AGB_FIRMWARE, NULL) != 0)) {
         draw_loading(title, "Saving AGB_FIRM...");
         print("Saving patched AGB_FIRM");
         if (write_file(agb_firm_loc, PATH_PATCHED_AGB_FIRMWARE, agb_firm_size) != 0) {

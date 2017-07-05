@@ -22,7 +22,6 @@ int unmount_sd()
         print("Failed to mount SD card!");
         return 1;
     }
-    print("Unmounted SD card");
     return 0;
 }
 
@@ -46,6 +45,10 @@ int read_file_offset(void *dest, const char *path, uint32_t size, uint32_t offse
 
     fr = f_read(&handle, dest, size, &bytes_read);
     if (fr != FR_OK) goto error;
+    if (bytes_read <= 0) {
+        fr = FR_DISK_ERR;
+        goto error;
+    }
 
     fr = f_close(&handle);
     if (fr != FR_OK) goto error;
