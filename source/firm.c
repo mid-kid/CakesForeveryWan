@@ -132,8 +132,6 @@ int decrypt_cetk_key(void *key, const void *cetk)
 
     static int common_key_y_init = 0;
     uint8_t iv[AES_BLOCK_SIZE] = {0};
-    const uint8_t key_y_hash[0x20] = {0x21, 0x12, 0xF4, 0x50, 0x78, 0x6D, 0xCE, 0x64, 0x39, 0xFD, 0xB8, 0x71, 0x14, 0x74, 0x41, 0xF4,
-                                      0x69, 0xB6, 0xC4, 0x70, 0xA4, 0xB1, 0x5F, 0x7D, 0xFD, 0xE8, 0xCC, 0xE4, 0xC4, 0x62, 0x82, 0x5B};
 
     uint32_t sigtype = __builtin_bswap32(*(uint32_t *)cetk);
     if (sigtype != SIG_TYPE_RSA2048_SHA256) return 1;
@@ -142,47 +140,10 @@ int decrypt_cetk_key(void *key, const void *cetk)
     if (ticket->ticketCommonKeyYIndex != 1) return 1;
 
     if (!common_key_y_init) {
-        uint8_t common_key_y[AES_BLOCK_SIZE] = {0};
-        uint8_t *p9_base = (uint8_t *)0x08028000; // Process9 location on a regular boot (non-A9LH)
-        uint32_t search_len = 0x70000;
-
-        // A workaround is necessary when booting from A9LH
-        if (A9LHBOOT) {
-            uint8_t *firm_loc = (uint8_t *)fcram_temp + FCRAM_SPACING;
-            firm_h *firm = (firm_h*)firm_loc;
-
-            if (dump_firm(firm_loc, 0)) {
-                print("Couldn't dump FIRM0!");
-                return 1;
-            }
-
-            if (firm->magic != FIRM_MAGIC) {
-                print("Couldn't decrypt FIRM0!");
-                return 1;
-            }
-
-            // It can be assumed section 2 is ARM9 because it's either a 8.1 or a 9.0 N3DS FIRM
-            if (decrypt_arm9bin((arm9bin_h *)(firm_loc + firm->section[2].offset), NATIVE_FIRM, 0)) {
-                print("ARM9 binary couldn't be decrypted!");
-                return 1;
-            }
-
-            p9_base = (uint8_t *)(firm_loc + firm->section[2].offset); // Beggining of the ARM9 section
-            search_len = firm->section[2].size;
-        }
-
-        uint8_t tmp_hash[0x20];
-
-        for (uint32_t i = 0; i < search_len; i ++) {
-            if (*(p9_base + i) == 0x0C) { // First byte matches
-                sha(tmp_hash, p9_base + i, 0x10, SHA_256_MODE);
-                if (memcmp(tmp_hash, key_y_hash, 0x20) == 0) {
-                    memcpy(common_key_y, p9_base + i, sizeof(common_key_y));
-                    print("Found the common key Y");
-                    break;
-                }
-            }
-        }
+        // From https://github.com/profi200/Project_CTR/blob/master/makerom/pki/prod.h#L19
+        uint8_t common_key_y[AES_BLOCK_SIZE] = {
+            0x0C, 0x76, 0x72, 0x30, 0xF0, 0x99, 0x8F, 0x1C, 0x46, 0x82, 0x82, 0x02, 0xFA, 0xAC, 0xBE, 0x4C
+        };
 
         aes_setkey(0x3D, common_key_y, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
         common_key_y_init = 1;
