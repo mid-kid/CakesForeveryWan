@@ -10,6 +10,8 @@ firm_maxsize equ 0x200000  ; Random value that's bigger than any of the currentl
     ; - r7: Reserved space for file handle
     ; - *(*r7 + 0x28): fread function.
 
+.ascii "fix_"  ; Newer N3DS firms use r8 instead of r7. Fix that here.
+
     mov r4, r1  ; Back up the original FIRM path.
 
     pxi_wait_recv:

@@ -8,6 +8,7 @@ patches:
         variables:
             - open  # fopen
             - rebc  # reboot_code
+            - fix_
         versions:
             o3ds:
                 0x5E:
@@ -15,82 +16,98 @@ patches:
                     variables:
                         - 0x08059E48
                         - &reboot_code_o3ds 0x080FF4FC
+                        - &fix_nop 0xE1A00000
                 0x5C:
                     offset: 0x08084B3C
                     variables:
                         - 0x08059E34
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x52:
                     offset: 0x08084ACC
                     variables:
                         - 0x08059D24
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x50:
                     offset: 0x08084A10
                     variables:
                         - 0x08059D10
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x49:
                     offset: 0x080859FC
                     variables:
                         - 0x0805B180
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x38:
                     offset: 0x08085914
                     variables:
                         - 0x0805AF20
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x37:
                     offset: 0x08085894
                     variables:
                         - 0x0805AF88
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x30:
                     offset: 0x080855C4
                     variables:
                         - 0x0805ADA4
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x2A:
                     offset: 0x08085568
                     variables:
                         - 0x0805AF88
                         - *reboot_code_o3ds
+                        - *fix_nop
                 0x1F:
                     offset: 0x08086B64
                     variables:
                         - 0x0805CF04
                         - *reboot_code_o3ds
+                        - *fix_nop
             n3ds:
                 0x2F:
                     offset: 0x08084B7C
                     variables:
                         - 0x08059E44
                         - &reboot_code_n3ds 0x0817F4FC
+                        - &fix_mov_r7_r8 0xE1A07008
                 0x2D:
                     offset: 0x08084B3C
                     variables:
                         - 0x08059E30
                         - *reboot_code_n3ds
+                        - *fix_nop
                 0x21:
                     offset: 0x08084AC4
                     variables:
                         - 0x08059D20
                         - *reboot_code_n3ds
+                        - *fix_nop
                 0x1F:
                     offset: 0x08084A0C
                     variables:
                         - 0x08059D10
                         - *reboot_code_n3ds
+                        - *fix_nop
                 0x1B:
                     offset: 0x080849F0
                     variables:
                         - 0x08059D0C
                         - *reboot_code_n3ds
+                        - *fix_nop
                 0x0F:
                     offset: 0x08085968
                     variables:
                         - 0x0805B014
                         - *reboot_code_n3ds
+                        - *fix_nop
 
     patch2.bin:
         type: NATIVE_FIRM
