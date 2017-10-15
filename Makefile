@@ -13,11 +13,13 @@ OC := arm-none-eabi-objcopy
 
 PYTHON := python3
 CONVERT := convert
+ARMIPS := armips
 
 dir_source := source
 dir_build := build
 dir_out := out
 dir_patches := patches
+dir_hacks := hacks
 dir_cakehax := CakeHax
 dir_cakebrah := CakeBrah
 
@@ -37,9 +39,7 @@ objects_cfw = $(patsubst $(dir_source)/%.s, $(dir_build)/%.o, \
 
 cakes := $(patsubst $(dir_patches)/%/, $(dir_out)/cakes/patches/%.cake, $(wildcard $(dir_patches)/*/))
 
-provide_files := $(dir_out)/slot0x25keyX_bin.here \
-				 $(dir_out)/slot0x11key96_bin.here \
-				 $(dir_out)/cakes/firmware_bin.here \
+provide_files := $(dir_out)/cakes/firmware_bin.here \
 				 $(dir_out)/cakes/cetk.here
 
 .PHONY: all
@@ -82,26 +82,31 @@ $(dir_out)/Cakes.dat: $(dir_out)/Cakes.bin
 	@$(MAKE) $(CAKEFLAGS) -C $(dir_cakehax) launcher
 	dd if=$< of=$@ bs=512 seek=144
 
+$(dir_out)/Cakes.firm: $(dir_out)/Cakes.bin $(dir_build)/hacks/b9s_screens.bin
+	@mkdir -p "$(@D)"
+	firmtool build $@ -i -n 0x24000000 -e 0 -D $^ -A 0x23F00000 0x24000000 -C NDMA NDMA
+
 $(dir_out)/Cakes.bin: $(dir_build)/main.elf
 	$(OC) -S -O binary $< $@
 
-$(dir_out)/Cakes.firm: $(dir_build)/main.elf
-	@mkdir -p "$(@D)"
-	firmtool build $@ -i -e 0 -D $^ -C NDMA
-
 # Simple make rule for armips cakes.
 $(dir_out)/cakes/patches/%.cake: $(dir_patches)/%/recipe.yaml $(dir_patches)/%/patches.s
-	@mkdir -p $(dir_out)/cakes/patches
-	@mkdir -p $(dir_build)/patches/$*
+	@mkdir -p "$(@D)"
+	@mkdir -p "$(dir_build)/patches/$*"
 	@echo "bake $@"
 	@cd $(dir_build)/patches/$* && \
-		armips $(abspath $(dir_patches)/$*/patches.s) && \
+		$(ARMIPS) $(abspath $(dir_patches)/$*/patches.s) && \
 		$(PYTHON) $(abspath $(dir_patches)/patissier.py) $(abspath $<) $(abspath $@)
 
 .PHONY: $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh
 $(dir_out)/3ds/Cakes/Cakes.3dsx $(dir_out)/3ds/Cakes/Cakes.smdh:
 	@mkdir -p "$(@D)"
 	@$(MAKE) $(BRAHFLAGS) -C $(dir_cakebrah) all
+
+$(dir_build)/hacks/b9s_screens.bin: $(dir_hacks)/b9s_screens.s
+	@mkdir -p "$(@D)"
+	@echo "Hack: b9s_screens"
+	@cd $(dir_build)/hacks && $(ARMIPS) $(abspath $<)
 
 $(dir_build)/main.elf: $(objects_cfw)
 	$(LINK.o) -T linker.ld  $(OUTPUT_OPTION) $^
