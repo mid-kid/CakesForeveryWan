@@ -192,15 +192,13 @@ int patch_options(void *address, const uint32_t size, const uint8_t options, con
     if (options & patch_option_keyx) {
         print("Patch option: Adding keyX");
 
-        if (read_file(fcram_temp, PATH_SLOT0X25KEYX, AES_BLOCK_SIZE) != 0) {
-            print("Failed to load keyX");
-            draw_message("Failed to load keyX", "Make sure the keyX is\n  located at /slot0x25keyX.bin");
-            return 1;
-        }
+        char key[] = {
+            0xCE, 0xE7, 0xD8, 0xAB, 0x30, 0xC0, 0x0D, 0xAE, 0x85, 0x0E, 0xF5, 0xE3, 0x82, 0xAC, 0x5A, 0xF3
+        };
 
         void *pos = memsearch(address, "slot0x25keyXhere", size, AES_BLOCK_SIZE);
         if (pos) {
-            memcpy(pos, fcram_temp, AES_BLOCK_SIZE);
+            memcpy(pos, key, AES_BLOCK_SIZE);
         } else {
             print("I don't know where to add keyX.\n  Ignoring...");
         }

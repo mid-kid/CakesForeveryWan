@@ -58,15 +58,13 @@ void slot0x11key96_init()
 {
     // 9.6 crypto may need us to get the key from somewhere else.
     // Unless the console already has the key initialized, that is.
-    uint8_t key[AES_BLOCK_SIZE];
-    if (read_file(key, PATH_SLOT0X11KEY96, AES_BLOCK_SIZE) == 0) {
-        // If we can't read the key, we assume it's not needed, and the firmware is the right version.
-        // Otherwise, we make sure the error message for decrypting arm9bin mentions this.
-        aes_setkey(0x11, key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+    uint8_t key[] = {
+        0x42, 0x3F, 0x81, 0x7A, 0x23, 0x52, 0x58, 0x31, 0x6E, 0x75, 0x8E, 0x3A, 0x39, 0x43, 0x2E, 0xD0
+    };
+    aes_setkey(0x11, key, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
 
-        // Tell boot_firm it needs to regenerate the keys.
-        update_96_keys = 1;
-    }
+    // Tell boot_firm it needs to regenerate the keys.
+    update_96_keys = 1;
 }
 
 int dump_firm(void *firm_buffer, const uint8_t firm_id)
@@ -95,21 +93,30 @@ int dump_firm(void *firm_buffer, const uint8_t firm_id)
 
 int decrypt_arm9bin(arm9bin_h *header, enum firm_types firm_type, const unsigned int version)
 {
-    uint8_t slot = 0x15;
+    uint8_t slot;
+    uint8_t decrypted_keyx[AES_BLOCK_SIZE];
+    uint8_t *encrypted_keyx;
 
     print("Decrypting ARM9 FIRM binary");
 
     if (firm_type == NATIVE_FIRM && version > 0x0F) {
-        uint8_t decrypted_keyx[AES_BLOCK_SIZE];
-
         slot0x11key96_init();
         slot = 0x16;
+        encrypted_keyx = header->slot0x16keyX;
+    } else {
+        uint8_t slot0x11keyold[] = {
+            0x07, 0x29, 0x44, 0x38, 0xF8, 0xC9, 0x75, 0x93, 0xAA, 0x0E, 0x4A, 0xB4, 0xAE, 0x84, 0xC1, 0xD8
+        };
 
-        aes_use_keyslot(0x11);
-        aes(decrypted_keyx, header->slot0x16keyX, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
-        aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
+        aes_setkey(0x11, slot0x11keyold, AES_KEYNORMAL, AES_INPUT_BE | AES_INPUT_NORMAL);
+        slot = 0x15;
+        encrypted_keyx = header->keyx;
     }
 
+    aes_use_keyslot(0x11);
+    aes(decrypted_keyx, encrypted_keyx, 1, NULL, AES_ECB_DECRYPT_MODE, 0);
+
+    aes_setkey(slot, decrypted_keyx, AES_KEYX, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_setkey(slot, header->keyy, AES_KEYY, AES_INPUT_BE | AES_INPUT_NORMAL);
     aes_setiv(header->ctr, AES_INPUT_BE | AES_INPUT_NORMAL);
 
@@ -303,8 +310,6 @@ int load_firm(firm_h *dest, char *path, char *path_firmkey, char *path_cetk, siz
                         print("Couldn't decrypt ARM9 FIRM binary");
                         draw_loading("Couldn't decrypt ARM9 FIRM binary",
                                      "Double-check you've got the right firmware.bin.\n"
-                                     "If you are trying to decrypt a >=9.6 firmware on a <9.6 console, please double-check your key is saved at:\n"
-                                     "  " PATH_SLOT0X11KEY96 "\n"
                                      "We remind you that you can't decrypt it on an old 3ds.\nIf the issue persists, please file a bug report.");
                         return 1;
                     }
@@ -379,6 +384,7 @@ void boot_firm()
             return;
         }
 
+        slot0x11key96_init();
         aes_use_keyslot(0x11);
         uint8_t keyx[AES_BLOCK_SIZE];
         for (int slot = 0x19; slot < 0x20; slot++) {
