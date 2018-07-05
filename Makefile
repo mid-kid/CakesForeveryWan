@@ -131,8 +131,8 @@ $(dir_build)/%.o: $(dir_source)/%.mono
 	@mkdir -p "$(@D)"
 	printf '.global $*\n$*: .incbin "$<"\n' | $(COMPILE.s) $(OUTPUT_OPTION)
 
-$(dir_source)/%.mono: $(dir_source)/%.pbm
+$(dir_source)/%.mono: | $(dir_source)/%.pbm
 	@mkdir -p "$(@D)"
-	$(CONVERT) $< $@
+	$(CONVERT) $| $@
 
 include $(call rwildcard, $(dir_build), *.d)
